@@ -3,6 +3,7 @@ import { Nanum_Myeongjo, Do_Hyeon } from "next/font/google";
 import "./globals.css";
 import clsx from "clsx";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 const myeongjo = Nanum_Myeongjo({
   weight: ['400', '700', '800'],
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className={clsx(myeongjo.variable, dohyeon.variable, "font-serif antialiased bg-stone-50 text-stone-900")}>
         <Header />
         {children}
+        <Footer />
       </body>
     </html>
   );
