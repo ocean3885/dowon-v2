@@ -9,6 +9,12 @@ REMOTE_DIR="/var/www/dowon-v2" # CAUTION: Change this to your actual project pat
 echo "Deploying to $SERVER_IP..."
 
 ssh $REMOTE_USER@$SERVER_IP << EOF
+  # Load environment to ensure npm/node/pm2 are found
+  export NVM_DIR="\$HOME/.nvm"
+  [ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh"
+  source ~/.bashrc 2>/dev/null
+  source ~/.profile 2>/dev/null
+  
   cd $REMOTE_DIR
   
   echo "Pulling latest changes..."
