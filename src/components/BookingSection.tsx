@@ -2,7 +2,7 @@ import { Calendar, Phone, CreditCard, ChevronRight } from 'lucide-react';
 
 export default function BookingSection() {
     return (
-        <section className="py-24 bg-white border-b border-stone-100">
+        <section className="py-12 md:py-24 bg-white border-b border-stone-100">
             <div className="container mx-auto px-4">
                 <div className="max-w-4xl mx-auto">
                     <div className="text-center mb-16">
@@ -24,7 +24,7 @@ export default function BookingSection() {
                                 간편하게 선택하세요.
                             </p>
                             <a
-                                href="https://map.naver.com/p/entry/place/1311338458?placePath=/ticket?fromPanelNum=1&additionalHeight=76&timestamp=202512081117&locale=ko&svcName=map_pcv5&fromPanelNum=1&additionalHeight=76&timestamp=202512081117&locale=ko&svcName=map_pcv5&c=15.00,0,0,0,dh"
+                                href="https://booking.naver.com/booking/6/bizes/167387"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="mt-auto inline-flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition-colors w-full justify-center"

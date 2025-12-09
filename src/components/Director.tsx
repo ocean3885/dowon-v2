@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 export default function Director() {
     return (
-        <section className="py-24 bg-stone-50 overflow-hidden">
+        <section className="py-12 md:py-24 bg-stone-50 overflow-hidden">
             <div className="container mx-auto px-4">
                 <div className="flex flex-col md:flex-row items-center gap-12 max-w-6xl mx-auto">
 
@@ -19,7 +19,7 @@ export default function Director() {
                         <div className="relative aspect-[3/4] w-full max-w-md mx-auto rounded-2xl overflow-hidden shadow-2xl">
                             {/* Note: In a real app, you should configure remote patterns in next.config.ts for external images */}
                             <img
-                                src="https://myungridan-gil.com/static/section/img/37.jpg"
+                                src="/kjh.jpg"
                                 alt="김종찬 원장"
                                 className="object-cover w-full h-full"
                             />
@@ -76,6 +76,14 @@ export default function Director() {
                                     <li className="flex items-center gap-2">
                                         <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
                                         정성을 다하는 인생 상담
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                                        동아대 정치외교학과
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full"></span>
+                                        도원명리학회대표
                                     </li>
                                 </ul>
                             </div>

@@ -36,14 +36,14 @@ export default function ServicesPage() {
 
             {/* 1. Philosophy Section */}
             <section className="container mx-auto px-6 mb-20">
-                <div className="bg-white rounded-xl shadow-lg p-8 md:p-12 border border-stone-100 relative overflow-hidden">
+                <div className="bg-white mt-6 rounded-xl shadow-lg p-8 md:p-12 border border-stone-100 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-stone-50 rounded-full -mr-32 -mt-32 opacity-50 pointer-events-none"></div>
 
                     <div className="relative z-10 flex flex-col md:flex-row gap-12 items-center mb-12">
                         <div className="flex-1">
                             <h2 className="text-xl md:text-2xl font-serif font-bold text-stone-800 mb-6 flex items-center gap-2">
                                 <span className="w-1 h-8 bg-stone-800 rounded-full"></span>
-                                1. 김종찬 원장의 명품 작명이란?
+                                김종찬 원장의 명품 작명이란?
                             </h2>
                             <p className="text-stone-700 text-lg leading-relaxed mb-6">
                                 오랜 경험을 바탕으로 <span className="font-bold text-stone-900">전통적인 작명법</span>을 준수하면서,
@@ -66,30 +66,36 @@ export default function ServicesPage() {
                         </div>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-6 mb-8">
+                    <div className="grid lg:grid-cols-3 gap-6 mb-8">
                         <div className="bg-stone-50 p-6 rounded-xl border border-stone-100 hover:shadow-md transition-shadow group">
-                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:bg-stone-800 group-hover:text-white transition-colors">
-                                <ScrollText className="w-6 h-6" />
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0">
+                                    <ScrollText className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-xl md:text-2xl font-bold text-stone-900">전문적인 분석</h3>
                             </div>
-                            <h3 className="text-xl md:text-2xl font-bold text-stone-900 mb-3">전문적인 분석</h3>
                             <p className="text-stone-600 text-sm leading-relaxed">
                                 사주의 병(病)과 약(藥)을 정확히 분석하여, 근본적인 운세의 흐름을 파악하고 부족함을 채워줍니다.
                             </p>
                         </div>
                         <div className="bg-stone-50 p-6 rounded-xl border border-stone-100 hover:shadow-md transition-shadow group">
-                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:bg-stone-800 group-hover:text-white transition-colors">
-                                <Sparkles className="w-6 h-6" />
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0">
+                                    <Sparkles className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-xl md:text-2xl font-bold text-stone-900">현대적 감각</h3>
                             </div>
-                            <h3 className="text-xl md:text-2xl font-bold text-stone-900 mb-3">현대적 감각</h3>
                             <p className="text-stone-600 text-sm leading-relaxed">
                                 촌스럽지 않고 시대에 뒤떨어지지 않는, 세련되고 부르기 좋으며 기억에 남는 이름을 짓습니다.
                             </p>
                         </div>
                         <div className="bg-stone-50 p-6 rounded-xl border border-stone-100 hover:shadow-md transition-shadow group">
-                            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:bg-stone-800 group-hover:text-white transition-colors">
-                                <Scale className="w-6 h-6" />
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:bg-stone-800 group-hover:text-white transition-colors flex-shrink-0">
+                                    <Scale className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-xl md:text-2xl font-bold text-stone-900">운명 보완</h3>
                             </div>
-                            <h3 className="text-xl md:text-2xl font-bold text-stone-900 mb-3">운명 보완</h3>
                             <p className="text-stone-600 text-sm leading-relaxed">
                                 사주에서 부족한 오행과 기운을 이름으로 보완하여, 인생의 균형을 맞추고 길운을 불러옵니다.
                             </p>
@@ -106,8 +112,9 @@ export default function ServicesPage() {
 
             {/* 2. Process Section */}
             <section className="container mx-auto px-6 mb-20">
-                <h2 className="text-xl md:text-2xl font-serif font-bold text-stone-800 mb-4">
-                    2. 작명 세부 과정
+                <h2 className="text-xl md:text-2xl font-serif font-bold text-stone-800 mb-4 flex items-center gap-2">
+                    <span className="w-1 h-8 bg-stone-800 rounded-full"></span>
+                    작명 세부 과정
                 </h2>
                 <p className="text-stone-600 mb-10">좋은 이름을 짓는 3단계 | 도원사주작명원에서는 좋은 이름을 짓기 위해 다음과 같은 세부적이고 과학적인 절차를 따릅니다.</p>
 
@@ -185,8 +192,9 @@ export default function ServicesPage() {
 
             {/* 3. Pricing Section */}
             <section className="container mx-auto px-6 mb-20">
-                <h2 className="text-xl md:text-2xl font-serif font-bold text-stone-800 mb-8">
-                    3. 작명/개명 서비스 안내
+                <h2 className="text-xl md:text-2xl font-serif font-bold text-stone-800 mb-8 flex items-center gap-2">
+                    <span className="w-1 h-8 bg-stone-800 rounded-full"></span>
+                    작명/개명 서비스 안내
                 </h2>
                 <div className="grid md:grid-cols-2 gap-8">
                     {/* Newborn */}
@@ -194,14 +202,14 @@ export default function ServicesPage() {
                         <h3 className="text-xl md:text-2xl font-bold text-stone-900 mb-2">신생아 작명</h3>
                         <p className="text-stone-500 mb-6">아기의 첫 선물, 이름에서부터 특별함을 시작하세요.</p>
                         <p className="text-stone-700 mb-8">소중한 순간, 소중한 이름.</p>
-                        <div className="text-3xl font-bold text-stone-900 text-right">150,000원</div>
+                        <div className="text-3xl font-bold text-stone-900 text-right">200,000원</div>
                     </div>
                     {/* Renaming */}
                     <div className="bg-white p-8 rounded-xl shadow-sm border border-stone-200 hover:border-stone-400 transition-colors">
                         <h3 className="text-xl md:text-2xl font-bold text-stone-900 mb-2">개명</h3>
                         <p className="text-stone-500 mb-6">운명을 바꾸는 힘, 이름에서 시작됩니다.</p>
                         <p className="text-stone-700 mb-8">사주에 맞는 이름으로 개명하여 좋은 기운을 맞이하세요.</p>
-                        <div className="text-3xl font-bold text-stone-900 text-right">150,000원</div>
+                        <div className="text-3xl font-bold text-stone-900 text-right">200,000원</div>
                     </div>
                 </div>
                 <div className="mt-6 text-stone-500 text-sm text-right">
@@ -210,10 +218,10 @@ export default function ServicesPage() {
             </section>
 
             {/* 4. Steps Section (Online) */}
-            {/* 4. Steps Section (Online) */}
             <section className="container mx-auto px-6">
-                <h2 className="text-xl md:text-2xl font-serif font-bold text-stone-800 mb-8">
-                    4. 작명/개명 진행 절차
+                <h2 className="text-xl md:text-2xl font-serif font-bold text-stone-800 mb-8 flex items-center gap-2">
+                    <span className="w-1 h-8 bg-stone-800 rounded-full"></span>
+                    작명/개명 진행 절차
                 </h2>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {/* Step A */}
@@ -227,7 +235,7 @@ export default function ServicesPage() {
                             />
                         </div>
                         <div>
-                            <h3 className="text-xl md:text-2xl font-bold mb-2 text-stone-900">a. 신청서 작성</h3>
+                            <h3 className="text-xl md:text-2xl font-bold mb-2 text-stone-900">1. 신청서 작성</h3>
                             <p className="text-stone-600 text-sm leading-relaxed">
                                 생년월일시 (음력/양력 구분) 등 필수 기입 내용을 정확히 기재합니다. 희망 한자, 선호하는 이름 유형 등 추가 정보도 기재 바랍니다.
                             </p>
@@ -245,9 +253,9 @@ export default function ServicesPage() {
                             />
                         </div>
                         <div>
-                            <h3 className="text-xl md:text-2xl font-bold mb-2 text-stone-900">b. 작명료 결제</h3>
+                            <h3 className="text-xl md:text-2xl font-bold mb-2 text-stone-900">2. 작명료 결제</h3>
                             <p className="text-stone-600 text-sm leading-relaxed">
-                                (15만원) 신청서 및 입금 확인 후 작업 시작 전 연락드립니다. 내용 불분명 시 작업이 보류될 수 있습니다.
+                                신청서 및 입금 확인 후 작업 시작 전 연락드립니다. 내용 불분명 시 작업이 보류될 수 있습니다.
                             </p>
                         </div>
                     </div>
@@ -263,9 +271,9 @@ export default function ServicesPage() {
                             />
                         </div>
                         <div>
-                            <h3 className="text-xl md:text-2xl font-bold mb-2 text-stone-900">c. 작명 진행 및 발송</h3>
+                            <h3 className="text-xl md:text-2xl font-bold mb-2 text-stone-900">3. 작명 진행 및 발송</h3>
                             <p className="text-stone-600 text-sm leading-relaxed">
-                                최적의 이름을 뽑아 <strong>작명추천서 (이름 8개)</strong>를 신청서에 기재된 이메일로 보내드립니다.
+                                최적의 이름을 뽑아 <strong>작명추천서 </strong>를 신청서에 기재된 이메일로 보내드립니다.
                             </p>
                         </div>
                     </div>
@@ -281,7 +289,7 @@ export default function ServicesPage() {
                             />
                         </div>
                         <div>
-                            <h3 className="text-xl md:text-2xl font-bold mb-2 text-stone-900">d. 작명 완료</h3>
+                            <h3 className="text-xl md:text-2xl font-bold mb-2 text-stone-900">4. 작명 완료</h3>
                             <p className="text-stone-600 text-sm leading-relaxed">
                                 추천서의 이름 중 하나를 선택하시면 작명신청이 완료됩니다.
                             </p>

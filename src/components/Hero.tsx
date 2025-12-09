@@ -62,11 +62,11 @@ export default function Hero() {
                         transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
                         className="space-y-6 md:space-y-8 flex flex-col items-center w-full"
                     >
-                        <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif text-amber-500 font-light tracking-wide leading-relaxed whitespace-nowrap">
+                        <h2 className="text-2xl md:text-3xl lg:text-4xl font-serif text-amber-500 font-light tracking-wide leading-relaxed whitespace-nowrap">
                             김종찬 원장
                         </h2>
 
-                        <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif font-black tracking-tight leading-none whitespace-nowrap bg-gradient-to-b from-amber-100 via-white to-stone-300 bg-clip-text text-transparent drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">
+                        <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-black tracking-tight leading-none whitespace-nowrap bg-gradient-to-b from-amber-100 via-white to-stone-300 bg-clip-text text-transparent drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]">
                             도원작명철학원
                         </h1>
 

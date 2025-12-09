@@ -8,9 +8,20 @@ import { redirect } from 'next/navigation';
 export async function submitLead(formData: FormData) {
     const name = formData.get('name') as string;
     const birthDate = formData.get('birthDate') as string;
+    const gender = formData.get('gender') as string;
+    const birthTime = formData.get('birthTime') as string;
     const contact = formData.get('contact') as string;
     const serviceType = formData.get('serviceType') as string;
-    const notes = formData.get('notes') as string;
+    let notes = formData.get('notes') as string;
+
+    // Append extra info to notes to avoid DB schema change
+    let extraInfo = '';
+    if (gender) extraInfo += `[성별: ${gender === 'male' ? '남성' : '여성'}] `;
+    if (birthTime) extraInfo += `[태어난 시간: ${birthTime}] `;
+
+    if (extraInfo) {
+        notes = `${extraInfo}\n${notes}`;
+    }
 
     if (!name || !contact || !serviceType) {
         return { success: false, message: '필수 항목을 입력해주세요.' };

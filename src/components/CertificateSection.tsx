@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 export default function CertificateSection() {
     return (
-        <section className="py-24 bg-stone-100 overflow-hidden">
+        <section className="py-12 md:py-24 bg-stone-100 overflow-hidden">
             <div className="container mx-auto px-6">
                 <div className="flex flex-col md:flex-row items-center gap-16 max-w-6xl mx-auto">
 

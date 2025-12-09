@@ -28,7 +28,7 @@ export default function ConsultationForm() {
     };
 
     return (
-        <section id="consultation-form" className="py-24 bg-stone-900 text-stone-100">
+        <section id="consultation-form" className="py-12 md:py-24 bg-stone-900 text-stone-100">
             <div className="container mx-auto px-4 max-w-4xl">
                 <div className="text-center mb-12">
                     <h2 className="text-3xl md:text-5xl font-bold mb-4 font-display">상담 신청</h2>
@@ -62,12 +62,37 @@ export default function ConsultationForm() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-stone-300">생년월일 (음/양력 필수 기재)</label>
+                                <label className="text-sm font-medium text-stone-300">생년월일 (음/양력 기재) *</label>
                                 <input
                                     name="birthDate"
+                                    required
                                     className="w-full bg-stone-900 border border-stone-600 rounded-lg px-4 py-3 focus:ring-2 focus:ring-stone-400 focus:border-transparent outline-none transition-all"
                                     placeholder="예: 1980.05.20 (양력)"
                                 />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-stone-300">태어난 시간 (모를 경우 미입력)</label>
+                                <input
+                                    name="birthTime"
+                                    className="w-full bg-stone-900 border border-stone-600 rounded-lg px-4 py-3 focus:ring-2 focus:ring-stone-400 focus:border-transparent outline-none transition-all"
+                                    placeholder="예: 오후 2시 30분"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-stone-300">성별 *</label>
+                                <div className="flex gap-4">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="gender" value="male" className="accent-amber-500 w-5 h-5" required />
+                                        <span className="text-stone-300">남성</span>
+                                    </label>
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input type="radio" name="gender" value="female" className="accent-amber-500 w-5 h-5" required />
+                                        <span className="text-stone-300">여성</span>
+                                    </label>
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-stone-300">상담 분야 *</label>
@@ -95,6 +120,10 @@ export default function ConsultationForm() {
                                 className="w-full bg-stone-900 border border-stone-600 rounded-lg px-4 py-3 focus:ring-2 focus:ring-stone-400 focus:border-transparent outline-none transition-all resize-none"
                                 placeholder="상담받고 싶은 내용이나 궁금한 점을 간단히 적어주세요."
                             ></textarea>
+                        </div>
+
+                        <div className="text-center text-stone-400 text-sm py-2">
+                            * 원장님께서 상담이 많아 답변이 늦어질 경우 <a href="tel:063-285-7255" className="text-amber-500 font-bold hover:underline">063-285-7255</a> 로 직접 전화문의 바랍니다.
                         </div>
 
                         <button

@@ -8,7 +8,7 @@ export default async function BlogSection() {
     if (posts.length === 0) return null;
 
     return (
-        <section className="py-24 bg-stone-50">
+        <section className="py-12 md:py-24 bg-stone-50">
             <div className="container mx-auto px-4">
                 <div className="max-w-xl mx-auto text-center mb-16">
                     <h2 className="text-3xl md:text-4xl font-bold text-stone-800 mb-4 font-serif">도원 이야기</h2>
