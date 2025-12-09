@@ -2,8 +2,10 @@
 
 import { getDb } from './db';
 import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+
+import { sendSMS } from './aligo';
 
 export async function submitLead(formData: FormData) {
     const name = formData.get('name') as string;
@@ -27,22 +29,108 @@ export async function submitLead(formData: FormData) {
         return { success: false, message: '필수 항목을 입력해주세요.' };
     }
 
+    // Get IP Address
+    const headersList = await headers();
+    const forwardedFor = headersList.get('x-forwarded-for');
+    const ip = forwardedFor ? forwardedFor.split(',')[0] : 'unknown';
+
     try {
         const db = await getDb();
+
+        // 1. IP Rate Limiting Check (Max 3 per 10 mins)
+        if (ip !== 'unknown') {
+            const ipCount = await db.get(
+                `SELECT COUNT(*) as count FROM consultations 
+                 WHERE ipAddress = ? 
+                 AND createdAt > datetime('now', '-10 minutes')`,
+                ip
+            );
+
+            if (ipCount && ipCount.count >= 3) {
+                return {
+                    success: false,
+                    message: '너무 많은 요청이 감지되었습니다. 잠시 후 다시 시도해주세요.'
+                };
+            }
+        }
+
+        // 2. Phone Rate Limiting Check
+        // Check if there's a submission from the same contact within the last 5 minutes
+        const existing = await db.get(
+            `SELECT createdAt FROM consultations 
+             WHERE contact = ? 
+             AND createdAt > datetime('now', '-5 minutes')
+             ORDER BY createdAt DESC LIMIT 1`,
+            contact
+        );
+
+        if (existing) {
+            return {
+                success: false,
+                message: '이미 상담 신청이 접수되었습니다. 추가 접수는 5분 뒤에 가능합니다.'
+            };
+        }
+
+        // 3. Save to DB
         await db.run(
-            'INSERT INTO consultations (name, birthDate, contact, serviceType, notes) VALUES (?, ?, ?, ?, ?)',
+            'INSERT INTO consultations (name, birthDate, contact, serviceType, notes, ipAddress) VALUES (?, ?, ?, ?, ?, ?)',
             name,
             birthDate,
             contact,
             serviceType,
-            notes
+            notes,
+            ip
         );
 
-        revalidatePath('/admin'); // If we had an admin page
+        // 4. Send SMS Notification
+        // Translating serviceType for better readability in SMS
+        const serviceTypeMap: Record<string, string> = {
+            'saju': '사주 명리',
+            'naming': '신생아 작명',
+            'rename': '개명',
+            'gunghap': '궁합',
+            'date': '택일',
+            'other': '기타 상담'
+        };
+        const serviceName = serviceTypeMap[serviceType] || serviceType;
+
+        const smsContent = `[도원철학관 상담신청]
+이름: ${name}
+연락처: ${contact}
+생년월일: ${birthDate}
+성별/시간: ${extraInfo.trim() || '미입력'}
+신청분야: ${serviceName}
+내용: ${notes.replace(extraInfo + '\n', '').substring(0, 30)}${notes.length > 50 ? '...' : ''}`;
+
+        // Fire and forget SMS or await? 
+        // Awaiting ensures we know if it failed, but strictly speaking DB success is primary.
+        // Let's await to log usage properly, but not fail the user request if SMS fails?
+        // User requested: "문자전송도 같이 이루어 지게 코드를 추가해줘"
+        // Let's just await it.
+        await sendSMS(smsContent);
+
+        revalidatePath('/admin');
         return { success: true, message: '상담 신청이 완료되었습니다. 곧 연락드리겠습니다.' };
     } catch (error) {
         console.error('Database error:', error);
         return { success: false, message: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' };
+    }
+}
+
+export async function deleteConsultation(id: number) {
+    const session = (await cookies()).get('admin_session');
+    if (!session || session.value !== 'true') {
+        return { success: false, message: 'Unauthorized' };
+    }
+
+    try {
+        const db = await getDb();
+        await db.run('DELETE FROM consultations WHERE id = ?', id);
+        revalidatePath('/admin');
+        return { success: true, message: '삭제되었습니다.' };
+    } catch (error) {
+        console.error('Delete error:', error);
+        return { success: false, message: '삭제 중 오류가 발생했습니다.' };
     }
 }
 

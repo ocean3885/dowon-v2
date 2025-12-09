@@ -61,7 +61,19 @@ export default async function BlogSection() {
                         </a>
                     ))}
                 </div>
+
+                <div className="mt-12 text-center">
+                    <a
+                        href="https://blog.naver.com/ocean3885"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-8 py-3 bg-stone-800 text-stone-100 rounded-full font-medium hover:bg-stone-900 transition-all hover:gap-3"
+                    >
+                        <span>도원 블로그 바로가기</span>
+                        <ArrowUpRight size={18} />
+                    </a>
+                </div>
             </div>
-        </section>
+        </section >
     );
 }

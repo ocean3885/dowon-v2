@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getConsultations } from '@/lib/actions';
+import DeleteConsultationButton from '@/components/DeleteConsultationButton';
 
 export default async function AdminPage() {
     let consultations = [];
@@ -28,14 +29,17 @@ export default async function AdminPage() {
                                     <h3 className="font-bold text-stone-800 text-lg mb-1">{item.name}</h3>
                                     <p className="text-xs text-stone-500">{new Date(item.createdAt).toLocaleString('ko-KR')}</p>
                                 </div>
-                                <span className="inline-block px-2.5 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold whitespace-nowrap">
-                                    {item.serviceType === 'saju' && '사주'}
-                                    {item.serviceType === 'naming' && '작명'}
-                                    {item.serviceType === 'rename' && '개명'}
-                                    {item.serviceType === 'gunghap' && '궁합'}
-                                    {item.serviceType === 'date' && '택일'}
-                                    {item.serviceType === 'other' && '기타'}
-                                </span>
+                                <div className="flex flex-col items-end gap-2">
+                                    <span className="inline-block px-2.5 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-semibold whitespace-nowrap">
+                                        {item.serviceType === 'saju' && '사주'}
+                                        {item.serviceType === 'naming' && '작명'}
+                                        {item.serviceType === 'rename' && '개명'}
+                                        {item.serviceType === 'gunghap' && '궁합'}
+                                        {item.serviceType === 'date' && '택일'}
+                                        {item.serviceType === 'other' && '기타'}
+                                    </span>
+                                    <DeleteConsultationButton id={item.id} />
+                                </div>
                             </div>
 
                             <div className="space-y-3 mb-4 flex-grow">
