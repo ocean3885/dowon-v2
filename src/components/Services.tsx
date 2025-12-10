@@ -38,11 +38,11 @@ const services = [
 
 export default function Services() {
     return (
-        <section className="py-12 md:py-24 bg-stone-100">
+        <section className="py-12 md:py-24 bg-stone-100 dark:bg-stone-900">
             <div className="container mx-auto px-4 max-w-6xl">
                 <div className="text-center mb-16">
-                    <span className="text-stone-500 font-serif tracking-widest uppercase mb-2 block">Services</span>
-                    <h2 className="text-3xl md:text-5xl font-bold font-display text-stone-900">상담 분야</h2>
+                    <span className="text-stone-500 dark:text-stone-400 font-serif tracking-widest uppercase mb-2 block">Services</span>
+                    <h2 className="text-3xl md:text-5xl font-bold font-display text-stone-900 dark:text-stone-100">상담 분야</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -54,15 +54,15 @@ export default function Services() {
                             viewport={{ once: true }}
                             transition={{ delay: index * 0.1 }}
                             whileHover={{ y: -5 }}
-                            className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow border border-stone-200"
+                            className="bg-white dark:bg-stone-800 p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow border border-stone-200 dark:border-stone-700"
                         >
                             <div className="flex items-center gap-4 mb-4">
-                                <div className="w-12 h-12 bg-stone-900 text-white rounded-lg flex items-center justify-center shrink-0">
+                                <div className="w-12 h-12 bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900 rounded-lg flex items-center justify-center shrink-0">
                                     <service.icon className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-xl font-bold font-display text-stone-800">{service.title}</h3>
+                                <h3 className="text-xl font-bold font-display text-stone-800 dark:text-stone-100">{service.title}</h3>
                             </div>
-                            <p className="text-stone-600 leading-relaxed font-serif">
+                            <p className="text-stone-600 dark:text-stone-300 leading-relaxed font-serif">
                                 {service.description}
                             </p>
                         </motion.div>
