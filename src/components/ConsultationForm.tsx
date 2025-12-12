@@ -9,6 +9,7 @@ import clsx from 'clsx';
 export default function ConsultationForm() {
     const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
     const [message, setMessage] = useState('');
+    const [notesLength, setNotesLength] = useState(0);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -113,13 +114,19 @@ export default function ConsultationForm() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-stone-300">상담 내용 / 메모</label>
+                            <label className="text-sm font-medium text-stone-300">상담 내용 / 메모 *</label>
                             <textarea
                                 name="notes"
                                 rows={4}
                                 className="w-full bg-stone-900 border border-stone-600 rounded-lg px-4 py-3 focus:ring-2 focus:ring-stone-400 focus:border-transparent outline-none transition-all resize-none"
-                                placeholder="상담받고 싶은 내용이나 궁금한 점을 간단히 적어주세요."
+                                placeholder="상담받고 싶은 내용을 적어주세요. (최대 500자)"
+                                required
+                                maxLength={500}
+                                onChange={(e) => setNotesLength(e.target.value.length)}
                             ></textarea>
+                            <div className="text-right text-xs text-stone-500 mt-1">
+                                {notesLength} / 500자
+                            </div>
                         </div>
 
                         <div className="text-center text-stone-400 text-sm py-2">

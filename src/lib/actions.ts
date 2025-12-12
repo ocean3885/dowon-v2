@@ -100,7 +100,7 @@ export async function submitLead(formData: FormData) {
 생년월일: ${birthDate}
 성별/시간: ${extraInfo.trim() || '미입력'}
 신청분야: ${serviceName}
-내용: ${notes.replace(extraInfo + '\n', '').substring(0, 30)}${notes.length > 50 ? '...' : ''}`;
+내용: ${notes.replace(extraInfo + '\n', '').substring(0, 500)}${notes.length > 500 ? '...' : ''}`;
 
         // Fire and forget SMS or await? 
         // Awaiting ensures we know if it failed, but strictly speaking DB success is primary.
