@@ -26,7 +26,7 @@ export default async function BlogSection() {
                             rel="noopener noreferrer"
                             className="group block bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
                         >
-                            <div className="aspect-[4/3] bg-stone-200 relative overflow-hidden">
+                            <div className="aspect-[2/1] bg-stone-200 relative overflow-hidden">
                                 {post.thumbnailUrl ? (
                                     <img
                                         src={post.thumbnailUrl}
@@ -54,7 +54,7 @@ export default async function BlogSection() {
                                 <h3 className="font-bold text-stone-800 text-lg mb-2 line-clamp-2 group-hover:text-amber-800 transition-colors">
                                     {post.title}
                                 </h3>
-                                <p className="text-stone-500 text-sm line-clamp-2 leading-relaxed">
+                                <p className="text-stone-500 text-sm line-clamp-4 leading-relaxed">
                                     {post.summary}
                                 </p>
                             </div>

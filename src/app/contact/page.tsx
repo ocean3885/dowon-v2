@@ -17,7 +17,7 @@ export default function ContactPage() {
     return (
         <main className="min-h-screen bg-stone-50">
             {/* Header */}
-            <section className="relative pt-48 pb-20 px-6 bg-stone-100/50">
+            <section className="relative pt-32 md:pt-40 md:pb-12 px-6 bg-stone-100/50">
                 <div className="container mx-auto text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}

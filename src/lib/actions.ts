@@ -240,6 +240,21 @@ export async function getSelectedBlogPosts() {
     return db.all('SELECT * FROM blog_posts WHERE isSelected = 1 ORDER BY publishedDate DESC LIMIT 4');
 }
 
+export async function getRecentPosts() {
+    const db = await getDb();
+    // Fetch recent 4 posts with category name
+    // Strip HTML tags from content for summary is tricky in SQL, so we fetch content and handle in component or here.
+    // Handling in SQL is hard. We'll fetch content and truncate/strip in component or helper.
+    // Actually we can just fetch content and map it.
+    return db.all(`
+        SELECT p.*, c.name as categoryName 
+        FROM posts p 
+        LEFT JOIN categories c ON p.categoryId = c.id 
+        ORDER BY p.publishedAt DESC 
+        LIMIT 4
+    `);
+}
+
 export async function toggleBlogPostSelection(id: number) {
     const session = (await cookies()).get('admin_session');
     if (!session || session.value !== 'true') return { success: false };

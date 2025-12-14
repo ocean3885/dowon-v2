@@ -12,6 +12,7 @@ const navItems = [
     { name: '원장소개', href: '/about' },
     { name: '작명/개명', href: '/services' },
     { name: '상담안내', href: '/process' },
+    { name: '게시판', href: '/board' },
     { name: '오시는길', href: '/contact' },
 ];
 

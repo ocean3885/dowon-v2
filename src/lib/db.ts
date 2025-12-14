@@ -33,6 +33,29 @@ export async function getDb() {
         isSelected INTEGER DEFAULT 0,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        displayOrder INTEGER DEFAULT 0,
+        postLimit INTEGER DEFAULT 5,
+        isActive INTEGER DEFAULT 1,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS posts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        categoryId INTEGER,
+        title TEXT NOT NULL,
+        content TEXT NOT NULL,
+        author TEXT,
+        viewCount INTEGER DEFAULT 0,
+        imageUrl TEXT,
+        thumbnailUrl TEXT,
+        publishedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (categoryId) REFERENCES categories(id)
+      );
     `);
 
     // Migration: Check if ipAddress column exists in consultations
@@ -49,6 +72,17 @@ export async function getDb() {
         // If table existed without IP, CREATE TABLE does nothing. ALTER adds it.
         // So catching duplicate column error is the right way.
       }
+    }
+
+    // Seed initial categories
+    const categoryCount = await db.get('SELECT COUNT(*) as count FROM categories');
+    if (categoryCount && categoryCount.count === 0) {
+      await db.exec(`
+        INSERT INTO categories (name, displayOrder, postLimit, isActive) VALUES 
+        ('공지사항', 1, 5, 1),
+        ('칼럼', 2, 6, 1),
+        ('자유게시판', 3, 5, 1);
+      `);
     }
   }
   return db;
