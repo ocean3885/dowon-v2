@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import { Jimp } from 'jimp';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(request: NextRequest) {
     try {
@@ -90,6 +91,10 @@ export async function POST(request: NextRequest) {
 
             count++;
         }
+
+        revalidatePath('/board');
+        revalidatePath('/admin/board');
+        revalidatePath('/admin/board/categories');
 
         return NextResponse.json({ success: true, count });
 

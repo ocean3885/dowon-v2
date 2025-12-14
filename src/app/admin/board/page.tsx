@@ -4,6 +4,8 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import BulkImportButton from '@/components/admin/BulkImportButton';
 
+export const dynamic = 'force-dynamic';
+
 async function getAdminPosts() {
     const db = await getDb();
     // Fetch all posts with category names

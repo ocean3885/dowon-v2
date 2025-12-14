@@ -1,12 +1,13 @@
 import sqlite3 from 'sqlite3';
 import { open, Database } from 'sqlite';
+import path from 'path';
 
 let db: Database | null = null;
 
 export async function getDb() {
   if (!db) {
     db = await open({
-      filename: './dowon.db',
+      filename: path.join(process.cwd(), 'dowon.db'),
       driver: sqlite3.Database
     });
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { revalidatePath } from 'next/cache';
 
 export async function GET() {
     const db = await getDb();
@@ -22,6 +23,8 @@ export async function POST(request: NextRequest) {
         postLimit || 5
     );
 
+    revalidatePath('/board');
+    revalidatePath('/admin/board/categories');
     return NextResponse.json({ id: result.lastID, name, displayOrder, postLimit });
 }
 
@@ -53,6 +56,8 @@ export async function PUT(request: NextRequest) {
         ...start
     );
 
+    revalidatePath('/board');
+    revalidatePath('/admin/board/categories');
     return NextResponse.json({ success: true });
 }
 
@@ -72,5 +77,7 @@ export async function DELETE(request: NextRequest) {
 
     await db.run('DELETE FROM categories WHERE id = ?', id);
 
+    revalidatePath('/board');
+    revalidatePath('/admin/board/categories');
     return NextResponse.json({ success: true });
 }
