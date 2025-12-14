@@ -22,8 +22,6 @@ ssh $REMOTE_USER@$SERVER_IP << EOF
   
   echo "Installing dependencies..."
   npm install
-  # Fix for sharp library on CPUs without v2 microarchitecture support
-  npm install --os=linux --cpu=x64 sharp
   
   echo "Building application..."
   npm run build
