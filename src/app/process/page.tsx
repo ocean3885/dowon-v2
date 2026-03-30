@@ -168,7 +168,7 @@ export default function ProcessPage() {
                                 아기가 태어날 가장 좋은 시간과 날짜를 선택하여, 아기에게 최상의 사주팔자를 선물합니다. 인생의 시작점부터 좋은 기운을 담습니다.
                             </p>
                             <div className="pt-4 border-t border-stone-100 text-right">
-                                <span className="text-lg font-bold text-stone-900">80,000원</span>
+                                <span className="text-lg font-bold text-stone-900">100,000원</span>
                             </div>
                         </div>
                     </div>
@@ -185,9 +185,9 @@ export default function ProcessPage() {
                             <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-300"></div>
                         </div>
                         <div className="p-6 flex flex-col flex-grow">
-                            <h3 className="text-xl font-bold text-stone-900 mb-2">상호 작명</h3>
+                            <h3 className="text-xl font-bold text-stone-900 mb-2">작명 개명</h3>
                             <p className="text-stone-600 text-sm leading-relaxed mb-4 flex-grow">
-                                사업의 번창과 재물운 증진에 도움이 되는 길(吉)한 상호를 작명합니다. 브랜드에 좋은 기운과 뜻을 담아드립니다.
+                                사주에 맞는 명품 이름으로 작명 및 개명을 통하여 좋은 기운을 맞이하세요.
                             </p>
                             <div className="pt-4 border-t border-stone-100 text-right">
                                 <span className="text-lg font-bold text-stone-900">200,000원</span>
