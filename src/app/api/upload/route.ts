@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import sharp from 'sharp';
 import path from 'path';
 import { writeFile, mkdir } from 'fs/promises';
 
@@ -21,19 +20,12 @@ export async function POST(request: NextRequest) {
         await mkdir(uploadDir, { recursive: true });
 
         const originalPath = path.join(uploadDir, filename);
-        const thumbnailPath = path.join(uploadDir, 'thumb_' + filename);
-
         // Save original
         await writeFile(originalPath, buffer);
 
-        // Generate thumbnail with center-crop cover behavior.
-        await sharp(buffer)
-            .resize(300, 200, { fit: 'cover', position: 'centre' })
-            .toFile(thumbnailPath);
-
         return NextResponse.json({
             url: `/uploads/${filename}`,
-            thumbnailUrl: `/uploads/thumb_${filename}`
+            thumbnailUrl: `/uploads/${filename}`
         });
     } catch (error) {
         console.error('Upload error:', error);

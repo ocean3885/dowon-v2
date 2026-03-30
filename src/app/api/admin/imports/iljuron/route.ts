@@ -3,7 +3,6 @@ import { getDb } from '@/lib/db';
 import path from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
-import sharp from 'sharp';
 import { revalidatePath } from 'next/cache';
 
 export async function POST(request: NextRequest) {
@@ -59,19 +58,12 @@ export async function POST(request: NextRequest) {
                 if (existsSync(imgPath)) {
                     const destFilename = `${Date.now()}_${koreanName}.png`;
                     const destPath = path.join(publicUploadDir, destFilename);
-                    const thumbFilename = `thumb_${destFilename}`;
-                    const thumbPath = path.join(publicUploadDir, thumbFilename);
 
                     // Copy original
                     await fs.copyFile(imgPath, destPath);
 
-                    // Create thumbnail with center-crop cover behavior.
-                    await sharp(imgPath)
-                        .resize(300, 200, { fit: 'cover', position: 'centre' })
-                        .toFile(thumbPath);
-
                     imageUrl = `/uploads/iljuron/${destFilename}`;
-                    thumbnailUrl = `/uploads/iljuron/${thumbFilename}`;
+                    thumbnailUrl = imageUrl;
                 }
             }
 
