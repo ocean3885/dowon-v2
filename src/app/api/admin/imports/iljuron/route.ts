@@ -3,7 +3,7 @@ import { getDb } from '@/lib/db';
 import path from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
-import { Jimp } from 'jimp';
+import sharp from 'sharp';
 import { revalidatePath } from 'next/cache';
 
 export async function POST(request: NextRequest) {
@@ -65,11 +65,10 @@ export async function POST(request: NextRequest) {
                     // Copy original
                     await fs.copyFile(imgPath, destPath);
 
-                    // Create thumbnail using Jimp
-                    const image = await Jimp.read(imgPath);
-                    await image
-                        .cover({ w: 300, h: 200 })
-                        .write(thumbPath as any);
+                    // Create thumbnail with center-crop cover behavior.
+                    await sharp(imgPath)
+                        .resize(300, 200, { fit: 'cover', position: 'centre' })
+                        .toFile(thumbPath);
 
                     imageUrl = `/uploads/iljuron/${destFilename}`;
                     thumbnailUrl = `/uploads/iljuron/${thumbFilename}`;

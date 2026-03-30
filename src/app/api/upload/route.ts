@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Jimp } from 'jimp';
+import sharp from 'sharp';
 import path from 'path';
 import { writeFile, mkdir } from 'fs/promises';
 
@@ -26,12 +26,10 @@ export async function POST(request: NextRequest) {
         // Save original
         await writeFile(originalPath, buffer);
 
-        // Generate thumbnail using Jimp
-        const image = await Jimp.read(buffer);
-        await image
-            .resize({ w: 300, h: 200 }) // approximate cover fit not directly supported in one call for resize but cover is.
-            .cover({ w: 300, h: 200 })
-            .write(thumbnailPath as any);
+        // Generate thumbnail with center-crop cover behavior.
+        await sharp(buffer)
+            .resize(300, 200, { fit: 'cover', position: 'centre' })
+            .toFile(thumbnailPath);
 
         return NextResponse.json({
             url: `/uploads/${filename}`,

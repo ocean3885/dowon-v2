@@ -17,7 +17,7 @@ import {
 
 export default function ProcessPage() {
     return (
-        <main className="pt-24 min-h-screen bg-stone-50">
+        <main className="relative pt-24 min-h-screen bg-stone-50">
             {/* Hero Section */}
             <section className="relative w-full py-20 md:py-32 flex items-center justify-center overflow-hidden">
                 {/* Background Texture with Overlay */}
@@ -26,6 +26,7 @@ export default function ProcessPage() {
                         src="/luxury_korean_paper_bg.png"
                         alt="Korean Paper Texture"
                         fill
+                        sizes="100vw"
                         className="object-cover opacity-40"
                         priority
                     />
@@ -114,6 +115,7 @@ export default function ProcessPage() {
                                 src="/sj_card_bg.jpg"
                                 alt="사주 상담"
                                 fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                                 className="object-cover transition-transform duration-500 group-hover:scale-110"
                             />
                             <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-300"></div>
@@ -136,6 +138,7 @@ export default function ProcessPage() {
                                 src="/etc_card_bg.jpg"
                                 alt="궁합 상담"
                                 fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                                 className="object-cover transition-transform duration-500 group-hover:scale-110"
                             />
                             <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-300"></div>
@@ -158,6 +161,7 @@ export default function ProcessPage() {
                                 src="/jm_card_bg.jpg"
                                 alt="출산 택일"
                                 fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                                 className="object-cover transition-transform duration-500 group-hover:scale-110"
                             />
                             <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-300"></div>
@@ -180,6 +184,7 @@ export default function ProcessPage() {
                                 src="/gm_card_bg.jpg"
                                 alt="상호 작명"
                                 fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
                                 className="object-cover transition-transform duration-500 group-hover:scale-110"
                             />
                             <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-300"></div>

@@ -4,7 +4,7 @@ import { ScrollText, Sparkles, Scale } from 'lucide-react';
 
 export default function ServicesPage() {
     return (
-        <main className="pt-24 min-h-screen bg-stone-50">
+        <main className="relative pt-24 min-h-screen bg-stone-50">
             {/* Hero Section */}
             <section className="relative w-full py-20 md:py-32 flex items-center justify-center overflow-hidden">
                 {/* Background Texture with Overlay */}
@@ -13,6 +13,7 @@ export default function ServicesPage() {
                         src="/luxury_korean_paper_bg.png"
                         alt="Korean Paper Texture"
                         fill
+                        sizes="100vw"
                         className="object-cover opacity-40"
                         priority
                     />
@@ -60,6 +61,7 @@ export default function ServicesPage() {
                                     src="/about2.jpg"
                                     alt="김종찬 원장"
                                     fill
+                                    sizes="256px"
                                     className="object-cover"
                                 />
                             </div>
@@ -121,13 +123,13 @@ export default function ServicesPage() {
                 <div className="space-y-6">
                     {/* Step 1 */}
                     <div className="flex flex-col md:flex-row gap-6 items-center md:items-start bg-white p-6 rounded-xl shadow-sm border border-stone-100">
-                        <div className="w-[200px] flex-shrink-0">
+                        <div className="relative w-[200px] aspect-square flex-shrink-0">
                             <Image
                                 src="/process1.png"
                                 alt="Process Step 1"
-                                width={200}
-                                height={200}
-                                className="w-full h-auto rounded-lg object-contain bg-stone-50"
+                                fill
+                                sizes="200px"
+                                className="rounded-lg object-contain bg-stone-50"
                             />
                         </div>
                         <div className="flex-grow text-center md:text-left">
@@ -145,13 +147,13 @@ export default function ServicesPage() {
 
                     {/* Step 2 */}
                     <div className="flex flex-col md:flex-row gap-6 items-center md:items-start bg-white p-6 rounded-xl shadow-sm border border-stone-100">
-                        <div className="w-[200px] flex-shrink-0">
+                        <div className="relative w-[200px] aspect-square flex-shrink-0">
                             <Image
                                 src="/process2.png"
                                 alt="Process Step 2"
-                                width={200}
-                                height={200}
-                                className="w-full h-auto rounded-lg object-contain bg-stone-50"
+                                fill
+                                sizes="200px"
+                                className="rounded-lg object-contain bg-stone-50"
                             />
                         </div>
                         <div className="flex-grow text-center md:text-left">
@@ -167,13 +169,13 @@ export default function ServicesPage() {
 
                     {/* Step 3 */}
                     <div className="flex flex-col md:flex-row gap-6 items-center md:items-start bg-white p-6 rounded-xl shadow-sm border border-stone-100">
-                        <div className="w-[200px] flex-shrink-0">
+                        <div className="relative w-[200px] aspect-square flex-shrink-0">
                             <Image
                                 src="/process3.png"
                                 alt="Process Step 3"
-                                width={200}
-                                height={200}
-                                className="w-full h-auto rounded-lg object-contain bg-stone-50"
+                                fill
+                                sizes="200px"
+                                className="rounded-lg object-contain bg-stone-50"
                             />
                         </div>
                         <div className="flex-grow text-center md:text-left">
@@ -231,6 +233,7 @@ export default function ServicesPage() {
                                 src="/jminfo1.jpg"
                                 alt="신청서 작성"
                                 fill
+                                sizes="150px"
                                 className="object-cover"
                             />
                         </div>
@@ -249,6 +252,7 @@ export default function ServicesPage() {
                                 src="/jminfo2.jpg"
                                 alt="작명료 결제"
                                 fill
+                                sizes="150px"
                                 className="object-cover"
                             />
                         </div>
@@ -267,6 +271,7 @@ export default function ServicesPage() {
                                 src="/jminfo3.jpg"
                                 alt="작명 진행 및 추천"
                                 fill
+                                sizes="150px"
                                 className="object-cover"
                             />
                         </div>
@@ -285,6 +290,7 @@ export default function ServicesPage() {
                                 src="/jminfo4.jpg"
                                 alt="작명 완료"
                                 fill
+                                sizes="150px"
                                 className="object-cover"
                             />
                         </div>

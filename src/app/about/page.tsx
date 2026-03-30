@@ -19,7 +19,7 @@ const staggerContainer = {
 
 export default function AboutPage() {
     return (
-        <main className="min-h-screen bg-stone-50">
+        <main className="relative min-h-screen bg-stone-50">
             {/* Redesigned Hero Section (No Image) */}
             <section className="relative pt-48 pb-24 px-6 md:px-0 bg-stone-100/50">
                 <div className="container mx-auto text-center">
@@ -55,6 +55,7 @@ export default function AboutPage() {
                             src="/about2.jpg"
                             alt="김종찬 원장"
                             fill
+                            sizes="(max-width: 768px) 100vw, 50vw"
                             className="object-cover hover:scale-105 transition-transform duration-700"
                         />
                     </motion.div>
@@ -86,7 +87,7 @@ export default function AboutPage() {
             <section className="bg-stone-900 text-stone-200 py-24 px-6 relative overflow-hidden">
                 {/* Background Pattern */}
                 <div className="absolute top-0 right-0 w-1/2 h-full opacity-10 pointer-events-none">
-                    <Image src="/window.svg" alt="pattern" fill className="object-cover" />
+                    <Image src="/window.svg" alt="pattern" fill sizes="50vw" className="object-cover" />
                 </div>
 
                 <div className="container mx-auto grid md:grid-cols-2 gap-16 items-center relative z-10">
@@ -127,6 +128,7 @@ export default function AboutPage() {
                             src="/about3.jpg"
                             alt="성명학 연구"
                             fill
+                            sizes="(max-width: 768px) 100vw, 50vw"
                             className="object-cover hover:scale-105 transition-transform duration-700"
                         />
                     </motion.div>
@@ -169,6 +171,7 @@ export default function AboutPage() {
                             src="/about4.jpg"
                             alt="도원사주작명원의 약속"
                             fill
+                            sizes="(max-width: 1024px) 100vw, 896px"
                             className="object-cover"
                         />
                     </motion.div>

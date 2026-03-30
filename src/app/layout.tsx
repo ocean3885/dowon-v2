@@ -34,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className="scroll-smooth">
+    <html lang="ko" className="scroll-smooth" data-scroll-behavior="smooth">
       <body className={clsx(myeongjo.variable, dohyeon.variable, "font-serif antialiased bg-stone-50 text-stone-900")}>
         <Header />
         {children}

@@ -1,15 +1,56 @@
-import sqlite3 from 'sqlite3';
-import { open, Database } from 'sqlite';
+import Database from 'better-sqlite3';
 import path from 'path';
 
-let db: Database | null = null;
+type RunResult = {
+  lastID: number;
+  changes: number;
+};
+
+class AsyncDb {
+  private readonly db: Database.Database;
+
+  constructor(filename: string) {
+    this.db = new Database(filename);
+  }
+
+  async exec(sql: string): Promise<void> {
+    this.db.exec(sql);
+  }
+
+  async get<T = any>(sql: string, ...params: unknown[]): Promise<T | undefined> {
+    const stmt = this.db.prepare(sql);
+    return stmt.get(...normalizeParams(params)) as T | undefined;
+  }
+
+  async all<T = any>(sql: string, ...params: unknown[]): Promise<T[]> {
+    const stmt = this.db.prepare(sql);
+    return stmt.all(...normalizeParams(params)) as T[];
+  }
+
+  async run(sql: string, ...params: unknown[]): Promise<RunResult> {
+    const stmt = this.db.prepare(sql);
+    const result = stmt.run(...normalizeParams(params));
+
+    return {
+      lastID: Number(result.lastInsertRowid ?? 0),
+      changes: result.changes,
+    };
+  }
+}
+
+function normalizeParams(params: unknown[]): unknown[] {
+  if (params.length === 1 && Array.isArray(params[0])) {
+    return params[0] as unknown[];
+  }
+
+  return params;
+}
+
+let db: AsyncDb | null = null;
 
 export async function getDb() {
   if (!db) {
-    db = await open({
-      filename: path.join(process.cwd(), 'dowon.db'),
-      driver: sqlite3.Database
-    });
+    db = new AsyncDb(path.join(process.cwd(), 'dowon.db'));
 
     await db.exec(`
       CREATE TABLE IF NOT EXISTS consultations (
@@ -76,7 +117,7 @@ export async function getDb() {
     }
 
     // Seed initial categories
-    const categoryCount = await db.get('SELECT COUNT(*) as count FROM categories');
+    const categoryCount = await db.get<{ count: number }>('SELECT COUNT(*) as count FROM categories');
     if (categoryCount && categoryCount.count === 0) {
       await db.exec(`
         INSERT INTO categories (name, displayOrder, postLimit, isActive) VALUES 
