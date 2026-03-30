@@ -18,6 +18,7 @@ ssh $REMOTE_USER@$SERVER_IP << EOF
   cd $REMOTE_DIR
   
   echo "Pulling latest changes..."
+  git stash
   git pull origin main
   
   echo "Installing dependencies..."
