@@ -298,8 +298,10 @@ export async function deleteBoardPost(id: number) {
     try {
         const db = await getDb();
         await db.run('DELETE FROM posts WHERE id = ?', id);
+        revalidatePath('/');
         revalidatePath('/admin/board');
         revalidatePath('/board');
+        revalidatePath(`/board/post/${id}`);
         return { success: true };
     } catch (error) {
         console.error('Board delete error:', error);

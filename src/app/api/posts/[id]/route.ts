@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { revalidatePath } from 'next/cache';
 
 export async function GET(
     request: NextRequest,
@@ -57,6 +58,11 @@ export async function PUT(
         ...values
     );
 
+    revalidatePath('/');
+    revalidatePath('/board');
+    revalidatePath('/admin/board');
+    revalidatePath(`/board/post/${id}`);
+
     return NextResponse.json({ success: true });
 }
 
@@ -69,6 +75,11 @@ export async function DELETE(
     const db = await getDb();
 
     await db.run('DELETE FROM posts WHERE id = ?', id);
+
+    revalidatePath('/');
+    revalidatePath('/board');
+    revalidatePath('/admin/board');
+    revalidatePath(`/board/post/${id}`);
 
     return NextResponse.json({ success: true });
 }

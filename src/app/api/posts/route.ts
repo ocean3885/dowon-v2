@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { revalidatePath } from 'next/cache';
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
@@ -61,6 +62,10 @@ export async function POST(request: NextRequest) {
      VALUES (?, ?, ?, ?, ?, ?, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
         categoryId, title, content, author, imageUrl, thumbnailUrl
     );
+
+    revalidatePath('/');
+    revalidatePath('/board');
+    revalidatePath('/admin/board');
 
     return NextResponse.json({ id: result.lastID });
 }

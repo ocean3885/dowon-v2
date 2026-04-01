@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
             count++;
         }
 
+        revalidatePath('/');
         revalidatePath('/board');
         revalidatePath('/admin/board');
         revalidatePath('/admin/board/categories');
