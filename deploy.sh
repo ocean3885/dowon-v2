@@ -30,7 +30,7 @@ ssh $REMOTE_USER@$SERVER_IP << EOF
 
   # If existing posts still point thumbnailUrl to original images,
   # run this once to generate thumbnail files and update the DB.
-  npm run backfill:thumbnails
+  # npm run backfill:thumbnails
   
   echo "Building application..."
   npm run build
