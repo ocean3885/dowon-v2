@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'path';
 import { writeFile, mkdir } from 'fs/promises';
+import { buildThumbnailUrl, createThumbnailFromBuffer, getPublicFilePath } from '@/lib/thumbnails';
 
 export async function POST(request: NextRequest) {
     try {
@@ -23,9 +24,20 @@ export async function POST(request: NextRequest) {
         // Save original
         await writeFile(originalPath, buffer);
 
+        const url = `/uploads/${filename}`;
+        let thumbnailUrl = url;
+
+        try {
+            thumbnailUrl = buildThumbnailUrl(url);
+            await createThumbnailFromBuffer(buffer, getPublicFilePath(thumbnailUrl));
+        } catch (thumbnailError) {
+            console.error('Thumbnail generation failed:', thumbnailError);
+            thumbnailUrl = url;
+        }
+
         return NextResponse.json({
-            url: `/uploads/${filename}`,
-            thumbnailUrl: `/uploads/${filename}`
+            url,
+            thumbnailUrl
         });
     } catch (error) {
         console.error('Upload error:', error);

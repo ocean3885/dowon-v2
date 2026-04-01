@@ -288,3 +288,21 @@ export async function deleteBlogPost(id: number) {
         return { success: false };
     }
 }
+
+export async function deleteBoardPost(id: number) {
+    const session = (await cookies()).get('admin_session');
+    if (!session || session.value !== 'true') {
+        return { success: false, message: 'Unauthorized' };
+    }
+
+    try {
+        const db = await getDb();
+        await db.run('DELETE FROM posts WHERE id = ?', id);
+        revalidatePath('/admin/board');
+        revalidatePath('/board');
+        return { success: true };
+    } catch (error) {
+        console.error('Board delete error:', error);
+        return { success: false, message: '삭제 중 오류가 발생했습니다.' };
+    }
+}

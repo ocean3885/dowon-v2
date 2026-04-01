@@ -3,6 +3,7 @@ import { getDb } from '@/lib/db';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import BulkImportButton from '@/components/admin/BulkImportButton';
+import DeleteBoardPostButton from '@/components/admin/DeleteBoardPostButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -75,15 +76,15 @@ export default async function AdminBoardPage() {
                                     {format(new Date(post.publishedAt), 'yyyy-MM-dd', { locale: ko })}
                                 </td>
                                 <td className="px-6 py-4 text-right">
-                                    {/* Simplified delete for now - could be Client Component or Server Action */}
-                                    <button className="text-red-500 hover:text-red-700 text-sm font-medium">
-                                        삭제
-                                    </button>
-                                    {/* Note: Delete button won't work without JS handler. 
-                        Ideally we make this a client component or use form action.
-                        For speed, I'll update it to a client component later or embedded form if needed.
-                        Actually, let's leave it visual for now or make it a form.
-                    */}
+                                    <div className="flex items-center justify-end gap-3">
+                                        <Link
+                                            href={`/admin/board/edit/${post.id}`}
+                                            className="text-stone-600 hover:text-stone-900 text-sm font-medium"
+                                        >
+                                            수정
+                                        </Link>
+                                        <DeleteBoardPostButton id={post.id} />
+                                    </div>
                                 </td>
                             </tr>
                         ))}

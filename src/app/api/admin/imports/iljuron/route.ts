@@ -4,13 +4,14 @@ import path from 'path';
 import fs from 'fs/promises';
 import { existsSync } from 'fs';
 import { revalidatePath } from 'next/cache';
+import { buildThumbnailUrl, createThumbnailFromFile, getPublicFilePath } from '@/lib/thumbnails';
 
 export async function POST(request: NextRequest) {
     try {
         const db = await getDb();
 
         // 1. Ensure Category "일주론" exists
-        let category = await db.get('SELECT * FROM categories WHERE name = "일주론"');
+        let category = await db.get('SELECT * FROM categories WHERE name = ?', '일주론');
         if (!category) {
             const result = await db.run(
                 'INSERT INTO categories (name, displayOrder, postLimit, isActive) VALUES (?, ?, ?, ?)',
@@ -63,7 +64,14 @@ export async function POST(request: NextRequest) {
                     await fs.copyFile(imgPath, destPath);
 
                     imageUrl = `/uploads/iljuron/${destFilename}`;
-                    thumbnailUrl = imageUrl;
+
+                    try {
+                        thumbnailUrl = buildThumbnailUrl(imageUrl);
+                        await createThumbnailFromFile(destPath, getPublicFilePath(thumbnailUrl));
+                    } catch (thumbnailError) {
+                        console.error(`Thumbnail generation failed for ${destFilename}:`, thumbnailError);
+                        thumbnailUrl = imageUrl;
+                    }
                 }
             }
 

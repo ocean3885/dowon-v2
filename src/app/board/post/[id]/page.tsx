@@ -34,15 +34,6 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
     return (
         <div className="pt-24 min-h-screen bg-stone-50 pb-20">
             <div className="container mx-auto px-6 max-w-3xl">
-                <div className="mb-6 flex justify-end">
-                    <Link href={`/board/${post.categoryId}`} className="text-base md:text-lg text-stone-500 hover:text-amber-600 mb-4 inline-flex items-center gap-2 transition-colors">
-                        <span>{post.categoryName} 목록으로</span>
-                        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
-                        </svg>
-                    </Link>
-                </div>
-
                 <article className="bg-white rounded-lg shadow-sm border border-stone-100 overflow-hidden">
                     <header className="p-8 border-b border-stone-100">
                         <div className="flex items-center gap-2 text-sm text-amber-600 font-medium mb-3">
@@ -55,6 +46,14 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
                             <span>{post.author || '관리자'}</span>
                             <span>{format(new Date(post.publishedAt), 'yyyy.MM.dd HH:mm', { locale: ko })}</span>
                             <span>조회 {post.viewCount}</span>
+                        </div>
+                        <div className="mt-5 flex justify-end">
+                            <Link href="/board" className="inline-flex items-center gap-2 text-sm md:text-base text-stone-500 hover:text-amber-600 transition-colors">
+                                <span>목록</span>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
+                                </svg>
+                            </Link>
                         </div>
                     </header>
 
@@ -80,13 +79,13 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
                     <div className="border-t border-stone-100 p-8 flex justify-center bg-stone-50/50">
                         <Link
-                            href={`/board/${post.categoryId}`}
+                            href="/board"
                             className="px-8 py-3 bg-white border border-stone-200 text-stone-600 hover:border-amber-500 hover:text-amber-600 rounded-full transition-all duration-300 flex items-center gap-2 shadow-sm hover:shadow-md"
                         >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                             </svg>
-                            <span>목록으로 돌아가기</span>
+                            <span>목록</span>
                         </Link>
                     </div>
                 </article>
