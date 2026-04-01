@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 # Configuration
 # Replace these with your actual server details
 SERVER_IP="1.234.23.176"
@@ -9,6 +11,8 @@ REMOTE_DIR="/var/www/dowon-v2" # CAUTION: Change this to your actual project pat
 echo "Deploying to $SERVER_IP..."
 
 ssh $REMOTE_USER@$SERVER_IP << EOF
+  set -e
+
   # Load environment to ensure npm/node/pm2 are found
   export NVM_DIR="\$HOME/.nvm"
   [ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh"
@@ -24,9 +28,9 @@ ssh $REMOTE_USER@$SERVER_IP << EOF
   echo "Installing dependencies..."
   # Default: keep using npm install
   # Alternative for clean lockfile-based installs:
-  # rm -rf node_modules
-  # npm ci
-  npm install
+  rm -rf node_modules
+  npm ci
+  # npm install
 
   # If existing posts still point thumbnailUrl to original images,
   # run this once to generate thumbnail files and update the DB.
@@ -37,8 +41,9 @@ ssh $REMOTE_USER@$SERVER_IP << EOF
   
   echo "Setting file permissions..."
   # Directories: rwxr-xr-x, Files: rw-r--r--
-  find $REMOTE_DIR -type d -exec chmod 755 {} \;
-  find $REMOTE_DIR -type f -exec chmod 644 {} \;
+  # Exclude node_modules so executable package binaries keep their execute bit.
+  find $REMOTE_DIR -path "$REMOTE_DIR/node_modules" -prune -o -type d -exec chmod 755 {} \;
+  find $REMOTE_DIR -path "$REMOTE_DIR/node_modules" -prune -o -type f -exec chmod 644 {} \;
   # Shell scripts: rwxr-x--- (owner+group execute only)
   find $REMOTE_DIR -name "*.sh" -exec chmod 750 {} \;
   # Env files: rw------- (owner read/write only)
