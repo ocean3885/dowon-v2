@@ -26,7 +26,9 @@ export function getPublicFilePath(assetPath: string) {
     return path.join(process.cwd(), 'public', normalizeAssetPath(assetPath));
 }
 
-async function writeThumbnail(image: Jimp, thumbnailPath: string, options: ThumbnailOptions = {}) {
+type JimpImage = Awaited<ReturnType<typeof Jimp.read>>;
+
+async function writeThumbnail(image: JimpImage, thumbnailPath: string, options: ThumbnailOptions = {}) {
     const width = options.width ?? DEFAULT_THUMBNAIL_WIDTH;
     const height = options.height ?? DEFAULT_THUMBNAIL_HEIGHT;
     const quality = options.quality ?? DEFAULT_THUMBNAIL_QUALITY;
