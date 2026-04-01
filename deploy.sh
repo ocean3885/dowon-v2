@@ -2,7 +2,7 @@
 
 # Configuration
 # Replace these with your actual server details
-SERVER_IP="1.234.44.174"
+SERVER_IP="1.234.23.176"
 REMOTE_USER="root" # CAUTION: Change this to your actual server username
 REMOTE_DIR="/var/www/dowon-v2" # CAUTION: Change this to your actual project path on the server
 
@@ -22,11 +22,15 @@ ssh $REMOTE_USER@$SERVER_IP << EOF
   git pull origin main
   
   echo "Installing dependencies..."
+  # Default: keep using npm install
+  # Alternative for clean lockfile-based installs:
+  # rm -rf node_modules
+  # npm ci
   npm install
 
   # If existing posts still point thumbnailUrl to original images,
   # run this once to generate thumbnail files and update the DB.
-  # npm run backfill:thumbnails
+  npm run backfill:thumbnails
   
   echo "Building application..."
   npm run build
