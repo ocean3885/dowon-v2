@@ -1,5 +1,5 @@
 import Hero from '@/components/Hero';
-import Director from '@/components/Director';
+import Director1 from '@/components/Director1';
 import Services from '@/components/Services';
 import CertificateSection from '@/components/CertificateSection';
 import ConsultationForm from '@/components/ConsultationForm';
@@ -12,7 +12,7 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       <Hero />
-      <Director />
+      <Director1 />
       <Services />
       <CertificateSection />
       <BlogSection />

@@ -130,7 +130,7 @@ export default function ConsultationForm() {
                         </div>
 
                         <div className="text-center text-stone-400 text-sm py-2">
-                            * 원장님께서 상담이 많아 답변이 늦어질 경우 <a href="tel:063-285-7255" className="text-amber-500 font-bold hover:underline">063-285-7255</a> 로 직접 전화문의 바랍니다.
+                            * 상담료 입금확인 후 상담이 시작됩니다. 상담관련 추가 요청 사항은 <a href="tel:063-285-7255" className="text-amber-500 font-bold hover:underline">063-285-7255</a> 로 직접 전화문의 바랍니다. 
                         </div>
 
                         <button
