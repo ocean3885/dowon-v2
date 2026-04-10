@@ -20,7 +20,7 @@ export default function Hero() {
     };
 
     return (
-        <section ref={containerRef} className="relative h-svh flex items-center justify-center overflow-hidden bg-stone-950 text-stone-50">
+        <section ref={containerRef} className="relative h-svh min-h-[680px] flex items-center justify-center overflow-hidden bg-stone-950 text-stone-50">
             {/* Dark Hanji Background Layer */}
             <motion.div
                 style={{ y, opacity }}
