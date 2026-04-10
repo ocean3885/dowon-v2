@@ -10,6 +10,7 @@
   --color-stone-200: #e7e5e4;
   --color-stone-800: #292524;
   --color-stone-900: #1c1917;
+  --breakpoint-nav820: 820px;
 }
 
 @variant dark (&:where(.dark, .dark *));

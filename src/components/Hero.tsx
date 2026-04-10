@@ -3,6 +3,7 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowDown } from 'lucide-react';
 import { useRef } from 'react';
+import Image from 'next/image';
 
 export default function Hero() {
     const containerRef = useRef(null);
@@ -19,16 +20,18 @@ export default function Hero() {
     };
 
     return (
-        <section ref={containerRef} className="relative h-screen flex items-center justify-center overflow-hidden bg-stone-950 text-stone-50">
+        <section ref={containerRef} className="relative h-svh flex items-center justify-center overflow-hidden bg-stone-950 text-stone-50">
             {/* Dark Hanji Background Layer */}
             <motion.div
                 style={{ y, opacity }}
                 className="absolute inset-0 z-0"
             >
-                <img
+                <Image
                     src="/luxury_korean_paper_bg.png"
                     alt="Background"
-                    className="w-full h-full object-cover opacity-80"
+                    fill
+                    className="object-cover opacity-80"
+                    priority
                 />
                 <div className="absolute inset-0 bg-black/30"></div>
                 <div className="absolute inset-0 bg-linear-to-b from-black/60 via-transparent to-stone-950"></div>

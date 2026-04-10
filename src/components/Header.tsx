@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
@@ -44,20 +45,21 @@ export default function Header() {
                 animate={{ y: 0 }}
                 transition={{ duration: 0.5 }}
             >
-                <div className="container mx-auto px-6 h-20 flex items-center justify-between">
+                <div className="w-full px-6 h-20 flex items-center justify-between">
                     {/* Logo */}
                     <Link href="/" className="z-50 group">
-                        <span className={clsx(
-                            "font-serif text-xl md:text-2xl font-bold tracking-tighter transition-all duration-300",
-                            "text-stone-100 group-hover:text-stone-300", // Simple Light Gray, brightening on hover
-                            "drop-shadow-sm"
-                        )}>
-                            도원작명철학원
-                        </span>
+                        <Image
+                            src="/dowon_logo.png"
+                            alt="도원작명철학원"
+                            width={220}
+                            height={64}
+                            className="h-10 md:h-12 lg:h-14 w-auto object-contain transition-opacity duration-300 group-hover:opacity-80"
+                            priority
+                        />
                     </Link>
 
                     {/* Desktop Navigation */}
-                    <nav className="hidden md:flex items-center gap-8">
+                    <nav className="hidden nav820:flex items-center gap-8">
                         {navItems.map((item) => (
                             <Link
                                 key={item.href}
@@ -74,7 +76,7 @@ export default function Header() {
 
                     {/* Mobile Menu Button */}
                     <button
-                        className="md:hidden z-50 text-white"
+                        className="nav820:hidden z-50 text-white"
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     >
                         {isMobileMenuOpen ? <X /> : <Menu />}
@@ -90,7 +92,7 @@ export default function Header() {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: "100%" }}
                         transition={{ duration: 0.3, type: "tween" }}
-                        className="fixed inset-0 z-40 bg-stone-950 flex flex-col items-center justify-center space-y-8 md:hidden"
+                        className="fixed inset-0 z-40 bg-stone-950 flex flex-col items-center justify-center space-y-8 min-[820px]:hidden"
                     >
                         {navItems.map((item) => (
                             <Link
