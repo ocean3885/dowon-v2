@@ -1,36 +1,36 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { BookOpen, User, Users, Calendar, PenTool, Sparkles } from 'lucide-react';
+import Image from 'next/image';
 
 const services = [
     {
-        icon: User,
+        image: "/service1.png",
         title: "사주 명리",
         description: "생년월일시를 통해 타고난 기질과 운의 흐름을 분석하여 인생의 길흉화복을 예측합니다.",
     },
     {
-        icon: PenTool,
+        image: "/service2.png",
         title: "신생아 작명",
         description: "아이의 사주에 부족한 기운을 보완하고 부르기 좋으며 듣기 좋은 명품 이름을 짓습니다.",
     },
     {
-        icon: Users,
+        image: "/service3.png",
         title: "궁합",
         description: "연인, 부부, 동업자와의 성격 조화와 기운의 합을 분석하여 관계의 발전을 돕습니다.",
     },
     {
-        icon: Sparkles,
+        image: "/service4.png",
         title: "개명",
         description: "잘못 지어진 이름으로 인한 흉을 피하고, 새로운 이름으로 삶의 긍정적인 변화를 돕습니다.",
     },
     {
-        icon: Calendar,
+        image: "/service5.png",
         title: "택일",
         description: "결혼, 이사, 개업 등 중요한 행사에 가장 길한 날짜와 시간을 선정해드립니다.",
     },
     {
-        icon: BookOpen,
+        image: "/service6.png",
         title: "진로/적성",
         description: "학생 및 직장인의 타고난 적성을 파악하여 가장 성공 확률이 높은 진로를 제시합니다.",
     },
@@ -54,17 +54,24 @@ export default function Services() {
                             viewport={{ once: true }}
                             transition={{ delay: index * 0.1 }}
                             whileHover={{ y: -5 }}
-                            className="bg-white dark:bg-stone-800 p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow border border-stone-200 dark:border-stone-700"
+                            className="bg-white dark:bg-stone-800 p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow border border-stone-200 dark:border-stone-700 flex items-center gap-5"
                         >
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className="w-12 h-12 bg-stone-800 dark:bg-stone-200 text-white dark:text-stone-900 rounded-lg flex items-center justify-center shrink-0">
-                                    <service.icon className="w-6 h-6" />
-                                </div>
-                                <h3 className="text-xl font-bold font-display text-stone-800 dark:text-stone-100">{service.title}</h3>
+                            <div className="shrink-0">
+                                <Image
+                                    src={service.image}
+                                    alt={service.title}
+                                    width={100}
+                                    height={80}
+                                    style={{ width: 'auto', height: 'auto' }}
+                                    className="rounded-lg object-cover"
+                                />
                             </div>
-                            <p className="text-stone-600 dark:text-stone-300 leading-relaxed font-serif">
-                                {service.description}
-                            </p>
+                            <div>
+                                <h3 className="text-xl font-bold font-display text-stone-800 dark:text-stone-100 mb-2">{service.title}</h3>
+                                <p className="text-stone-600 dark:text-stone-300 leading-relaxed font-serif text-sm">
+                                    {service.description}
+                                </p>
+                            </div>
                         </motion.div>
                     ))}
                 </div>
