@@ -19,21 +19,36 @@ const staggerContainer = {
 
 export default function AboutPage() {
     return (
-        <main className="relative min-h-screen bg-stone-50">
-            {/* Redesigned Hero Section (No Image) */}
-            <section className="relative pt-48 pb-24 px-6 md:px-0 bg-stone-100/50">
-                <div className="container mx-auto text-center">
+        <main className="relative pt-24 min-h-screen bg-stone-50">
+            {/* Hero Section */}
+            <section className="relative w-full py-20 md:py-32 flex items-center justify-center overflow-hidden">
+                {/* Background Texture with Overlay */}
+                <div className="absolute inset-0 z-0">
+                    <Image
+                        src="/luxury_korean_paper_bg.png"
+                        alt="Korean Paper Texture"
+                        fill
+                        sizes="100vw"
+                        className="object-cover opacity-40"
+                        priority
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-stone-50/80"></div>
+                </div>
+
+                <div className="container mx-auto px-6 relative z-10 text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8 }}
                     >
-                        <p className="text-amber-700 font-bold tracking-widest mb-4 uppercase text-sm">About Us</p>
-                        <h1 className="text-4xl md:text-5xl font-bold font-serif text-stone-900 mb-8 leading-tight">
+                        <span className="block text-stone-500 font-serif tracking-widest text-sm md:text-base mb-4 uppercase">
+                            About Us
+                        </span>
+                        <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold text-stone-900 mb-8 leading-normal md:leading-snug break-keep">
                             이름 하나로<br className="md:hidden" /> 인생의 이야기가 달라집니다
                         </h1>
-                        <div className="h-1 w-20 bg-stone-800 mx-auto mb-8" />
-                        <p className="text-lg text-stone-600 font-light max-w-2xl mx-auto leading-relaxed">
+                        <div className="w-16 h-1 bg-stone-800 mx-auto mb-8 opacity-20"></div>
+                        <p className="text-stone-600 text-base md:text-xl max-w-2xl mx-auto font-medium leading-relaxed break-keep">
                             도원사주작명원에 방문해 주신 여러분, 진심으로 환영합니다.
                         </p>
                     </motion.div>
@@ -41,7 +56,7 @@ export default function AboutPage() {
             </section>
 
             {/* Introduction Section */}
-            <section className="py-24 px-6 md:px-0 container mx-auto">
+            <section className="py-24 container max-w-6xl mx-auto px-6">
                 <motion.div
                     className="grid md:grid-cols-2 gap-16 items-center"
                     initial="initial"
@@ -90,7 +105,7 @@ export default function AboutPage() {
                     <Image src="/window.svg" alt="pattern" fill sizes="50vw" className="object-cover" />
                 </div>
 
-                <div className="container mx-auto grid md:grid-cols-2 gap-16 items-center relative z-10">
+                <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center relative z-10 px-6">
                     <motion.div
                         className="order-2 md:order-1 space-y-8"
                         initial="initial"
