@@ -2,12 +2,15 @@ import Hero from '@/components/Hero';
 import Director1 from '@/components/Director1';
 import Services from '@/components/Services';
 import NamingPhilosophy from '@/components/NamingPhilosophy';
+import ServicesPhilosophy from '@/components/services/ServicesPhilosophy';
+import ServicesProcess from '@/components/services/ServicesProcess';
 import NamingBenefits from '@/components/NamingBenefits';
 import CertificateSection from '@/components/CertificateSection';
 import ConsultationForm from '@/components/ConsultationForm';
 import BlogSection from '@/components/BlogSection';
 import RecentPostsSection from '@/components/RecentPostsSection';
 import ReviewSection from '@/components/ReviewSection';
+import PhoneConsultation from '@/components/PhoneConsultation';
 import BookingSection from '@/components/BookingSection';
 
 export default function Home() {
@@ -17,6 +20,9 @@ export default function Home() {
       <Director1 />
       <Services />
       <NamingPhilosophy />
+      <ServicesPhilosophy />
+      <ServicesProcess />
+      <PhoneConsultation />
       <NamingBenefits />
       <CertificateSection />
       <BlogSection />
@@ -24,7 +30,6 @@ export default function Home() {
       <ReviewSection />
       <BookingSection />
       <ConsultationForm />
-
     </main>
   );
 }

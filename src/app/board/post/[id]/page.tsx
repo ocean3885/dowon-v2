@@ -33,7 +33,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
     return (
         <div className="pt-24 min-h-screen bg-stone-50 pb-20">
-            <div className="container mx-auto px-6 max-w-3xl">
+            <div className="container mx-auto px-6 max-w-4xl">
                 <article className="bg-white rounded-lg shadow-sm border border-stone-100 overflow-hidden">
                     <header className="p-8 border-b border-stone-100">
                         <div className="flex items-center gap-2 text-sm text-amber-600 font-medium mb-3">
