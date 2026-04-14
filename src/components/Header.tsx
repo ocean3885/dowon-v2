@@ -47,7 +47,16 @@ export default function Header() {
             >
                 <div className="w-full px-6 h-20 flex items-center justify-between">
                     {/* Logo */}
-                    <Link href="/" className="z-50 group">
+                    <Link 
+                        href="/" 
+                        className="z-50 group"
+                        onClick={(e) => {
+                            if (pathname === '/') {
+                                e.preventDefault();
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
+                        }}
+                    >
                         <Image
                             src="/dowon_logo.png"
                             alt="도원작명철학원"

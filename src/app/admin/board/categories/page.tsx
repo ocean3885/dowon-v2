@@ -59,24 +59,6 @@ export default function CategoryManagePage() {
                             required
                         />
                     </div>
-                    <div className="w-24">
-                        <label className="block text-sm text-stone-600 mb-1">순서</label>
-                        <input
-                            type="number"
-                            className="w-full px-3 py-2 border rounded"
-                            value={newCategory.displayOrder}
-                            onChange={e => setNewCategory({ ...newCategory, displayOrder: parseInt(e.target.value) })}
-                        />
-                    </div>
-                    <div className="w-24">
-                        <label className="block text-sm text-stone-600 mb-1">노출수</label>
-                        <input
-                            type="number"
-                            className="w-full px-3 py-2 border rounded"
-                            value={newCategory.postLimit}
-                            onChange={e => setNewCategory({ ...newCategory, postLimit: parseInt(e.target.value) })}
-                        />
-                    </div>
                     <button
                         type="submit"
                         disabled={loading}
@@ -91,11 +73,9 @@ export default function CategoryManagePage() {
                 <table className="w-full text-left">
                     <thead className="bg-stone-50 border-b border-stone-200">
                         <tr>
-                            <th className="px-6 py-3 text-sm font-medium text-stone-500">ID</th>
+                            <th className="px-6 py-3 text-sm font-medium text-stone-500 w-24">ID</th>
                             <th className="px-6 py-3 text-sm font-medium text-stone-500">카테고리명</th>
-                            <th className="px-6 py-3 text-sm font-medium text-stone-500">순서 (낮은순)</th>
-                            <th className="px-6 py-3 text-sm font-medium text-stone-500">메인 노출 수</th>
-                            <th className="px-6 py-3 text-sm font-medium text-stone-500 text-right">상태</th>
+                            <th className="px-6 py-3 text-sm font-medium text-stone-500 text-right w-48">상태</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-stone-100">
@@ -114,34 +94,6 @@ export default function CategoryManagePage() {
                                             setCategories(newCategories);
                                         }}
                                         onBlur={(e) => handleUpdate(cat.id, 'name', e.target.value)}
-                                    />
-                                </td>
-                                <td className="px-6 py-4">
-                                    <input
-                                        type="number"
-                                        value={cat.displayOrder}
-                                        className="w-20 px-2 py-1 border rounded text-sm"
-                                        onChange={(e) => {
-                                            const newCategories = categories.map(c =>
-                                                c.id === cat.id ? { ...c, displayOrder: parseInt(e.target.value) } : c
-                                            );
-                                            setCategories(newCategories);
-                                        }}
-                                        onBlur={(e) => handleUpdate(cat.id, 'displayOrder', parseInt(e.target.value))}
-                                    />
-                                </td>
-                                <td className="px-6 py-4">
-                                    <input
-                                        type="number"
-                                        value={cat.postLimit}
-                                        className="w-20 px-2 py-1 border rounded text-sm"
-                                        onChange={(e) => {
-                                            const newCategories = categories.map(c =>
-                                                c.id === cat.id ? { ...c, postLimit: parseInt(e.target.value) } : c
-                                            );
-                                            setCategories(newCategories);
-                                        }}
-                                        onBlur={(e) => handleUpdate(cat.id, 'postLimit', parseInt(e.target.value))}
                                     />
                                 </td>
                                 <td className="px-6 py-4 text-right">
