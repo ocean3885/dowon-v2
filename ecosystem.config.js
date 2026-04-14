@@ -7,6 +7,7 @@ module.exports = {
             instances: 1,
             autorestart: true,
             watch: false,
+            ignore_watch: ["node_modules", "public/uploads", "*.db", "*.db-journal", ".next"],
             max_memory_restart: '1G',
             env: {
                 NODE_ENV: 'production',

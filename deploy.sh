@@ -28,6 +28,7 @@ ssh $REMOTE_USER@$SERVER_IP << EOF
   echo "Installing dependencies..."
   # Default: keep using npm install
   # Alternative for clean lockfile-based installs:
+  rm -rf .next
   # rm -rf node_modules
   # npm ci
   npm install
@@ -55,7 +56,7 @@ ssh $REMOTE_USER@$SERVER_IP << EOF
 
   echo "Reloading PM2 process..."
   # Failsafe: start if not running, reload if running
-  pm2 reload ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
+  pm2 reload ecosystem.config.js --env production --update-env || pm2 start ecosystem.config.js --env production
   
   echo "Deployment complete!"
 EOF
