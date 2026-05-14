@@ -45,7 +45,7 @@ export default function Header() {
                 animate={{ y: 0 }}
                 transition={{ duration: 0.5 }}
             >
-                <div className="w-full px-6 h-20 flex items-center justify-between">
+                <div className="w-full px-6 lg:px-12 xl:px-20 h-20 flex items-center justify-between">
                     {/* Logo */}
                     <Link 
                         href="/" 
@@ -74,7 +74,7 @@ export default function Header() {
                                 key={item.href}
                                 href={item.href}
                                 className={clsx(
-                                    "text-sm font-medium tracking-widest hover:text-amber-500 transition-colors font-serif",
+                                    "text-sm font-medium tracking-widest hover:text-amber-500 transition-colors font-sans",
                                     pathname === item.href ? "text-amber-500" : "text-stone-300"
                                 )}
                             >
@@ -109,7 +109,7 @@ export default function Header() {
                                 href={item.href}
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className={clsx(
-                                    "text-2xl font-serif font-bold tracking-widest",
+                                    "text-2xl font-sans font-bold tracking-widest",
                                     pathname === item.href ? "text-amber-500" : "text-stone-300"
                                 )}
                             >

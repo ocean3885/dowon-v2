@@ -1,20 +1,35 @@
 import type { Metadata } from "next";
 import { Nanum_Myeongjo, Do_Hyeon } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import clsx from "clsx";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
-const myeongjo = Nanum_Myeongjo({
-  weight: ['400', '700', '800'],
-  subsets: ["latin"],
-  variable: '--font-myeongjo',
+// Pretendard (Local Font)
+const pretendard = localFont({
+  src: "../../public/fonts/PretendardVariable.woff2",
+  display: "swap",
+  weight: "100 900",
+  variable: "--font-pretendard",
 });
 
+// Nanum Myeongjo (Google Font - Korean support)
+const myeongjo = Nanum_Myeongjo({
+  weight: ['400', '700', '800'],
+  variable: '--font-myeongjo',
+  display: 'swap',
+  subsets: ['latin'],
+  preload: true,
+});
+
+// Do Hyeon (Google Font)
 const dohyeon = Do_Hyeon({
   weight: ['400'],
-  subsets: ["latin"],
   variable: '--font-dohyeon',
+  display: 'swap',
+  subsets: ['latin'],
+  preload: true,
 });
 
 export const metadata: Metadata = {
@@ -35,7 +50,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko" className="scroll-smooth" data-scroll-behavior="smooth">
-      <body className={clsx(myeongjo.variable, dohyeon.variable, "font-serif antialiased bg-stone-50 text-stone-900")}>
+      <head>
+        <style dangerouslySetInnerHTML={{ __html: `
+          :root {
+            --font-pretendard: ${pretendard.style.fontFamily};
+            --font-myeongjo: ${myeongjo.style.fontFamily};
+            --font-dohyeon: ${dohyeon.style.fontFamily};
+          }
+        `}} />
+      </head>
+      <body className="font-sans antialiased bg-stone-50 text-stone-900">
         <Header />
         {children}
         <Footer />

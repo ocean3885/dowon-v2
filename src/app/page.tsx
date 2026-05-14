@@ -1,4 +1,3 @@
-import Hero from '@/components/Hero';
 import Director1 from '@/components/Director1';
 import Services from '@/components/Services';
 import NamingPhilosophy from '@/components/NamingPhilosophy';
@@ -12,11 +11,12 @@ import RecentPostsSection from '@/components/RecentPostsSection';
 import ReviewSection from '@/components/ReviewSection';
 import PhoneConsultation from '@/components/PhoneConsultation';
 import BookingSection from '@/components/BookingSection';
+import HeroSection from '@/components/example/HeroSection';
 
 export default function Home() {
   return (
     <main className="min-h-screen">
-      <Hero />
+      <HeroSection />
       <Director1 />
       <Services />
       <NamingPhilosophy />
