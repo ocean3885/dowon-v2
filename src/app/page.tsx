@@ -11,12 +11,16 @@ import RecentPostsSection from '@/components/RecentPostsSection';
 import ReviewSection from '@/components/ReviewSection';
 import PhoneConsultation from '@/components/PhoneConsultation';
 import BookingSection from '@/components/BookingSection';
-import HeroSection from '@/components/example/HeroSection';
+import HeroSection from '@/components/home/HeroSection';
+import CounselingPhilosophySection from '@/components/home/CounselingPhilosophySection';
+import CounselingCategorySection from '@/components/home/CounselingCategorySection';
 
 export default function Home() {
   return (
     <main className="min-h-screen">
       <HeroSection />
+      <CounselingPhilosophySection />
+      <CounselingCategorySection />
       <Director1 />
       <Services />
       <NamingPhilosophy />
