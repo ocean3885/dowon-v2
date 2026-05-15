@@ -20,42 +20,42 @@ const counselingItems = [
         title: "사주 상담",
         description:
             "타고난 사주를 바탕으로 인생의 흐름과 방향을 명확히 해석합니다.",
-        image: "https://images.unsplash.com/photo-1516542076529-1ea3854896f2?q=80&w=1200&auto=format&fit=crop",
+        image: "/home/service_new1.webp",
     },
     {
         icon: BriefcaseBusiness,
         title: "직업 · 진로 상담",
         description:
             "적성과 시기를 분석하여 직업과 진로의 올바른 방향을 제시합니다.",
-        image: "https://images.unsplash.com/photo-1501503060443-bd2411599e83?auto=format&fit=crop&q=80&w=1200",
+        image: "/home/service_new2.jpg",
     },
     {
         icon: Heart,
         title: "연애 · 궁합 상담",
         description:
             "두 사람의 인연과 성향을 분석하여 관계의 흐름을 짚어드립니다.",
-        image: "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&q=80&w=1200",
+        image: "/home/service_new6.webp",
     },
     {
         icon: BarChart3,
         title: "재물 · 사업 상담",
         description:
             "재물운의 흐름과 사업운의 시기를 분석하여 성공의 전략을 함께 세웁니다.",
-        image: "https://images.unsplash.com/photo-1510074377623-8cf13fb86c08?auto=format&fit=crop&q=80&w=1200",
+        image: "/home/service_new4.webp",
     },
     {
         icon: House,
         title: "이사 · 택일 상담",
         description:
             "좋은 기운이 흐르는 시기와 공간을 선택하여 안정과 발전을 돕습니다.",
-        image: "https://images.unsplash.com/photo-1545562093-6056a291079d?auto=format&fit=crop&q=80&w=1200",
+        image: "/home/service_new3.webp",
     },
     {
         icon: Baby,
         title: "작명 · 개명 상담",
         description:
             "이름에 담긴 뜻과 오행의 조화를 통해 삶의 기운을 바르게 세워드립니다.",
-        image: "https://images.unsplash.com/photo-1555252333-9f8e92e65df9?q=80&w=1200&auto=format&fit=crop",
+        image: "/home/service_new5.jpg",
     },
 ];
 
@@ -115,14 +115,14 @@ export default function CounselingCategorySection() {
                 </div>
 
                 {/* Cards */}
-                <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="mt-12 flex gap-6 overflow-x-auto pb-8 snap-x snap-mandatory sm:grid sm:grid-cols-2 sm:gap-8 lg:grid-cols-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden after:content-[''] after:w-6 after:shrink-0 sm:after:hidden">
                     {counselingItems.map((item, index) => {
                         const Icon = item.icon;
 
                         return (
                             <div
                                 key={index}
-                                className="group relative overflow-hidden rounded-[32px] border border-[#C8A46B]/15 bg-white p-8 transition-all duration-500 hover:border-[#C8A46B]/40 hover:shadow-[0_20px_50px_rgba(200,164,107,0.08)]"
+                                className="group relative min-w-[85%] sm:min-w-0 snap-center overflow-hidden rounded-[32px] border border-[#C8A46B]/15 bg-white p-8 transition-all duration-500 hover:border-[#C8A46B]/40 hover:shadow-[0_20px_50px_rgba(200,164,107,0.08)]"
                             >
                                 {/* Icon & Title */}
                                 <div className="flex items-center gap-4 mb-5">
@@ -165,12 +165,12 @@ export default function CounselingCategorySection() {
                 </div>
 
                 {/* Notice */}
-                <div className="mt-12 flex flex-col md:flex-row items-center justify-center gap-4 rounded-2xl border border-[#C8A46B]/20 bg-white/50 px-6 py-4 text-center md:text-left text-xs text-[#7a6f60] backdrop-blur-sm">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#C8A46B]/40 font-sans font-bold text-[#C8A46B] text-[10px]">
+                <div className="mt-12 flex flex-col md:flex-row items-center justify-center gap-4 rounded-2xl border border-[#C8A46B]/30 bg-white/80 px-6 py-4 text-center md:text-left text-sm text-[#4a453e] backdrop-blur-sm">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#C8A46B]/50 font-sans font-bold text-[#C8A46B] text-[10px]">
                         !
                     </div>
 
-                    <span className="break-keep antialiased">
+                    <span className="font-medium break-keep antialiased">
                         상담은 100% 사전 예약제로 운영되며, 개개인의 고민에 집중할 수 있도록 충분한 상담 시간을 보장합니다.
                     </span>
                 </div>
@@ -183,7 +183,7 @@ export default function CounselingCategorySection() {
                         return (
                             <div
                                 key={index}
-                                className="group relative flex flex-col items-center p-6 text-center rounded-[24px] border border-[#C8A46B]/10 bg-white/40 transition-all hover:bg-white/60"
+                                className="group relative flex flex-col items-center p-6 text-center rounded-[24px] border border-[#C8A46B]/25 bg-white/70 transition-all hover:bg-white hover:border-[#C8A46B]/40 hover:shadow-[0_10px_30px_rgba(200,164,107,0.05)]"
                             >
                                 <div className="mb-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#C8A46B]/20 bg-[#fdfaf5]">
                                     <Icon

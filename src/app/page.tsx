@@ -14,6 +14,8 @@ import BookingSection from '@/components/BookingSection';
 import HeroSection from '@/components/home/HeroSection';
 import CounselingPhilosophySection from '@/components/home/CounselingPhilosophySection';
 import CounselingCategorySection from '@/components/home/CounselingCategorySection';
+import PhilosophySection from '@/components/home/PhilosophySection';
+import NamingSection from '@/components/home/NamingSection';
 
 export default function Home() {
   return (
@@ -21,8 +23,10 @@ export default function Home() {
       <HeroSection />
       <CounselingPhilosophySection />
       <CounselingCategorySection />
-      <Director1 />
-      <Services />
+      <PhilosophySection />
+      <NamingSection />
+      {/* <Director1 /> */}
+      {/* <Services /> */}
       <NamingPhilosophy />
       <ServicesPhilosophy />
       <ServicesProcess />
