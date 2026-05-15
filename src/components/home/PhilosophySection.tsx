@@ -78,9 +78,9 @@ export default function PhilosophySection() {
       </div>
 
       {/* BOTTOM DARK SECTION: Philosophy Quote & Details */}
-      <div className="relative bg-[#1a1815] py-16 sm:py-20 text-white px-8 lg:px-24">
+      <div className="relative bg-[#1a1815] py-16 sm:py-20 text-white px-8 lg:px-24 -mt-px shadow-[0_-1px_0_0_#1a1815]">
         {/* Background Decorative Element */}
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-[radial-gradient(circle_at_top_right,rgba(200,164,107,0.08),transparent_70%)] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-full lg:w-1/3 h-full bg-[radial-gradient(circle_at_top_right,rgba(200,164,107,0.04),transparent_80%)] pointer-events-none" />
 
         <div className="relative grid grid-cols-1 gap-12 lg:grid-cols-12 max-w-7xl mx-auto">
           {/* QUOTE AREA */}

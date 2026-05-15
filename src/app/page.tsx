@@ -8,7 +8,6 @@ import CertificateSection from '@/components/CertificateSection';
 import ConsultationForm from '@/components/ConsultationForm';
 import BlogSection from '@/components/BlogSection';
 import RecentPostsSection from '@/components/RecentPostsSection';
-import ReviewSection from '@/components/ReviewSection';
 import PhoneConsultation from '@/components/PhoneConsultation';
 import BookingSection from '@/components/BookingSection';
 import HeroSection from '@/components/home/HeroSection';
@@ -16,6 +15,7 @@ import CounselingPhilosophySection from '@/components/home/CounselingPhilosophyS
 import CounselingCategorySection from '@/components/home/CounselingCategorySection';
 import PhilosophySection from '@/components/home/PhilosophySection';
 import NamingSection from '@/components/home/NamingSection';
+import ReviewSection from '@/components/home/ReviewSection';
 
 export default function Home() {
   return (
@@ -25,6 +25,7 @@ export default function Home() {
       <CounselingCategorySection />
       <PhilosophySection />
       <NamingSection />
+      <ReviewSection />
       {/* <Director1 /> */}
       {/* <Services /> */}
       <NamingPhilosophy />

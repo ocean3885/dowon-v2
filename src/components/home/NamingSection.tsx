@@ -94,9 +94,9 @@ export default function NamingSection() {
       </div>
 
       {/* PROCESS SECTION: Dark Theme */}
-      <div className="relative bg-[#1a1815] py-12 sm:py-16 text-white px-8 lg:px-24">
+      <div className="relative bg-[#1a1815] py-12 sm:py-16 text-white px-8 lg:px-24 -mt-px shadow-[0_-1px_0_0_#1a1815]">
         {/* Decorative Background */}
-        <div className="absolute top-0 left-0 w-1/3 h-full bg-[radial-gradient(circle_at_top_left,rgba(200,164,107,0.06),transparent_70%)] pointer-events-none" />
+        <div className="absolute top-0 left-0 w-full lg:w-1/3 h-full bg-[radial-gradient(circle_at_top_left,rgba(200,164,107,0.04),transparent_80%)] pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row items-center lg:items-start justify-start mb-10 lg:mb-12 gap-8 lg:gap-20 text-center lg:text-left">

@@ -9,12 +9,12 @@ import { Menu, X } from 'lucide-react';
 import clsx from 'clsx';
 
 const navItems = [
-    { name: '홈', href: '/' },
-    { name: '원장소개', href: '/about' },
-    { name: '작명/개명', href: '/services' },
-    { name: '상담안내', href: '/process' },
+    { name: '철학원소개', href: '/about' },
+    { name: '상담안내', href: '/services' },
+    { name: '상담신청', href: '/submit' },
+    { name: '인명용한자', href: '/hanja' },
+    { name: '만세력', href: '/calendar' },
     { name: '게시판', href: '/board' },
-    { name: '오시는길', href: '/contact' },
 ];
 
 export default function Header() {
@@ -47,8 +47,8 @@ export default function Header() {
             >
                 <div className="w-full px-6 lg:px-12 xl:px-20 h-20 flex items-center justify-between">
                     {/* Logo */}
-                    <Link 
-                        href="/" 
+                    <Link
+                        href="/"
                         className="z-50 group"
                         onClick={(e) => {
                             if (pathname === '/') {
