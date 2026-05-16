@@ -139,10 +139,36 @@ export async function deleteConsultation(id: number) {
     }
 }
 
+export async function checkEmailDuplicate(email: string) {
+    if (!email) return { success: false, message: '이메일을 입력해주세요.' };
+    
+    try {
+        const adminSupabase = await createAdminClient();
+        const { data, error } = await adminSupabase
+            .from('members')
+            .select('id')
+            .eq('email', email)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+            return { success: false, message: '이미 사용 중인 이메일입니다.', isDuplicate: true };
+        } else {
+            return { success: true, message: '사용 가능한 이메일입니다.', isDuplicate: false };
+        }
+    } catch (error) {
+        console.error('Email check error:', error);
+        return { success: false, message: '중복 확인 중 오류가 발생했습니다.' };
+    }
+}
+
 export async function signup(formData: FormData) {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
     const name = formData.get('name') as string;
+    const phone = formData.get('phone') as string;
+    const birthDate = formData.get('birthDate') as string;
     
     const supabase = await createClient();
     const adminSupabase = await createAdminClient();
@@ -153,6 +179,10 @@ export async function signup(formData: FormData) {
         password,
         options: {
             emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+            data: {
+                full_name: name,
+                phone: phone,
+            }
         },
     });
 
@@ -175,6 +205,8 @@ export async function signup(formData: FormData) {
                 id: data.user.id,
                 email: email,
                 name: name || email.split('@')[0],
+                phone: phone,
+                birth_date: birthDate,
                 role: isFirstUser ? 'admin' : 'user'
             });
 
@@ -251,7 +283,7 @@ export async function logout() {
     const supabase = await createClient();
     await supabase.auth.signOut();
     revalidatePath('/', 'layout');
-    redirect('/login');
+    redirect('/');
 }
 
 export async function getConsultations() {
