@@ -5,8 +5,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
 import clsx from 'clsx';
+import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
+
+import { User } from '@supabase/supabase-js';
 
 const navItems = [
     { name: '철학원소개', href: '/about' },
@@ -17,10 +21,41 @@ const navItems = [
     { name: '게시판', href: '/board' },
 ];
 
-export default function Header() {
+export default function Header({ initialUser }: { initialUser: User | null }) {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [user, setUser] = useState<User | null>(initialUser);
     const pathname = usePathname();
+    const router = useRouter();
+    // Use useState to ensure the supabase client is only created once
+    const [supabase] = useState(() => createClient());
+
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user: currentUser } } = await supabase.auth.getUser();
+            setUser(currentUser);
+        };
+        getUser();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            setUser(session?.user ?? null);
+            if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+                router.refresh();
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, [supabase, router]);
+
+    // Sync state when initialUser prop changes during navigation
+    useEffect(() => {
+        setUser(initialUser);
+    }, [initialUser]);
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        router.refresh();
+    };
 
     useEffect(() => {
         const handleScroll = () => {
@@ -66,7 +101,7 @@ export default function Header() {
                             priority
                         />
                     </Link>
-
+ 
                     {/* Desktop Navigation */}
                     <nav className="hidden nav820:flex items-center gap-8">
                         {navItems.map((item) => (
@@ -74,13 +109,28 @@ export default function Header() {
                                 key={item.href}
                                 href={item.href}
                                 className={clsx(
-                                    "text-sm font-medium tracking-widest hover:text-amber-500 transition-colors font-sans",
+                                    "text-sm font-medium tracking-widest hover:text-amber-500 transition-colors font-sans whitespace-nowrap",
                                     pathname === item.href ? "text-amber-500" : "text-stone-300"
                                 )}
                             >
                                 {item.name}
                             </Link>
                         ))}
+                        {user ? (
+                            <button
+                                onClick={handleLogout}
+                                className="ml-4 px-4 py-2 border border-stone-700 rounded-full text-xs font-medium text-stone-400 hover:bg-stone-800 transition-all duration-300 tracking-widest flex items-center gap-2"
+                            >
+                                LOGOUT <LogOut size={12} />
+                            </button>
+                        ) : (
+                            <Link
+                                href="/login"
+                                className="ml-4 px-4 py-2 border border-amber-500/30 rounded-full text-xs font-medium text-amber-500 hover:bg-amber-500 hover:text-stone-950 transition-all duration-300 tracking-widest whitespace-nowrap"
+                            >
+                                LOGIN
+                            </Link>
+                        )}
                     </nav>
 
                     {/* Mobile Menu Button */}
@@ -101,7 +151,7 @@ export default function Header() {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: "100%" }}
                         transition={{ duration: 0.3, type: "tween" }}
-                        className="fixed inset-0 z-40 bg-stone-950 flex flex-col items-center justify-center space-y-8 min-[820px]:hidden"
+                        className="fixed inset-0 z-40 bg-stone-950 flex flex-col items-center justify-center space-y-8 nav820:hidden"
                     >
                         {navItems.map((item) => (
                             <Link
@@ -116,6 +166,25 @@ export default function Header() {
                                 {item.name}
                             </Link>
                         ))}
+                        {user ? (
+                            <button
+                                onClick={() => {
+                                    handleLogout();
+                                    setIsMobileMenuOpen(false);
+                                }}
+                                className="mt-4 px-8 py-3 border border-stone-700 text-stone-300 rounded-full text-lg font-bold tracking-widest hover:bg-stone-900 transition-colors flex items-center gap-2"
+                            >
+                                LOGOUT <LogOut size={18} />
+                            </button>
+                        ) : (
+                            <Link
+                                href="/login"
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className="mt-4 px-8 py-3 bg-amber-600 text-stone-950 rounded-full text-lg font-bold tracking-widest hover:bg-amber-500 transition-colors"
+                            >
+                                LOGIN
+                            </Link>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>

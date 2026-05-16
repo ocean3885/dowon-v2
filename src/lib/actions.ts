@@ -1,8 +1,8 @@
 'use server';
 
-import { getDb } from './db';
+import { createClient, createAdminClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { cookies, headers } from 'next/headers';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { sendSMS } from './aligo';
@@ -12,18 +12,10 @@ export async function submitLead(formData: FormData) {
     const birthDate = formData.get('birthDate') as string;
     const gender = formData.get('gender') as string;
     const birthTime = formData.get('birthTime') as string;
+    const calendarType = formData.get('calendarType') as string; // 'solar' or 'lunar'
     const contact = formData.get('contact') as string;
     const serviceType = formData.get('serviceType') as string;
-    let notes = formData.get('notes') as string;
-
-    // Append extra info to notes to avoid DB schema change
-    let extraInfo = '';
-    if (gender) extraInfo += `[성별: ${gender === 'male' ? '남성' : '여성'}] `;
-    if (birthTime) extraInfo += `[태어난 시간: ${birthTime}] `;
-
-    if (extraInfo) {
-        notes = `${extraInfo}\n${notes}`;
-    }
+    const notes = formData.get('notes') as string;
 
     if (!name || !contact || !serviceType) {
         return { success: false, message: '필수 항목을 입력해주세요.' };
@@ -35,18 +27,17 @@ export async function submitLead(formData: FormData) {
     const ip = forwardedFor ? forwardedFor.split(',')[0] : 'unknown';
 
     try {
-        const db = await getDb();
+        const supabase = await createClient();
 
         // 1. IP Rate Limiting Check (Max 3 per 10 mins)
         if (ip !== 'unknown') {
-            const ipCount = await db.get(
-                `SELECT COUNT(*) as count FROM consultations 
-                 WHERE ipAddress = ? 
-                 AND createdAt > datetime('now', '-10 minutes')`,
-                ip
-            );
+            const { count: ipCount } = await supabase
+                .from('consultations')
+                .select('*', { count: 'exact', head: true })
+                .eq('ip_address', ip)
+                .gt('created_at', new Date(Date.now() - 10 * 60 * 1000).toISOString());
 
-            if (ipCount && ipCount.count >= 3) {
+            if (ipCount && ipCount >= 3) {
                 return {
                     success: false,
                     message: '너무 많은 요청이 감지되었습니다. 잠시 후 다시 시도해주세요.'
@@ -55,14 +46,14 @@ export async function submitLead(formData: FormData) {
         }
 
         // 2. Phone Rate Limiting Check
-        // Check if there's a submission from the same contact within the last 5 minutes
-        const existing = await db.get(
-            `SELECT createdAt FROM consultations 
-             WHERE contact = ? 
-             AND createdAt > datetime('now', '-5 minutes')
-             ORDER BY createdAt DESC LIMIT 1`,
-            contact
-        );
+        const { data: existing } = await supabase
+            .from('consultations')
+            .select('created_at')
+            .eq('contact', contact)
+            .gt('created_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
         if (existing) {
             return {
@@ -72,15 +63,23 @@ export async function submitLead(formData: FormData) {
         }
 
         // 3. Save to DB
-        await db.run(
-            'INSERT INTO consultations (name, birthDate, contact, serviceType, notes, ipAddress) VALUES (?, ?, ?, ?, ?, ?)',
-            name,
-            birthDate,
-            contact,
-            serviceType,
-            notes,
-            ip
-        );
+        // Use admin client to bypass RLS for public submissions through server actions
+        const adminSupabase = await createAdminClient();
+        const { error: insertError } = await adminSupabase
+            .from('consultations')
+            .insert({
+                name,
+                gender,
+                birth_date: birthDate,
+                birth_time: birthTime,
+                calendar_type: calendarType,
+                contact,
+                service_type: serviceType,
+                notes,
+                ip_address: ip
+            });
+
+        if (insertError) throw insertError;
 
         // 4. Send SMS Notification
         // Translating serviceType for better readability in SMS
@@ -98,9 +97,9 @@ export async function submitLead(formData: FormData) {
 이름: ${name}
 연락처: ${contact}
 생년월일: ${birthDate}
-성별/시간: ${extraInfo.trim() || '미입력'}
+성별/시간: ${gender === 'male' ? '남성' : '여성'}/${birthTime || '미입력'}
 신청분야: ${serviceName}
-내용: ${notes.replace(extraInfo + '\n', '').substring(0, 500)}${notes.length > 500 ? '...' : ''}`;
+내용: ${notes?.substring(0, 500)}${notes?.length > 500 ? '...' : ''}`;
 
         // Fire and forget SMS or await? 
         // Awaiting ensures we know if it failed, but strictly speaking DB success is primary.
@@ -118,14 +117,20 @@ export async function submitLead(formData: FormData) {
 }
 
 export async function deleteConsultation(id: number) {
-    const session = (await cookies()).get('admin_session');
-    if (!session || session.value !== 'true') {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
         return { success: false, message: 'Unauthorized' };
     }
 
     try {
-        const db = await getDb();
-        await db.run('DELETE FROM consultations WHERE id = ?', id);
+        const { error } = await supabase
+            .from('consultations')
+            .delete()
+            .eq('id', id);
+        
+        if (error) throw error;
+
         revalidatePath('/admin');
         return { success: true, message: '삭제되었습니다.' };
     } catch (error) {
@@ -134,39 +139,143 @@ export async function deleteConsultation(id: number) {
     }
 }
 
-export async function login(password: string) {
-    if (password === 'dowon1234!') {
-        (await cookies()).set('admin_session', 'true', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 60 * 60 * 24, // 1 day
-            path: '/',
-        });
-        return { success: true };
+export async function signup(formData: FormData) {
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const name = formData.get('name') as string;
+    
+    const supabase = await createClient();
+    const adminSupabase = await createAdminClient();
+
+    // 1. Auth Signup
+    const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+            emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+        },
+    });
+
+    if (signUpError) {
+        return { success: false, message: signUpError.message };
     }
-    return { success: false, message: '비밀번호가 올바르지 않습니다.' };
+
+    // 2. Add to dowon.members Whitelist
+    if (data.user) {
+        // Check if this is the first user
+        const { count } = await adminSupabase
+            .from('members')
+            .select('*', { count: 'exact', head: true });
+
+        const isFirstUser = count === 0;
+
+        const { error: memberError } = await adminSupabase
+            .from('members')
+            .insert({
+                id: data.user.id,
+                email: email,
+                name: name || email.split('@')[0],
+                role: isFirstUser ? 'admin' : 'user'
+            });
+
+        if (memberError) {
+            console.error('Failed to add to members whitelist:', memberError);
+            // We don't necessarily want to fail the whole signup if auth succeeded, 
+            // but for this project's logic, we should.
+            return { success: false, message: '회원 목록 등록에 실패했습니다.' };
+        }
+    }
+
+    return { success: true, message: '회원가입 확인 메일을 확인해주세요.' };
 }
 
+export async function login(formData: FormData) {
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const supabase = await createClient();
+
+    // 1. Sign in
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+    });
+
+    if (signInError) {
+        return { success: false, message: '이메일 또는 비밀번호가 올바르지 않습니다.' };
+    }
+
+    // 2. Auto-onboarding & Role Check
+    const adminSupabase = await createAdminClient();
+    let { data: member } = await adminSupabase
+        .from('members')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
+    if (!member) {
+        // Check if this is the first member of Dowon
+        const { count } = await adminSupabase
+            .from('members')
+            .select('*', { count: 'exact', head: true });
+
+        const isFirstUser = count === 0;
+        const defaultRole = isFirstUser ? 'admin' : 'user';
+
+        const { error: insertError } = await adminSupabase
+            .from('members')
+            .insert({
+                id: data.user.id,
+                email: data.user.email!,
+                name: data.user.email?.split('@')[0],
+                role: defaultRole
+            });
+
+        if (insertError) {
+            console.error('Failed to auto-onboard user:', insertError);
+            await supabase.auth.signOut();
+            return { success: false, message: '도원 프로젝트 멤버 등록 중 오류가 발생했습니다.' };
+        }
+        member = { role: defaultRole };
+    }
+
+    revalidatePath('/', 'layout');
+
+    // 3. Smart Redirect
+    if (member?.role === 'admin') {
+        redirect('/admin');
+    } else {
+        redirect('/');
+    }
+}
 export async function logout() {
-    (await cookies()).delete('admin_session');
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+    revalidatePath('/', 'layout');
     redirect('/login');
 }
 
 export async function getConsultations() {
-    const session = (await cookies()).get('admin_session');
-    if (!session || session.value !== 'true') {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
         throw new Error('Unauthorized');
     }
 
-    const db = await getDb();
-    return db.all('SELECT * FROM consultations ORDER BY createdAt DESC');
+    const { data, error } = await supabase
+        .from('consultations')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
 }
 
 // Blog Actions
 
 export async function createBlogPost(formData: FormData) {
-    const session = (await cookies()).get('admin_session');
-    if (!session || session.value !== 'true') return { success: false, message: 'Unauthorized' };
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, message: 'Unauthorized' };
 
     const title = formData.get('title') as string;
     const summary = formData.get('summary') as string;
@@ -180,11 +289,19 @@ export async function createBlogPost(formData: FormData) {
     }
 
     try {
-        const db = await getDb();
-        await db.run(
-            'INSERT INTO blog_posts (title, summary, contentUrl, thumbnailUrl, category, publishedDate) VALUES (?, ?, ?, ?, ?, ?)',
-            title, summary, contentUrl, thumbnailUrl, category, publishedDate
-        );
+        const { error } = await supabase
+            .from('blog_posts')
+            .insert({
+                title,
+                summary,
+                content_url: contentUrl,
+                thumbnail_url: thumbnailUrl,
+                category,
+                published_date: publishedDate
+            });
+
+        if (error) throw error;
+
         revalidatePath('/admin/blog');
         revalidatePath('/');
         return { success: true, message: '게시물이 등록되었습니다.' };
@@ -195,8 +312,9 @@ export async function createBlogPost(formData: FormData) {
 }
 
 export async function updateBlogPost(formData: FormData) {
-    const session = (await cookies()).get('admin_session');
-    if (!session || session.value !== 'true') return { success: false, message: 'Unauthorized' };
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, message: 'Unauthorized' };
 
     const id = formData.get('id') as string;
     const title = formData.get('title') as string;
@@ -211,11 +329,20 @@ export async function updateBlogPost(formData: FormData) {
     }
 
     try {
-        const db = await getDb();
-        await db.run(
-            'UPDATE blog_posts SET title = ?, summary = ?, contentUrl = ?, thumbnailUrl = ?, category = ?, publishedDate = ? WHERE id = ?',
-            title, summary, contentUrl, thumbnailUrl, category, publishedDate, id
-        );
+        const { error } = await supabase
+            .from('blog_posts')
+            .update({
+                title,
+                summary,
+                content_url: contentUrl,
+                thumbnail_url: thumbnailUrl,
+                category,
+                published_date: publishedDate
+            })
+            .eq('id', id);
+
+        if (error) throw error;
+
         revalidatePath('/admin/blog');
         revalidatePath('/');
         return { success: true, message: '게시물이 수정되었습니다.' };
@@ -226,46 +353,76 @@ export async function updateBlogPost(formData: FormData) {
 }
 
 export async function getBlogPosts() {
-    // Admin view - get all
-    const session = (await cookies()).get('admin_session');
-    if (!session || session.value !== 'true') throw new Error('Unauthorized');
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Unauthorized');
 
-    const db = await getDb();
-    return db.all('SELECT * FROM blog_posts ORDER BY publishedDate DESC, createdAt DESC');
+    const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .order('published_date', { ascending: false })
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
 }
 
 export async function getSelectedBlogPosts() {
-    // Public view - get only selected (limit 4)
-    const db = await getDb();
-    return db.all('SELECT * FROM blog_posts WHERE isSelected = 1 ORDER BY publishedDate DESC LIMIT 4');
+    const supabase = await createClient();
+    const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .eq('is_selected', true)
+        .order('published_date', { ascending: false })
+        .limit(4);
+
+    if (error) throw error;
+    return data;
 }
 
 export async function getRecentPosts() {
-    const db = await getDb();
-    // Fetch recent 4 posts with category name
-    // Strip HTML tags from content for summary is tricky in SQL, so we fetch content and handle in component or here.
-    // Handling in SQL is hard. We'll fetch content and truncate/strip in component or helper.
-    // Actually we can just fetch content and map it.
-    return db.all(`
-        SELECT p.*, c.name as categoryName 
-        FROM posts p 
-        LEFT JOIN categories c ON p.categoryId = c.id 
-        ORDER BY p.publishedAt DESC 
-        LIMIT 4
-    `);
+    const supabase = await createClient();
+    const { data, error } = await supabase
+        .from('posts')
+        .select(`
+            *,
+            categories (name)
+        `)
+        .order('published_at', { ascending: false })
+        .limit(4);
+
+    if (error) throw error;
+    
+    // Map categories.name to categoryName for compatibility
+    return data.map((post: any) => ({
+        ...post,
+        categoryName: post.categories?.name
+    }));
 }
 
 export async function toggleBlogPostSelection(id: number) {
-    const session = (await cookies()).get('admin_session');
-    if (!session || session.value !== 'true') return { success: false };
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false };
 
     try {
-        const db = await getDb();
-        // Check current state
-        const post = await db.get('SELECT isSelected FROM blog_posts WHERE id = ?', id);
-        const newState = post.isSelected ? 0 : 1;
+        const { data: post, error: getError } = await supabase
+            .from('blog_posts')
+            .select('is_selected')
+            .eq('id', id)
+            .single();
 
-        await db.run('UPDATE blog_posts SET isSelected = ? WHERE id = ?', newState, id);
+        if (getError) throw getError;
+
+        const newState = !post.is_selected;
+
+        const { error: updateError } = await supabase
+            .from('blog_posts')
+            .update({ is_selected: newState })
+            .eq('id', id);
+
+        if (updateError) throw updateError;
+
         revalidatePath('/admin/blog');
         revalidatePath('/');
         return { success: true };
@@ -275,12 +432,18 @@ export async function toggleBlogPostSelection(id: number) {
 }
 
 export async function deleteBlogPost(id: number) {
-    const session = (await cookies()).get('admin_session');
-    if (!session || session.value !== 'true') return { success: false };
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false };
 
     try {
-        const db = await getDb();
-        await db.run('DELETE FROM blog_posts WHERE id = ?', id);
+        const { error } = await supabase
+            .from('blog_posts')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+
         revalidatePath('/admin/blog');
         revalidatePath('/');
         return { success: true };
@@ -290,23 +453,34 @@ export async function deleteBlogPost(id: number) {
 }
 
 export async function deleteBoardPost(id: number) {
-    const session = (await cookies()).get('admin_session');
-    if (!session || session.value !== 'true') {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
         return { success: false, message: 'Unauthorized' };
     }
 
     try {
-        const db = await getDb();
+        const { data: post, error: getError } = await supabase
+            .from('posts')
+            .select('*')
+            .eq('id', id)
+            .single();
         
-        // Fetch the post before deleting
-        const post = await db.get('SELECT * FROM posts WHERE id = ?', id);
-        
-        if (!post) {
+        if (getError || !post) {
             return { success: false, message: '게시글이 존재하지 않습니다.' };
         }
 
         // Delete from DB
-        await db.run('DELETE FROM posts WHERE id = ?', id);
+        const { error: deleteError } = await supabase
+            .from('posts')
+            .delete()
+            .eq('id', id);
+
+        if (deleteError) throw deleteError;
+
+        // Note: Image deletion logic remains the same (assuming local uploads)
+        // However, if images are in Supabase Storage, we should use supabase.storage
+        // For now, I'll keep the local file deletion logic but we might need to migrate storage too.
 
         // Delete image files using fs
         try {

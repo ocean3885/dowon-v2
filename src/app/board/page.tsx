@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getDb } from '@/lib/db';
+import { createClient } from '@/utils/supabase/server';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import BoardCategorySelect from '@/components/BoardCategorySelect';
@@ -40,59 +40,58 @@ function getExcerpt(content: string) {
 }
 
 async function getBoardData(categoryId: string | null, page: number) {
-    const db = await getDb();
+    const supabase = await createClient();
     const limit = 20;
-    const offset = (page - 1) * limit;
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
 
-    const categories = await db.all<Category>(
-        'SELECT id, name FROM categories WHERE isActive = 1 ORDER BY displayOrder ASC, id ASC'
-    );
+    const { data: categories } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true })
+        .order('id', { ascending: true });
 
-    let postsQuery = `
-        SELECT p.id, p.title, p.content, p.publishedAt, p.viewCount, p.thumbnailUrl, p.categoryId, c.name as categoryName
-        FROM posts p
-        LEFT JOIN categories c ON p.categoryId = c.id
-        WHERE c.isActive = 1
-    `;
-    const postParams: Array<string | number> = [];
-
-    if (categoryId) {
-        postsQuery += ' AND p.categoryId = ?';
-        postParams.push(categoryId);
-    }
-
-    postsQuery += `
-        ORDER BY COALESCE(p.publishedAt, p.updatedAt) DESC, p.id DESC
-        LIMIT ? OFFSET ?
-    `;
-    postParams.push(limit, offset);
-
-    const posts = await db.all<BoardPost>(postsQuery, ...postParams);
-
-    let totalQuery = `
-        SELECT COUNT(*) as total
-        FROM posts p
-        LEFT JOIN categories c ON p.categoryId = c.id
-        WHERE c.isActive = 1
-    `;
-    const countParams: Array<string | number> = [];
+    let query = supabase
+        .from('posts')
+        .select(`
+            id, 
+            title, 
+            content, 
+            published_at, 
+            view_count, 
+            thumbnail_url, 
+            category_id,
+            categories!inner(name, is_active)
+        `, { count: 'exact' })
+        .eq('categories.is_active', true);
 
     if (categoryId) {
-        totalQuery += ' AND p.categoryId = ?';
-        countParams.push(categoryId);
+        query = query.eq('category_id', categoryId);
     }
 
-    const totalResult = await db.get<{ total: number }>(totalQuery, ...countParams);
-    const total = totalResult?.total || 0;
+    const { data: postsData, count: total } = await query
+        .order('published_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(from, to);
+
+    const posts = (postsData || []).map((post: any) => ({
+        ...post,
+        publishedAt: post.published_at,
+        viewCount: post.view_count,
+        thumbnailUrl: post.thumbnail_url,
+        categoryId: post.category_id,
+        categoryName: post.categories?.name
+    }));
 
     return {
-        categories,
+        categories: categories || [],
         posts,
         selectedCategoryId: categoryId,
         pagination: {
             currentPage: page,
-            total,
-            totalPages: Math.max(1, Math.ceil(total / limit)),
+            total: total || 0,
+            totalPages: Math.max(1, Math.ceil((total || 0) / limit)),
             limit,
         },
     };

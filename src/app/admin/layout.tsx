@@ -1,12 +1,32 @@
 import AdminNav from '@/components/AdminNav';
 import { logout } from '@/lib/actions';
 import { LogOut } from 'lucide-react';
+import { createClient } from '@/utils/supabase/server';
+import { redirect } from 'next/navigation';
 
-export default function AdminLayout({
+export default async function AdminLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        redirect('/login');
+    }
+
+    // Check role in dowon.members
+    const { data: member } = await supabase
+        .from('members')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+    if (member?.role !== 'admin') {
+        // Not an admin - kick back to home
+        redirect('/');
+    }
     return (
         <main className="min-h-screen bg-stone-50 pt-32 pb-12 px-4 md:px-8 font-sans">
             <div className="max-w-7xl mx-auto">

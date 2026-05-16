@@ -34,11 +34,11 @@ export default function Home() {
       <PhoneConsultation />
       <NamingBenefits />
       <CertificateSection />
-      <BlogSection />
-      <RecentPostsSection />
-      <ReviewSection />
+      {/* <BlogSection /> */}
+      {/* <RecentPostsSection /> */}
+      {/* <ReviewSection /> */}
       <BookingSection />
-      <ConsultationForm />
+      {/* <ConsultationForm /> */}
     </main>
   );
 }

@@ -5,6 +5,7 @@ import "./globals.css";
 import clsx from "clsx";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { createClient } from "@/utils/supabase/server";
 
 // Pretendard (Local Font)
 const pretendard = localFont({
@@ -43,11 +44,14 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <html lang="ko" className="scroll-smooth" data-scroll-behavior="smooth">
       <head>
@@ -60,7 +64,7 @@ export default function RootLayout({
         `}} />
       </head>
       <body className="font-sans antialiased bg-stone-50 text-stone-900">
-        <Header />
+        <Header key={user?.id || 'guest'} initialUser={user} />
         {children}
         <Footer />
       </body>

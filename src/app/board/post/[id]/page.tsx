@@ -1,26 +1,47 @@
 import Link from 'next/link';
-import { getDb } from '@/lib/db';
+import { createClient } from '@/utils/supabase/server';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { notFound } from 'next/navigation';
 
 async function getPostData(id: string) {
-    const db = await getDb();
+    const supabase = await createClient();
 
-    // Increment view count
-    // We use run to execute update. 
-    // Note: in a real hi-traffic app, this might be optimized, but fine for now.
-    await db.run('UPDATE posts SET viewCount = viewCount + 1 WHERE id = ?', id);
+    // Increment view count using rpc or update
+    // We'll use update for simplicity if we don't have a custom function
+    const { data: currentPost } = await supabase
+        .from('posts')
+        .select('view_count')
+        .eq('id', id)
+        .single();
 
-    const post = await db.get(
-        `SELECT p.*, c.name as categoryName, c.id as categoryId
-     FROM posts p 
-     LEFT JOIN categories c ON p.categoryId = c.id 
-     WHERE p.id = ?`,
-        id
-    );
+    if (currentPost) {
+        await supabase
+            .from('posts')
+            .update({ view_count: (currentPost.view_count || 0) + 1 })
+            .eq('id', id);
+    }
 
-    return post;
+    const { data: post, error } = await supabase
+        .from('posts')
+        .select(`
+            *,
+            categories (name, id)
+        `)
+        .eq('id', id)
+        .single();
+
+    if (error || !post) return null;
+
+    // Map fields for compatibility
+    return {
+        ...post,
+        categoryName: post.categories?.name,
+        categoryId: post.categories?.id,
+        publishedAt: post.published_at,
+        viewCount: post.view_count,
+        imageUrl: post.image_url
+    };
 }
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {

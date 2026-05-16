@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getDb } from '@/lib/db';
+import { createClient } from '@/utils/supabase/server';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import BulkImportButton from '@/components/admin/BulkImportButton';
@@ -8,21 +8,33 @@ import DeleteBoardPostButton from '@/components/admin/DeleteBoardPostButton';
 export const dynamic = 'force-dynamic';
 
 async function getAdminPosts(page: number, limit: number) {
-    const db = await getDb();
-    const offset = (page - 1) * limit;
+    const supabase = await createClient();
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
 
-    const [countResult, posts] = await Promise.all([
-        db.get('SELECT COUNT(*) as count FROM posts'),
-        db.all(`
-            SELECT p.id, p.title, p.author, p.viewCount, p.publishedAt, c.name as categoryName 
-            FROM posts p 
-            LEFT JOIN categories c ON p.categoryId = c.id 
-            ORDER BY p.publishedAt DESC
-            LIMIT ? OFFSET ?
-        `, [limit, offset])
-    ]);
+    const { data: postsData, count, error } = await supabase
+        .from('posts')
+        .select(`
+            id, 
+            title, 
+            author, 
+            view_count, 
+            published_at, 
+            categories (name)
+        `, { count: 'exact' })
+        .order('published_at', { ascending: false })
+        .range(from, to);
 
-    return { posts, totalPosts: countResult?.count || 0 };
+    if (error) throw error;
+
+    const posts = (postsData || []).map((post: any) => ({
+        ...post,
+        viewCount: post.view_count,
+        publishedAt: post.published_at,
+        categoryName: post.categories?.name
+    }));
+
+    return { posts, totalPosts: count || 0 };
 }
 
 const getPageNumbers = (current: number, total: number) => {
