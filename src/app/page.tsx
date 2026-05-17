@@ -16,6 +16,7 @@ import CounselingCategorySection from '@/components/home/CounselingCategorySecti
 import PhilosophySection from '@/components/home/PhilosophySection';
 import NamingSection from '@/components/home/NamingSection';
 import ReviewSection from '@/components/home/ReviewSection';
+import NamingInfoSection from '@/components/home/NamingInfoSection';
 
 export default function Home() {
   return (
@@ -25,6 +26,7 @@ export default function Home() {
       <CounselingCategorySection />
       <PhilosophySection />
       <NamingSection />
+      <NamingInfoSection />
       <ReviewSection />
       {/* <Director1 /> */}
       {/* <Services /> */}

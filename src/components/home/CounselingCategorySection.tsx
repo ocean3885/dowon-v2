@@ -89,6 +89,9 @@ const strengths = [
 export default function CounselingCategorySection() {
     return (
         <section className="relative overflow-hidden bg-[#fdfaf5] py-20 md:py-28 text-[#1a1a1a] font-serif antialiased">
+            {/* Background Image */}
+            <div className="absolute inset-0 bg-[url('/home/right_blur_bg_bright.webp')] bg-cover bg-left opacity-25 md:opacity-90 md:bg-center" />
+
             {/* Ambient Background */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(200,164,107,0.1),transparent_50%)]" />
 
