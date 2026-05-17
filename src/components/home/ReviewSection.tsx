@@ -189,7 +189,7 @@ export default function ReviewSection() {
                         <div className="lg:col-span-5 relative">
                             <div className="aspect-[16/10] lg:aspect-[16/9] relative overflow-hidden rounded-sm opacity-85 transition-opacity duration-500">
                                 <Image
-                                    src="/about4.jpg"
+                                    src="/home/banner_bg_img800.jpg"
                                     alt="상담 안내"
                                     fill
                                     className="object-cover"
