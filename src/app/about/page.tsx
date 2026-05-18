@@ -1,5 +1,5 @@
 import React from 'react';
-import BookingSection from '@/components/BookingSection';
+import BookingSection from '@/components/common/BookingSection';
 import AboutHero from '@/components/about/AboutHero';
 import AboutIntroduction from '@/components/about/AboutIntroduction';
 import AboutPhilosophy from '@/components/about/AboutPhilosophy';

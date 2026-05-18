@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import BookingSection from '@/components/BookingSection';
+import BookingSection from '@/components/common/BookingSection';
 import { motion } from 'framer-motion';
 import { MapPin, Phone, Clock, Info, CheckCircle2 } from 'lucide-react';
 

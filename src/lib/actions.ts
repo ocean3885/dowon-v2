@@ -7,6 +7,19 @@ import { redirect } from 'next/navigation';
 
 import { sendSMS } from './aligo';
 
+type RecentPostRow = {
+    id: number;
+    title: string;
+    content: string | null;
+    category_id: number | null;
+    categories?: { name?: string | null } | null;
+    image_url: string | null;
+    published_at: string | null;
+    thumbnail_url: string | null;
+    updated_at: string | null;
+    view_count: number | null;
+};
+
 export async function submitLead(formData: FormData) {
     const name = formData.get('name') as string;
     const birthDate = formData.get('birthDate') as string;
@@ -426,9 +439,15 @@ export async function getRecentPosts() {
     if (error) throw error;
     
     // Map categories.name to categoryName for compatibility
-    return data.map((post: any) => ({
+    return (data as RecentPostRow[]).map((post) => ({
         ...post,
-        categoryName: post.categories?.name
+        categoryId: post.category_id,
+        categoryName: post.categories?.name,
+        imageUrl: post.image_url,
+        publishedAt: post.published_at,
+        thumbnailUrl: post.thumbnail_url,
+        updatedAt: post.updated_at,
+        viewCount: post.view_count,
     }));
 }
 
@@ -549,8 +568,9 @@ export async function deleteBoardPost(id: number) {
                     const filePath = path.join(publicDir, url);
                     try {
                         await unlink(filePath);
-                    } catch (e: any) {
-                        console.error('Failed to delete image file:', filePath, e.message);
+                    } catch (e: unknown) {
+                        const message = e instanceof Error ? e.message : String(e);
+                        console.error('Failed to delete image file:', filePath, message);
                     }
                     
                     // Cleanup automatically generated thumbnails for this image as well

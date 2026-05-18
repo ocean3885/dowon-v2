@@ -1,5 +1,5 @@
 import React from 'react';
-import BookingSection from '@/components/BookingSection';
+import BookingSection from '@/components/common/BookingSection';
 import ServicesHero from '@/components/services/ServicesHero';
 import ServicesPhilosophy from '@/components/services/ServicesPhilosophy';
 import ServicesProcess from '@/components/services/ServicesProcess';

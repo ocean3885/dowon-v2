@@ -1,50 +1,103 @@
-import React from 'react';
+'use client';
+
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Mail, MapPin, Phone } from 'lucide-react';
 
-const Footer = () => {
+export default function Footer() {
+    const pathname = usePathname();
+
+    const scrollToTopOnHome = (event: React.MouseEvent<HTMLAnchorElement>) => {
+        if (pathname !== '/') return;
+
+        event.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
     return (
-        <footer className="bg-stone-950 text-stone-300 py-12 border-t border-stone-800">
-            <div className="container mx-auto px-4">
-                <div className="flex flex-col items-center justify-center space-y-4 text-center text-sm md:text-base font-light tracking-wide">
+        <footer className="bg-[#151310] text-white font-sans antialiased">
+            <div className="h-px w-full bg-[#C8A46B]/20" />
 
-                    {/* Business Info Group 1 */}
-                    <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
-                        <Link href="/admin" className="hover:text-stone-100 transition-colors">
-                            <span>상호 : 도원사주작명원</span>
+            <div className="mx-auto max-w-7xl px-6 py-9 lg:px-10">
+                <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="mx-auto max-w-sm text-center lg:mx-0 lg:text-left">
+                        <Link
+                            href="/"
+                            onClick={scrollToTopOnHome}
+                            className="font-serif text-2xl font-light tracking-[-0.04em] text-[#E5D5BC] transition-colors hover:text-white"
+                        >
+                            도원작명철학원
                         </Link>
-                        <span className="hidden md:inline text-stone-600">|</span>
-                        <span>대표 : 김종찬</span>
-                    </div>
 
-                    {/* Address */}
-                    <div>
-                        <span>주소 : 전주시 완산구 전주객사4길 46, 715호</span>
-                    </div>
-
-                    {/* Contact Info */}
-                    <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4">
-                        <span>tel : 063-285-7255</span>
-                        <span className="hidden md:inline text-stone-600">|</span>
-                        <span>mobile : 010-5518-7255</span>
-                    </div>
-
-                    {/* Business Info Group 2 */}
-                    <div className="flex flex-col md:flex-row items-center gap-2 md:gap-4 opacity-80">
-                        <span>e-mail : ocean3885@naver.com</span>
-                        <span className="hidden md:inline text-stone-600">|</span>
-                        <span>사업자등록번호 : 109-21-77233</span>
-                    </div>
-
-                    {/* Copyright */}
-                    <div className="pt-8 mt-4 border-t border-stone-800 w-full max-w-2xl">
-                        <p className="text-stone-500 text-xs">
-                            Copyright © 도원사주작명원 All rights reserved.
+                        <p className="mt-3 text-sm font-light leading-relaxed text-white/40 break-keep">
+                            정통 명리 상담과 작명, 개명을 통해 삶의 방향을 함께 살핍니다.
                         </p>
                     </div>
+
+                    <div className="flex flex-wrap justify-center gap-x-6 gap-y-4 text-center text-sm text-white/48 sm:gap-x-8 lg:grid lg:grid-cols-3 lg:gap-x-10 lg:gap-y-5 lg:text-left">
+                        <InfoItem
+                            icon={<MapPin className="h-3.5 w-3.5" strokeWidth={1.5} />}
+                            label="주소"
+                        >
+                            전주시 완산구 전주객사4길 46, 715호
+                        </InfoItem>
+
+                        <InfoItem
+                            icon={<Phone className="h-3.5 w-3.5" strokeWidth={1.5} />}
+                            label="전화"
+                        >
+                            <a href="tel:063-285-7255" className="transition-colors hover:text-[#C8A46B]">
+                                063-285-7255
+                            </a>
+                            <span className="mx-2 text-white/20">/</span>
+                            <span>010-5518-7255</span>
+                        </InfoItem>
+
+                        <InfoItem
+                            icon={<Mail className="h-3.5 w-3.5" strokeWidth={1.5} />}
+                            label="이메일"
+                        >
+                            <a href="mailto:ocean3885@naver.com" className="transition-colors hover:text-[#C8A46B]">
+                                ocean3885@naver.com
+                            </a>
+                        </InfoItem>
+
+                        <InfoItem label="대표">
+                            김종찬
+                        </InfoItem>
+
+                        <InfoItem label="사업자등록번호">
+                            109-21-77233
+                        </InfoItem>
+                    </div>
+                </div>
+
+                <div className="mt-8 border-t border-white/10 pt-5 text-center text-xs text-white/30 lg:text-left">
+                    <p>Copyright © 도원작명철학원 All rights reserved.</p>
                 </div>
             </div>
         </footer>
     );
-};
+}
 
-export default Footer;
+function InfoItem({
+    icon,
+    label,
+    children,
+}: {
+    icon?: React.ReactNode;
+    label: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div className="max-w-[280px] sm:max-w-none lg:max-w-[260px]">
+            <div className="mb-1.5 flex items-center justify-center gap-1.5 text-[11px] font-semibold tracking-[0.16em] text-[#C8A46B]/70 lg:justify-start">
+                {icon}
+                <span>{label}</span>
+            </div>
+            <div className="leading-relaxed break-keep">
+                {children}
+            </div>
+        </div>
+    );
+}

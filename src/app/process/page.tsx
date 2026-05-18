@@ -1,5 +1,5 @@
 import React from 'react';
-import BookingSection from '@/components/BookingSection';
+import BookingSection from '@/components/common/BookingSection';
 import ProcessHero from '@/components/process/ProcessHero';
 import ProcessWhyUs from '@/components/process/ProcessWhyUs';
 import ProcessMajorServices from '@/components/process/ProcessMajorServices';

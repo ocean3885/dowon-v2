@@ -1,12 +1,22 @@
 import { redirect } from 'next/navigation';
 import { getConsultations } from '@/lib/actions';
-import DeleteConsultationButton from '@/components/DeleteConsultationButton';
+import DeleteConsultationButton from '@/components/admin/DeleteConsultationButton';
+
+type Consultation = {
+    id: number;
+    name: string;
+    contact: string;
+    birthDate?: string | null;
+    createdAt: string;
+    notes?: string | null;
+    serviceType: 'saju' | 'naming' | 'rename' | 'gunghap' | 'date' | 'other' | string;
+};
 
 export default async function AdminPage() {
-    let consultations = [];
+    let consultations: Consultation[] = [];
     try {
         consultations = await getConsultations();
-    } catch (error) {
+    } catch {
         redirect('/login');
     }
 
@@ -22,7 +32,7 @@ export default async function AdminPage() {
                         아직 신청된 상담 내역이 없습니다.
                     </div>
                 ) : (
-                    consultations.map((item: any) => (
+                    consultations.map((item) => (
                         <div key={item.id} className="bg-white p-6 rounded-xl shadow-sm border border-stone-200 hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
                             <div className="flex justify-between items-start mb-4">
                                 <div className="flex-1 mr-4">

@@ -1,23 +1,21 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/utils/supabase/server';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import BoardCategorySelect from '@/components/BoardCategorySelect';
+import BoardCategorySelect from '@/components/board/BoardCategorySelect';
  
-type Category = {
-    id: number;
-    name: string;
-};
-
-type BoardPost = {
+type BoardPostRow = {
     id: number;
     title: string;
     content: string;
-    publishedAt: string;
-    viewCount: number;
-    thumbnailUrl: string | null;
-    categoryId: number | null;
-    categoryName: string | null;
+    published_at: string;
+    view_count: number;
+    thumbnail_url: string | null;
+    category_id: number | null;
+    categories?: {
+        name?: string | null;
+    } | null;
 };
 
 function getExcerpt(content: string) {
@@ -75,7 +73,7 @@ async function getBoardData(categoryId: string | null, page: number) {
         .order('id', { ascending: false })
         .range(from, to);
 
-    const posts = (postsData || []).map((post: any) => ({
+    const posts = (postsData as BoardPostRow[] | null || []).map((post) => ({
         ...post,
         publishedAt: post.published_at,
         viewCount: post.view_count,
@@ -190,11 +188,13 @@ export default async function BoardPage(
                                         <div className="flex items-center gap-4 md:gap-5">
                                             {post.thumbnailUrl && (
                                                 <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl bg-stone-100 sm:h-24 sm:w-32">
-                                                    <img
+                                                    <Image
                                                         src={post.thumbnailUrl}
                                                         alt=""
+                                                        width={128}
+                                                        height={96}
+                                                        sizes="(min-width: 640px) 128px, 80px"
                                                         loading="lazy"
-                                                        decoding="async"
                                                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                                                     />
                                                 </div>

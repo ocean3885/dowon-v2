@@ -1,4 +1,4 @@
-import AdminNav from '@/components/AdminNav';
+import AdminNav from '@/components/admin/AdminNav';
 import { logout } from '@/lib/actions';
 import { LogOut } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
