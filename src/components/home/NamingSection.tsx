@@ -166,11 +166,13 @@ function FeatureCard({
   desc: string
 }) {
   return (
-    <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
-      <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-full bg-[#FAF9F6] border border-[#C8A46B]/20 text-[#A6834D]">
-        {icon}
+    <div className="flex flex-col items-start sm:items-start text-left">
+      <div className="mb-4 flex flex-row items-center gap-4 sm:mb-6 sm:flex-col sm:items-start sm:gap-0 2xl:flex-row 2xl:items-center 2xl:gap-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#FAF9F6] border border-[#C8A46B]/20 text-[#A6834D]">
+          {icon}
+        </div>
+        <h3 className="text-xl font-medium text-[#111] tracking-tight sm:mt-6 2xl:mt-0">{title}</h3>
       </div>
-      <h3 className="mb-4 text-xl font-medium text-[#111] tracking-tight">{title}</h3>
       <p className="text-[14px] leading-[1.7] text-[#6b645d] font-sans font-light break-keep">
         {desc}
       </p>

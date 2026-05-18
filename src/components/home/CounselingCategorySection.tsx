@@ -186,20 +186,22 @@ export default function CounselingCategorySection() {
                         return (
                             <div
                                 key={index}
-                                className="group relative flex flex-col items-center p-6 text-center rounded-[24px] border border-[#C8A46B]/25 bg-white/70 transition-all hover:bg-white hover:border-[#C8A46B]/40 hover:shadow-[0_10px_30px_rgba(200,164,107,0.05)]"
+                                className="group relative flex flex-col items-start p-6 text-left sm:items-center sm:text-center rounded-[24px] border border-[#C8A46B]/25 bg-white/70 transition-all hover:bg-white hover:border-[#C8A46B]/40 hover:shadow-[0_10px_30px_rgba(200,164,107,0.05)]"
                             >
-                                <div className="mb-4 flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#C8A46B]/20 bg-[#fdfaf5]">
-                                    <Icon
-                                        className="h-5 w-5 text-[#C8A46B]"
-                                        strokeWidth={1.5}
-                                    />
+                                <div className="mb-4 flex flex-row items-center gap-4 sm:flex-col sm:gap-0">
+                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#C8A46B]/20 bg-[#fdfaf5]">
+                                        <Icon
+                                            className="h-5 w-5 text-[#C8A46B]"
+                                            strokeWidth={1.5}
+                                        />
+                                    </div>
+
+                                    <h4 className="text-lg tracking-[-0.03em] text-[#171717] break-keep sm:mt-4">
+                                        {item.title}
+                                    </h4>
                                 </div>
 
-                                <h4 className="text-lg font-light tracking-[-0.03em] text-[#171717] break-keep">
-                                    {item.title}
-                                </h4>
-
-                                <p className="mt-3 text-[13px] leading-relaxed text-[#5a5753] break-keep antialiased">
+                                <p className="mt-3 text-[14px] leading-relaxed text-[#474643] break-keep">
                                     {item.description}
                                 </p>
                             </div>
