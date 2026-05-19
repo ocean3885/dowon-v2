@@ -1,5 +1,6 @@
 'use server';
 
+import { randomBytes, scryptSync } from 'crypto';
 import { createClient, createAdminClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
@@ -20,12 +21,282 @@ type RecentPostRow = {
     view_count: number | null;
 };
 
+type SubmitApplicationState = {
+    success: boolean;
+    message: string;
+};
+
+type ConsultationTarget = {
+    name: string | null;
+    birthDate: string;
+    calendarType: string;
+    gender: string;
+    birthTimeAccuracy: string;
+    birthTime: string | null;
+};
+
+type ServiceDetails = Record<string, string | null>;
+
+const submitServiceLabels: Record<string, string> = {
+    saju: '사주 종합 상담',
+    love: '연애 · 결혼 상담',
+    career: '진로 · 직업 상담',
+    wealth: '사업 · 재물 상담',
+    naming: '작명 · 개명 상담',
+    moving: '이사 · 택일 상담',
+};
+
+const calendarTypeLabels: Record<string, string> = {
+    solar: '양력',
+    lunar: '음력',
+    leap_lunar: '음력윤달',
+};
+
+const birthTimeAccuracyLabels: Record<string, string> = {
+    exact: '알고 있음',
+    approximate: '대략 앎',
+    unknown: '모름',
+};
+
+function hashApplicationPassword(password: string) {
+    const salt = randomBytes(16).toString('hex');
+    const hash = scryptSync(password, salt, 64).toString('hex');
+
+    return `${salt}:${hash}`;
+}
+
+function getFormString(formData: FormData, name: string, fallback = '') {
+    return String(formData.get(name) || fallback).trim();
+}
+
+function buildBirthTime(formData: FormData, prefix: string) {
+    const period = getFormString(formData, `${prefix}BirthTimePeriod`);
+    const hour = getFormString(formData, `${prefix}BirthTimeHour`);
+    const minute = getFormString(formData, `${prefix}BirthTimeMinute`, '00');
+
+    if (!period || !hour) return '';
+
+    return `${hour}시 ${minute}분`;
+}
+
+function buildConsultationTarget(formData: FormData, index: 1 | 2): ConsultationTarget | null {
+    const prefix = `target${index}`;
+    const name = getFormString(formData, `${prefix}Name`);
+    const birthDate = getFormString(formData, `${prefix}BirthDate`);
+    const calendarType = getFormString(formData, `${prefix}CalendarType`, index === 1 ? 'solar' : '');
+    const gender = getFormString(formData, `${prefix}Gender`);
+    const birthTimeAccuracy = getFormString(formData, `${prefix}BirthTimeAccuracy`, index === 1 ? 'exact' : '');
+    const birthTime = buildBirthTime(formData, prefix);
+    const hasAnyValue = Boolean(name || birthDate || calendarType || gender || birthTimeAccuracy || birthTime);
+
+    if (!hasAnyValue) return null;
+
+    return {
+        name: name || null,
+        birthDate,
+        calendarType,
+        gender,
+        birthTimeAccuracy,
+        birthTime: birthTime || null,
+    };
+}
+
+function buildServiceDetails(formData: FormData, serviceType: string): ServiceDetails | null {
+    if (serviceType !== 'naming') return null;
+
+    return {
+        familyName: getFormString(formData, 'namingFamilyName'),
+        generationNameUsage: getFormString(formData, 'namingGenerationNameUsage', 'use'),
+        generationName: getFormString(formData, 'namingGenerationName') || null,
+        preferredNames: getFormString(formData, 'namingPreferredNames') || null,
+        hanjaUsage: getFormString(formData, 'namingHanjaUsage', 'optional'),
+        avoidedNames: getFormString(formData, 'namingAvoidedNames') || null,
+        additionalRequests: getFormString(formData, 'namingAdditionalRequests') || null,
+    };
+}
+
+function formatServiceDetailsForSms(details: ServiceDetails | null) {
+    if (!details) return '';
+
+    const generationNameUsage = details.generationNameUsage === 'none' ? '없음' : '사용';
+    const hanjaUsageLabels: Record<string, string> = {
+        required: '필수',
+        optional: '상관없음',
+        hangul: '한글 이름',
+    };
+
+    return `
+작명/개명 세부:
+성: ${details.familyName || '미입력'}
+돌림자: ${generationNameUsage}${details.generationName ? ` (${details.generationName})` : ''}
+선호 이름: ${details.preferredNames || '미입력'}
+한자 사용: ${details.hanjaUsage ? hanjaUsageLabels[details.hanjaUsage] || details.hanjaUsage : '미입력'}
+피하고 싶은 이름/한자: ${details.avoidedNames || '미입력'}
+추가 요청: ${details.additionalRequests || '미입력'}`;
+}
+
+export async function submitApplication(
+    _prevState: SubmitApplicationState,
+    formData: FormData
+): Promise<SubmitApplicationState> {
+    const applicantName = getFormString(formData, 'applicantName');
+    const applicantPhone = getFormString(formData, 'applicantPhone');
+    const applicantEmail = getFormString(formData, 'applicantEmail');
+    const applicationPassword = getFormString(formData, 'applicationPassword');
+    const consultationTargets = [buildConsultationTarget(formData, 1), buildConsultationTarget(formData, 2)].filter(
+        (target): target is ConsultationTarget => Boolean(target)
+    );
+    const serviceType = getFormString(formData, 'serviceType');
+    const serviceDetails = buildServiceDetails(formData, serviceType);
+    const concern = getFormString(formData, 'concern');
+    const privacyAgreed = formData.get('privacyAgreed') === 'on';
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!applicantName || !applicantPhone) {
+        return { success: false, message: '필수 항목을 입력해주세요.' };
+    }
+
+    if (!user && !applicationPassword) {
+        return { success: false, message: '비회원 신청서 확인 비밀번호를 입력해주세요.' };
+    }
+
+    if (applicationPassword && applicationPassword.length < 4) {
+        return { success: false, message: '신청서 확인 비밀번호는 4자 이상 입력해주세요.' };
+    }
+
+    if (consultationTargets.length === 0) {
+        return { success: false, message: '상담대상 정보를 입력해주세요.' };
+    }
+
+    const hasInvalidTarget = consultationTargets.some(
+        (target) =>
+            !target.birthDate ||
+            !target.calendarType ||
+            !target.gender ||
+            !target.birthTimeAccuracy ||
+            (target.birthTimeAccuracy !== 'unknown' && !target.birthTime)
+    );
+
+    if (hasInvalidTarget) {
+        return { success: false, message: '상담대상의 생년월일, 성별, 출생 시간 정보를 입력해주세요.' };
+    }
+
+    if (!serviceType) {
+        return { success: false, message: '상담 종류를 선택해주세요.' };
+    }
+
+    if (serviceType === 'naming' && !serviceDetails?.familyName) {
+        return { success: false, message: '작명 · 개명 상담은 성(姓)을 입력해주세요.' };
+    }
+
+    if (!privacyAgreed) {
+        return { success: false, message: '개인정보 수집 및 이용에 동의해주세요.' };
+    }
+
+    const headersList = await headers();
+    const forwardedFor = headersList.get('x-forwarded-for');
+    const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown';
+    const userAgent = headersList.get('user-agent') || null;
+
+    try {
+        const adminSupabase = await createAdminClient();
+
+        if (ip !== 'unknown') {
+            const { count: ipCount, error: ipCountError } = await adminSupabase
+                .from('submits')
+                .select('*', { count: 'exact', head: true })
+                .eq('ip_address', ip)
+                .gt('created_at', new Date(Date.now() - 10 * 60 * 1000).toISOString());
+
+            if (ipCountError) throw ipCountError;
+
+            if (ipCount && ipCount >= 3) {
+                return {
+                    success: false,
+                    message: '너무 많은 요청이 감지되었습니다. 잠시 후 다시 시도해주세요.',
+                };
+            }
+        }
+
+        const { data: recentPhone, error: recentPhoneError } = await adminSupabase
+            .from('submits')
+            .select('created_at')
+            .eq('applicant_phone', applicantPhone)
+            .gt('created_at', new Date(Date.now() - 5 * 60 * 1000).toISOString())
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (recentPhoneError) throw recentPhoneError;
+
+        if (recentPhone) {
+            return {
+                success: false,
+                message: '이미 상담 신청이 접수되었습니다. 추가 접수는 5분 뒤에 가능합니다.',
+            };
+        }
+
+        const { error: insertError } = await adminSupabase
+            .from('submits')
+            .insert({
+                applicant_name: applicantName,
+                applicant_phone: applicantPhone,
+                applicant_email: applicantEmail || null,
+                user_id: user?.id || null,
+                application_password_hash: applicationPassword ? hashApplicationPassword(applicationPassword) : null,
+                consultation_targets: consultationTargets,
+                service_type: serviceType,
+                service_details: serviceDetails,
+                concern: concern || null,
+                privacy_agreed: privacyAgreed,
+                ip_address: ip,
+                user_agent: userAgent,
+            });
+
+        if (insertError) throw insertError;
+
+        const serviceName = submitServiceLabels[serviceType] || serviceType;
+        const serviceDetailSummary = formatServiceDetailsForSms(serviceDetails);
+        const targetSummary = consultationTargets
+            .map((target, index) => {
+                const targetName = target.name || '이름 미입력';
+                const calendarTypeName = calendarTypeLabels[target.calendarType] || target.calendarType;
+                const genderName = target.gender === 'male' ? '남성' : '여성';
+                const timeAccuracyName = birthTimeAccuracyLabels[target.birthTimeAccuracy] || target.birthTimeAccuracy;
+
+                return `${index + 1}. ${targetName} / ${target.birthDate}(${calendarTypeName}) / ${genderName} / ${timeAccuracyName}${target.birthTime ? ` ${target.birthTime}` : ''}`;
+            })
+            .join('\n');
+
+        await sendSMS(`[도원 상담신청]
+신청인: ${applicantName}
+연락처: ${applicantPhone}
+이메일: ${applicantEmail || '미입력'}
+상담대상:
+${targetSummary}
+상담종류: ${serviceName}
+${serviceDetailSummary}
+내용: ${concern.substring(0, 500)}${concern.length > 500 ? '...' : ''}`);
+
+        revalidatePath('/submit');
+        revalidatePath('/my/applications');
+        revalidatePath('/admin');
+    } catch (error) {
+        console.error('Submit application error:', error);
+        return { success: false, message: '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.' };
+    }
+
+    redirect('/submit/complete');
+}
+
 export async function submitLead(formData: FormData) {
     const name = formData.get('name') as string;
     const birthDate = formData.get('birthDate') as string;
     const gender = formData.get('gender') as string;
     const birthTime = formData.get('birthTime') as string;
-    const calendarType = formData.get('calendarType') as string; // 'solar' or 'lunar'
+    const calendarType = formData.get('calendarType') as string; // 'solar', 'lunar', or 'leap_lunar'
     const contact = formData.get('contact') as string;
     const serviceType = formData.get('serviceType') as string;
     const notes = formData.get('notes') as string;

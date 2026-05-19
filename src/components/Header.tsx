@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, LogOut, User as UserIcon, Shield } from 'lucide-react';
+import { FileText, Menu, X, LogOut, User as UserIcon, Shield } from 'lucide-react';
 import clsx from 'clsx';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -182,7 +182,17 @@ export default function Header({ initialUser }: { initialUser: User | null }) {
                                                 <div className="w-5 h-5 flex items-center justify-center opacity-70">
                                                     <UserIcon size={16} />
                                                 </div>
-                                                프로필 설정
+                                                프로필
+                                            </Link>
+                                            <Link
+                                                href="/my/applications"
+                                                onClick={() => setIsUserMenuOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-2 text-sm text-stone-300 hover:bg-stone-800 transition-colors"
+                                            >
+                                                <div className="w-5 h-5 flex items-center justify-center opacity-70">
+                                                    <FileText size={16} />
+                                                </div>
+                                                상담내역
                                             </Link>
                                             {userRole === 'admin' && (
                                                 <Link
@@ -283,7 +293,14 @@ export default function Header({ initialUser }: { initialUser: User | null }) {
                                         onClick={() => setIsMobileMenuOpen(false)}
                                         className="flex items-center justify-center gap-3 px-8 py-3 bg-stone-900 text-stone-300 rounded-full text-lg font-bold tracking-widest hover:bg-stone-800 transition-colors"
                                     >
-                                        프로필 설정
+                                        프로필
+                                    </Link>
+                                    <Link
+                                        href="/my/applications"
+                                        onClick={() => setIsMobileMenuOpen(false)}
+                                        className="flex items-center justify-center gap-3 px-8 py-3 bg-stone-900 text-stone-300 rounded-full text-lg font-bold tracking-widest hover:bg-stone-800 transition-colors"
+                                    >
+                                        상담내역
                                     </Link>
                                     {userRole === 'admin' && (
                                         <Link
