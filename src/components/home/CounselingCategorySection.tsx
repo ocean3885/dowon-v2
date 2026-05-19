@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import Image from "next/image";
 import {
     Users,
     BriefcaseBusiness,
@@ -21,6 +23,7 @@ const counselingItems = [
         description:
             "타고난 사주를 바탕으로 인생의 흐름과 방향을 명확히 해석합니다.",
         image: "/home/service_new1.webp",
+        href: "/services/saju",
     },
     {
         icon: BriefcaseBusiness,
@@ -28,6 +31,7 @@ const counselingItems = [
         description:
             "적성과 시기를 분석하여 직업과 진로의 올바른 방향을 제시합니다.",
         image: "/home/service_new2.jpg",
+        href: "/services/career",
     },
     {
         icon: Heart,
@@ -35,6 +39,7 @@ const counselingItems = [
         description:
             "두 사람의 인연과 성향을 분석하여 관계의 흐름을 짚어드립니다.",
         image: "/home/service_new6.webp",
+        href: "/services/love-marriage",
     },
     {
         icon: BarChart3,
@@ -42,13 +47,15 @@ const counselingItems = [
         description:
             "재물운의 흐름과 사업운의 시기를 분석하여 성공의 전략을 함께 세웁니다.",
         image: "/home/service_new4.webp",
+        href: "/services/business-money",
     },
     {
         icon: House,
-        title: "이사 · 택일 상담",
+        title: "출산 · 택일 상담",
         description:
             "좋은 기운이 흐르는 시기와 공간을 선택하여 안정과 발전을 돕습니다.",
         image: "/home/service_new3.webp",
+        href: "/services/birth-date",
     },
     {
         icon: Baby,
@@ -56,6 +63,7 @@ const counselingItems = [
         description:
             "이름에 담긴 뜻과 오행의 조화를 통해 삶의 기운을 바르게 세워드립니다.",
         image: "/home/service_new5.jpg",
+        href: "/services/naming",
     },
 ];
 
@@ -149,19 +157,24 @@ export default function CounselingCategorySection() {
 
                                 {/* Image */}
                                 <div className="relative h-[180px] overflow-hidden rounded-2xl">
-                                    <img
+                                    <Image
                                         src={item.image}
                                         alt={item.title}
-                                        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                        fill
+                                        sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 85vw"
+                                        className="object-cover transition-transform duration-700 group-hover:scale-110"
                                     />
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
                                 </div>
 
                                 {/* Bottom CTA */}
-                                <button className="mt-4 flex items-center gap-2 font-sans text-[10px] font-bold tracking-widest text-[#C8A46B] transition-all hover:gap-3 uppercase">
+                                <Link
+                                    href={item.href}
+                                    className="mt-4 flex w-fit items-center gap-2 font-sans text-[10px] font-bold tracking-widest text-[#C8A46B] uppercase transition-all hover:gap-3"
+                                >
                                     자세히 보기
                                     <ArrowRight className="h-3 w-3" />
-                                </button>
+                                </Link>
                             </div>
                         );
                     })}

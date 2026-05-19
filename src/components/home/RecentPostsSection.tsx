@@ -36,15 +36,15 @@ export default async function RecentPostsSection() {
     return (
         <section className="relative overflow-hidden bg-[#f6f2eb] py-12 font-serif antialiased md:py-16 lg:py-20">
             <div
-                className="absolute inset-0 bg-cover bg-no-repeat bg-left opacity-30 pointer-events-none md:bg-center md:opacity-70"
+                className="absolute inset-0 bg-cover bg-no-repeat bg-left opacity-30 pointer-events-none md:bg-center md:opacity-40"
                 style={{ backgroundImage: 'url("/home/right_blur_bg_bright.webp")' }}
             />
             <div className="absolute right-0 top-0 h-full w-[45%] bg-[radial-gradient(circle_at_right,rgba(207,170,109,0.18),transparent_62%)] pointer-events-none" />
 
-            <div className="relative z-10 mx-auto max-w-[1600px] px-6 lg:px-12">
-                <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:gap-8">
+            <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-10">
+                <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[420px_minmax(0,1fr)]">
                     <div className="flex items-center justify-center lg:justify-start">
-                        <div className="w-full max-w-[480px] text-center lg:text-left">
+                        <div className="w-full max-w-[420px] text-center lg:text-left">
                             <div className="mb-3 flex items-center justify-center gap-3 lg:justify-start">
                                 <span className="font-sans text-xs font-medium tracking-[0.2em] text-[#b28a52] antialiased md:text-sm">
                                     도원의 새로운 이야기

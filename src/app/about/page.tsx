@@ -1,17 +1,16 @@
 import Image from 'next/image';
+import ReservationSection from '@/components/common/ReservationSection';
 import {
     ArrowRight,
     BarChart3,
     BriefcaseBusiness,
     CalendarDays,
     Compass,
-    CreditCard,
     Heart,
     Home,
     Leaf,
     MessageCircle,
     PenLine,
-    Phone,
     Scale,
     User,
     Users,
@@ -188,9 +187,10 @@ function HeroSection() {
                     fill
                     priority
                     sizes="46vw"
-                    className="object-cover object-center brightness-[0.97] contrast-[0.94]"
+                    className="object-cover object-center brightness-[0.98] contrast-[1.02]"
                 />
-                <div className="absolute inset-0 bg-[#f1e9dc]/10" />
+                <div className="absolute inset-0 bg-[#f1e9dc]/5" />
+                <div className="absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-[#ebe3d6] via-[#ebe3d6]/65 to-transparent" />
             </div>
 
             <div className="relative mx-auto max-w-7xl px-6 pb-0 pt-12 sm:px-10 lg:py-10">
@@ -222,9 +222,9 @@ function HeroSection() {
                         fill
                         priority
                         sizes="100vw"
-                        className="object-cover object-center brightness-[0.97] contrast-[0.94]"
+                        className="object-cover object-center brightness-[0.98] contrast-[1.02]"
                     />
-                    <div className="absolute inset-0 bg-[#f1e9dc]/10" />
+                    <div className="absolute inset-0 bg-[#f1e9dc]/5" />
                 </div>
             </div>
         </section>
@@ -246,13 +246,15 @@ function StrengthSection() {
 
                         return (
                             <div key={item.title} className="px-4 py-8 text-center sm:px-8">
-                                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#a77b45]/45 text-[#a77b45]">
-                                    <Icon className="h-7 w-7" strokeWidth={1.4} />
+                                <div className="flex items-center justify-center gap-4 sm:flex-col sm:gap-0">
+                                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-[#a77b45]/45 text-[#a77b45] sm:mx-auto">
+                                        <Icon className="h-7 w-7" strokeWidth={1.4} />
+                                    </div>
+                                    <h3 className="text-xl font-light text-[#17130f] break-keep sm:mt-7">
+                                        {item.title}
+                                    </h3>
                                 </div>
-                                <h3 className="mt-7 text-xl font-light text-[#17130f] break-keep">
-                                    {item.title}
-                                </h3>
-                                <p className="mx-auto mt-4 max-w-[180px] font-sans text-sm leading-7 text-[#504941] break-keep">
+                                <p className="mx-auto mt-4 max-w-[240px] font-sans text-sm leading-7 text-[#504941] break-keep sm:max-w-[180px]">
                                     {item.description}
                                 </p>
                             </div>
@@ -301,7 +303,7 @@ function DirectorSection() {
                     </div>
 
                     <div className="border-t border-[#d8cbbb] pt-8 lg:border-l lg:border-t-0 lg:pl-10 lg:pt-0">
-                        <InfoList title="주요 경력" items={['명리학 / 사주명리 상담 15년 경력', '다수의 기업 및 개인 상담 진행', '사주명리학 연구회 정회원', '명리학 강의 및 칼럼 활동']} />
+                        <InfoList title="주요 경력" items={['명리학 / 사주명리 상담 30년 경력', '다수의 기업 및 개인 상담 진행', '사주명리학 연구회 정회원', '명리학 강의 및 칼럼 활동']} />
 
                         <div className="mt-10">
                             <h3 className="font-sans text-base font-medium text-[#a77b45]">전문 분야</h3>
@@ -394,63 +396,18 @@ function SpecialtySection() {
                                 key={item.title}
                                 className="rounded-lg border border-[#eadfce] bg-white/86 p-6 text-center shadow-[0_12px_32px_rgba(91,65,35,0.06)]"
                             >
-                                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[#a77b45]/35 text-[#a77b45]">
-                                    <Icon className="h-6 w-6" strokeWidth={1.4} />
+                                <div className="flex items-center justify-center gap-4 sm:flex-col sm:gap-0">
+                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#a77b45]/35 text-[#a77b45] sm:mx-auto">
+                                        <Icon className="h-6 w-6" strokeWidth={1.4} />
+                                    </div>
+                                    <h3 className="text-xl font-light text-[#17130f] break-keep sm:mt-5">
+                                        {item.title}
+                                    </h3>
                                 </div>
-                                <h3 className="mt-5 text-xl font-light text-[#17130f] break-keep">{item.title}</h3>
                                 <p className="mt-4 font-sans text-sm leading-7 text-[#514a42] break-keep">{item.description}</p>
                             </div>
                         );
                     })}
-                </div>
-            </div>
-        </section>
-    );
-}
-
-function ReservationSection() {
-    return (
-        <section className="bg-[#fbf8f2] px-6 pb-16 lg:px-10">
-            <div className="mx-auto max-w-7xl">
-                <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center">
-                    <div className="flex items-center gap-5">
-                        <h2 className="text-2xl font-light text-[#17130f]">상담 예약 및 문의</h2>
-                        <span className="h-px w-10 bg-[#a77b45]/40" />
-                    </div>
-                    <p className="font-sans text-sm text-[#5b544d] break-keep">
-                        예약 상담으로 운영됩니다. 편하신 방법으로 문의해주세요.
-                    </p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                    <a
-                        href="https://booking.naver.com/booking/6/bizes/167387"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="group rounded-lg border border-[#b89768]/45 bg-white/70 p-6 transition-colors hover:bg-white"
-                    >
-                        <ContactCardHeader icon={<CalendarDays className="h-7 w-7" />} title="네이버 예약" />
-                        <p className="mt-5 font-sans text-sm leading-7 text-[#514a42] break-keep">
-                            원하는 날짜와 시간을 간편하게 선택하세요.
-                        </p>
-                        <span className="mt-5 inline-flex h-11 items-center gap-3 rounded bg-[#a77b45] px-6 font-sans text-sm font-semibold text-white transition-colors group-hover:bg-[#946b3a]">
-                            예약하기
-                            <ArrowRight className="h-4 w-4" />
-                        </span>
-                    </a>
-
-                    <a href="tel:063-285-7255" className="rounded-lg border border-[#b89768]/45 bg-white/70 p-6 transition-colors hover:bg-white">
-                        <ContactCardHeader icon={<Phone className="h-7 w-7" />} title="전화 문의" />
-                        <p className="mt-5 font-sans text-sm text-[#514a42]">방문 전 사전예약 필수</p>
-                        <p className="mt-3 font-sans text-3xl font-medium text-[#17130f]">063-285-7255</p>
-                        <p className="mt-2 font-sans text-sm text-[#514a42]">오전 10:00 - 오후 6:00</p>
-                    </a>
-
-                    <div className="rounded-lg border border-[#b89768]/45 bg-white/70 p-6">
-                        <ContactCardHeader icon={<CreditCard className="h-7 w-7" />} title="상담비 입금 계좌" />
-                        <p className="mt-5 font-sans text-sm text-[#514a42]">하나은행 (예금주: 김종찬)</p>
-                        <p className="mt-3 font-sans text-2xl font-medium text-[#17130f] sm:text-3xl">7029-1100-3499-07</p>
-                    </div>
                 </div>
             </div>
         </section>
@@ -469,17 +426,6 @@ function InfoList({ title, items }: { title: string; items: string[] }) {
                     </li>
                 ))}
             </ul>
-        </div>
-    );
-}
-
-function ContactCardHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
-    return (
-        <div className="flex items-center gap-5">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-[#a77b45]/35 bg-[#fbf8f2] text-[#a77b45]">
-                {icon}
-            </div>
-            <h3 className="text-xl font-light text-[#17130f]">{title}</h3>
         </div>
     );
 }

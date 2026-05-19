@@ -34,7 +34,7 @@ export default function NamingInfoSection() {
         <section className="relative overflow-hidden bg-[#f6f2eb] py-8 md:py-12 lg:py-14 font-serif antialiased">
             {/* background image with opacity */}
             <div
-                className="absolute inset-0 bg-cover bg-no-repeat bg-left sm:bg-center opacity-30 md:opacity-70 pointer-events-none"
+                className="absolute inset-0 bg-cover bg-no-repeat bg-left sm:bg-center opacity-30 md:opacity-50 pointer-events-none"
                 style={{ backgroundImage: 'url("/home/right_blur_bg_bright.webp")' }}
             />
             {/* subtle glow bg */}
