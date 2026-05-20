@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import {
@@ -73,6 +74,18 @@ const initialState = {
     message: '',
 };
 
+function normalizePhoneNumber(value: string) {
+    return value.replace(/\D/g, '').slice(0, 11);
+}
+
+function formatPhoneNumber(value: string) {
+    const digits = normalizePhoneNumber(value);
+
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
+}
+
 type Applicant = {
     name: string;
     phone: string;
@@ -139,6 +152,7 @@ export default function SubmitPageClient({ initialApplicant, initialIsLoggedIn }
         const serviceType = String(formData.get('serviceType') || '');
         const namingFamilyName = String(formData.get('namingFamilyName') || '').trim();
         const applicationPassword = getValue('applicationPassword');
+        const applicantPhone = getValue('applicantPhone');
 
         const validateTarget = (prefix: 'target1' | 'target2') => {
             const birthDate = getValue(`${prefix}BirthDate`);
@@ -178,7 +192,9 @@ export default function SubmitPageClient({ initialApplicant, initialIsLoggedIn }
         const target1Message = validateTarget('target1');
         const target2Message = validateTarget('target2');
 
-        if (!isLoggedIn && applicationPassword && applicationPassword.length < 4) {
+        if (applicantPhone.length < 10 || applicantPhone.length > 11) {
+            message = '전화번호는 숫자 10~11자리로 입력해주세요.';
+        } else if (!isLoggedIn && applicationPassword && applicationPassword.length < 4) {
             message = '신청서 확인 비밀번호는 4자 이상 입력해주세요.';
         } else if (target1Message) {
             message = target1Message;
@@ -230,6 +246,16 @@ export default function SubmitPageClient({ initialApplicant, initialIsLoggedIn }
             </section>
 
             <section className="px-5 py-8 sm:px-6 lg:px-10">
+                <div className="mx-auto mb-4 flex max-w-6xl flex-col gap-3 rounded-md border border-[#ded4c8] bg-white/72 px-5 py-4 text-sm shadow-[0_10px_30px_rgba(70,54,36,0.05)] sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                    <p className="font-medium text-[#4f4338]">이미 상담신청 하셨나요?</p>
+                    <Link
+                        href={isLoggedIn ? '/my/applications' : '/submit/lookup'}
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-[#b1844d] px-4 text-sm font-semibold text-[#6f4d27] transition-colors hover:bg-[#fffaf2]"
+                    >
+                        내 신청서 확인하기
+                        <ArrowRight className="h-4 w-4" />
+                    </Link>
+                </div>
                 <form action={formAction} onSubmit={validateBeforeSubmit} className="mx-auto max-w-6xl rounded-lg border border-[#ded4c8] bg-white/78 p-6 shadow-[0_18px_55px_rgba(70,54,36,0.08)] sm:p-8 lg:p-10">
                     <FormRow title="신청인 정보" description="상담 예약 및 신청서 확인에 필요한 정보를 입력해주세요.">
                         <div className="grid gap-6 lg:grid-cols-2">
@@ -241,13 +267,10 @@ export default function SubmitPageClient({ initialApplicant, initialIsLoggedIn }
                                 value={applicant.name}
                                 onChange={(value) => setApplicant((current) => ({ ...current, name: value }))}
                             />
-                            <TextField
-                                label="전화번호"
+                            <PhoneField
                                 name="applicantPhone"
-                                placeholder="예) 010-1234-5678"
-                                required
                                 value={applicant.phone}
-                                onChange={(value) => setApplicant((current) => ({ ...current, phone: value }))}
+                                onChange={(value) => setApplicant((current) => ({ ...current, phone: normalizePhoneNumber(value) }))}
                             />
                             <TextField
                                 label="이메일"
@@ -486,6 +509,34 @@ function TextField({
                 required={required}
                 value={value}
                 onChange={onChange ? (event) => onChange(event.target.value) : undefined}
+                className={inputClassName}
+            />
+        </div>
+    );
+}
+
+function PhoneField({
+    name,
+    value,
+    onChange,
+}: {
+    name: string;
+    value: string;
+    onChange: (value: string) => void;
+}) {
+    return (
+        <div>
+            <FieldLabel required>전화번호</FieldLabel>
+            <input type="hidden" name={name} value={normalizePhoneNumber(value)} />
+            <input
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel"
+                placeholder="예) 010-1234-5678"
+                required
+                value={formatPhoneNumber(value)}
+                onChange={(event) => onChange(event.target.value)}
+                maxLength={13}
                 className={inputClassName}
             />
         </div>

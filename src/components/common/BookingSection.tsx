@@ -49,7 +49,7 @@ export default function BookingSection() {
                                     </div>
 
                                     <a
-                                        href="https://booking.naver.com/booking/6/bizes/167387"
+                                        href="https://booking.naver.com/booking/6/bizes/167387/items/5603981"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="group mt-8 inline-flex h-13 w-full max-w-sm items-center justify-center gap-2 bg-[#C8A46B] px-7 font-sans text-sm font-bold text-[#1a1815] transition-colors hover:bg-[#d7b57c] lg:w-auto"

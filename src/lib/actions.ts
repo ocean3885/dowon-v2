@@ -1,6 +1,6 @@
 'use server';
 
-import { randomBytes, scryptSync } from 'crypto';
+import { randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 import { createClient, createAdminClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
@@ -37,6 +37,24 @@ type ConsultationTarget = {
 
 type ServiceDetails = Record<string, string | null>;
 
+export type GuestSubmitApplication = {
+    id: number;
+    applicant_name: string;
+    applicant_phone: string;
+    service_type: string;
+    service_details: ServiceDetails | null;
+    consultation_targets: ConsultationTarget[] | null;
+    concern: string | null;
+    status: string;
+    created_at: string;
+};
+
+export type LookupGuestApplicationsState = {
+    success: boolean;
+    message: string;
+    applications: GuestSubmitApplication[];
+};
+
 const submitServiceLabels: Record<string, string> = {
     saju: '사주 종합 상담',
     love: '연애 · 결혼 상담',
@@ -63,6 +81,26 @@ function hashApplicationPassword(password: string) {
     const hash = scryptSync(password, salt, 64).toString('hex');
 
     return `${salt}:${hash}`;
+}
+
+function verifyApplicationPassword(password: string, storedHash?: string | null) {
+    if (!storedHash) return false;
+
+    const [salt, hash] = storedHash.split(':');
+    if (!salt || !hash) return false;
+
+    try {
+        const expected = Buffer.from(hash, 'hex');
+        const actual = scryptSync(password, salt, expected.length);
+
+        return expected.length === actual.length && timingSafeEqual(expected, actual);
+    } catch {
+        return false;
+    }
+}
+
+function normalizePhoneNumber(phone: string) {
+    return phone.replace(/\D/g, '').slice(0, 11);
 }
 
 function getFormString(formData: FormData, name: string, fallback = '') {
@@ -140,7 +178,7 @@ export async function submitApplication(
     formData: FormData
 ): Promise<SubmitApplicationState> {
     const applicantName = getFormString(formData, 'applicantName');
-    const applicantPhone = getFormString(formData, 'applicantPhone');
+    const applicantPhone = normalizePhoneNumber(getFormString(formData, 'applicantPhone'));
     const applicantEmail = getFormString(formData, 'applicantEmail');
     const applicationPassword = getFormString(formData, 'applicationPassword');
     const consultationTargets = [buildConsultationTarget(formData, 1), buildConsultationTarget(formData, 2)].filter(
@@ -158,8 +196,12 @@ export async function submitApplication(
         return { success: false, message: '필수 항목을 입력해주세요.' };
     }
 
+    if (applicantPhone.length < 10 || applicantPhone.length > 11) {
+        return { success: false, message: '전화번호는 숫자 10~11자리로 입력해주세요.' };
+    }
+
     if (!user && !applicationPassword) {
-        return { success: false, message: '비회원 신청서 확인 비밀번호를 입력해주세요.' };
+        return { success: false, message: '신청서 확인 비밀번호를 입력해주세요.' };
     }
 
     if (applicationPassword && applicationPassword.length < 4) {
@@ -289,6 +331,74 @@ ${serviceDetailSummary}
     }
 
     redirect('/submit/complete');
+}
+
+type GuestSubmitApplicationRow = GuestSubmitApplication & {
+    application_password_hash: string | null;
+};
+
+export async function lookupGuestApplications(
+    _prevState: LookupGuestApplicationsState,
+    formData: FormData
+): Promise<LookupGuestApplicationsState> {
+    const applicantPhone = normalizePhoneNumber(getFormString(formData, 'applicantPhone'));
+    const applicationPassword = getFormString(formData, 'applicationPassword');
+
+    if (!applicantPhone || !applicationPassword) {
+        return { success: false, message: '전화번호와 비밀번호를 입력해주세요.', applications: [] };
+    }
+
+    if (applicantPhone.length < 10 || applicantPhone.length > 11) {
+        return { success: false, message: '전화번호는 숫자 10~11자리로 입력해주세요.', applications: [] };
+    }
+
+    if (applicationPassword.length < 4) {
+        return { success: false, message: '비밀번호는 4자 이상 입력해주세요.', applications: [] };
+    }
+
+    try {
+        const adminSupabase = await createAdminClient();
+        const { data, error } = await adminSupabase
+            .from('submits')
+            .select('id, applicant_name, applicant_phone, service_type, service_details, consultation_targets, concern, status, created_at, application_password_hash')
+            .eq('applicant_phone', applicantPhone)
+            .is('user_id', null)
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+        if (error) throw error;
+
+        const matchedApplications = ((data || []) as GuestSubmitApplicationRow[])
+            .filter((application) => verifyApplicationPassword(applicationPassword, application.application_password_hash))
+            .map((application) => ({
+                id: application.id,
+                applicant_name: application.applicant_name,
+                applicant_phone: application.applicant_phone,
+                service_type: application.service_type,
+                service_details: application.service_details,
+                consultation_targets: application.consultation_targets,
+                concern: application.concern,
+                status: application.status,
+                created_at: application.created_at,
+            }));
+
+        if (matchedApplications.length === 0) {
+            return {
+                success: false,
+                message: '일치하는 신청서를 찾지 못했습니다. 신청 시 입력한 전화번호와 비밀번호를 확인해주세요.',
+                applications: [],
+            };
+        }
+
+        return {
+            success: true,
+            message: '고객님의 신청서를 찾았습니다.',
+            applications: matchedApplications,
+        };
+    } catch (error) {
+        console.error('Lookup guest applications error:', error);
+        return { success: false, message: '신청서 조회 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.', applications: [] };
+    }
 }
 
 export async function submitLead(formData: FormData) {

@@ -17,7 +17,7 @@ export default function ReservationSection() {
 
                 <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
                     <a
-                        href="https://booking.naver.com/booking/6/bizes/167387"
+                        href="https://booking.naver.com/booking/6/bizes/167387/items/5603981"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="group rounded-lg border border-[#b89768]/45 bg-white/70 p-6 text-center transition-colors hover:bg-white"

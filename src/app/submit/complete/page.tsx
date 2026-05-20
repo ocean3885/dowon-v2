@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { CalendarCheck, Check, Clock3, MessageCircle, MoveRight } from 'lucide-react';
+import { createClient } from '@/utils/supabase/server';
 
 const guideItems = [
     {
@@ -18,12 +19,16 @@ const guideItems = [
     {
         icon: CalendarCheck,
         title: '상담 신청 확인',
-        value: '상담내역',
-        description: '로그인 회원은 상담내역 메뉴에서 확인할 수 있습니다.',
+        value: '신청서 확인',
+        description: '회원은 상담내역에서, 비회원은 신청서 조회에서 확인할 수 있습니다.',
     },
 ];
 
-export default function SubmitCompletePage() {
+export default async function SubmitCompletePage() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const applicationLink = user ? '/my/applications' : '/submit/lookup';
+
     return (
         <main className="min-h-screen overflow-hidden bg-[#f8f2e9] pt-20 text-[#211b16]">
             <section className="relative py-10 md:py-14">
@@ -144,10 +149,10 @@ export default function SubmitCompletePage() {
                             <MoveRight className="h-4 w-4" />
                         </Link>
                         <Link
-                            href="/services"
+                            href={applicationLink}
                             className="inline-flex h-14 w-full items-center justify-center rounded-md border border-[#b1844d] px-8 text-sm font-semibold text-[#6f4d27] transition-colors hover:bg-[#fffaf2] sm:h-16 sm:w-80"
                         >
-                            상담 안내 보기
+                            신청서 확인
                         </Link>
                     </div>
 
