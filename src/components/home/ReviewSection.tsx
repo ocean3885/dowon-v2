@@ -3,6 +3,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import {
     CalendarDays,
     MessageCircle,
@@ -10,7 +11,6 @@ import {
     Users,
     Star
 } from "lucide-react";
-import clsx from "clsx";
 
 const reviews = [
     {
@@ -176,13 +176,13 @@ export default function ReviewSection() {
                             </p>
 
                             <div className="flex flex-col sm:flex-row gap-4">
-                                <button className="h-12 sm:h-14 px-8 bg-[#C8A46B] text-black font-sans font-bold text-sm transition-all hover:bg-[#d7b57c] flex items-center justify-center gap-2">
+                                <Link href="/submit" className="h-12 sm:h-14 px-8 bg-[#C8A46B] text-black font-sans font-bold text-sm transition-all hover:bg-[#d7b57c] flex items-center justify-center gap-2">
                                     상담 신청하기
                                     <span className="text-xl">→</span>
-                                </button>
-                                <button className="h-12 sm:h-14 px-8 border border-white/20 text-white font-sans font-medium text-sm transition-all hover:bg-white/5 flex items-center justify-center">
+                                </Link>
+                                <Link href="/services" className="h-12 sm:h-14 px-8 border border-white/20 text-white font-sans font-medium text-sm transition-all hover:bg-white/5 flex items-center justify-center">
                                     상담 절차 안내
-                                </button>
+                                </Link>
                             </div>
                         </div>
 

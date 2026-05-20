@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import {
     ArrowRight,
     Baby,
@@ -154,15 +155,15 @@ export default function NamingInfoSection() {
 
                                 {/* buttons */}
                                 <div className="flex flex-col gap-2">
-                                    <button className="group flex h-10 md:h-12 lg:h-[50px] items-center justify-center gap-2 rounded-[10px] md:rounded-[12px] bg-gradient-to-r from-[#7b5524] to-[#9b7137] font-sans text-sm sm:text-base font-medium tracking-tight text-white transition-all duration-300 hover:opacity-95">
+                                    <Link href="/submit" className="group flex h-10 md:h-12 lg:h-[50px] items-center justify-center gap-2 rounded-[10px] md:rounded-[12px] bg-gradient-to-r from-[#7b5524] to-[#9b7137] font-sans text-sm sm:text-base font-medium tracking-tight text-white transition-all duration-300 hover:opacity-95">
                                         작명 상담 신청하기
                                         <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                                    </button>
+                                    </Link>
 
-                                    <button className="group flex h-10 md:h-12 lg:h-[50px] items-center justify-center gap-2 rounded-[10px] md:rounded-[12px] border border-[#d9ccbc] bg-white font-sans text-sm sm:text-base font-medium tracking-tight text-[#5a4632] transition-all duration-300 hover:border-[#b28a52]">
+                                    <Link href="/services" className="group flex h-10 md:h-12 lg:h-[50px] items-center justify-center gap-2 rounded-[10px] md:rounded-[12px] border border-[#d9ccbc] bg-white font-sans text-sm sm:text-base font-medium tracking-tight text-[#5a4632] transition-all duration-300 hover:border-[#b28a52]">
                                         상담 절차 보기
                                         <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                                    </button>
+                                    </Link>
                                 </div>
                             </div>
                         </div>

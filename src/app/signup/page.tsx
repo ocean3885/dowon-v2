@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
     Calendar,
     EyeOff,
@@ -14,17 +15,57 @@ import {
 } from "lucide-react";
 import { signup, checkEmailDuplicate } from "@/lib/actions";
 
+const agreementItems = [
+    {
+        key: 'terms',
+        label: "[필수] 서비스 이용약관 동의",
+        required: true,
+        detail: "도원 서비스 이용을 위한 기본 약관입니다. 회원은 상담 신청, 상담 내역 확인 등 제공되는 서비스를 관련 법령과 운영 정책에 따라 이용해야 합니다.",
+    },
+    {
+        key: 'privacy',
+        label: "[필수] 개인정보 수집 및 이용 동의",
+        required: true,
+        detail: "회원가입 및 상담 서비스 제공을 위해 이름, 이메일, 연락처, 생년월일 등의 정보를 수집할 수 있으며, 수집된 정보는 서비스 제공과 본인 확인 목적으로 사용됩니다.",
+    },
+    {
+        key: 'marketing',
+        label: "[선택] 마케팅 정보 수신 동의",
+        required: false,
+        detail: "이벤트, 서비스 안내, 상담 관련 소식 등을 이메일 또는 문자로 받아볼 수 있습니다. 선택 항목이므로 동의하지 않아도 회원가입은 가능합니다.",
+    },
+] as const;
+
 export default function SignupPage() {
+    const router = useRouter();
     const [error, setError] = useState("");
-    const [message, setMessage] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState("");
     const [birthDate, setBirthDate] = useState("");
+    const [agreements, setAgreements] = useState({
+        terms: false,
+        privacy: false,
+        marketing: false,
+    });
+    const [openAgreement, setOpenAgreement] = useState<string | null>(null);
     const [emailCheck, setEmailCheck] = useState<{ status: 'idle' | 'loading' | 'success' | 'error', message: string }>({
         status: 'idle',
         message: ''
     });
+    const isAllAgreed = Object.values(agreements).every(Boolean);
+
+    const handleAgreementChange = (key: keyof typeof agreements, checked: boolean) => {
+        setAgreements((current) => ({ ...current, [key]: checked }));
+    };
+
+    const handleAllAgreementChange = (checked: boolean) => {
+        setAgreements({
+            terms: checked,
+            privacy: checked,
+            marketing: checked,
+        });
+    };
 
     const handleCheckDuplicate = async () => {
         if (!email) {
@@ -46,7 +87,7 @@ export default function SignupPage() {
             } else {
                 setEmailCheck({ status: 'error', message: result.message });
             }
-        } catch (err) {
+        } catch {
             setEmailCheck({ status: 'error', message: '오류가 발생했습니다.' });
         }
     };
@@ -55,7 +96,6 @@ export default function SignupPage() {
         e.preventDefault();
         setIsLoading(true);
         setError("");
-        setMessage("");
 
         const formData = new FormData(e.currentTarget);
 
@@ -110,11 +150,16 @@ export default function SignupPage() {
             return;
         }
 
+        if (!agreements.terms || !agreements.privacy) {
+            setError("필수 약관에 동의해주세요.");
+            setIsLoading(false);
+            return;
+        }
+
         const result = await signup(formData);
 
         if (result.success) {
-            setMessage(result.message || "회원가입이 완료되었습니다. 이메일을 확인해주세요.");
-            setIsLoading(false);
+            router.push("/signup/complete");
         } else {
             setError(result.message || "회원가입 실패");
             setIsLoading(false);
@@ -355,32 +400,47 @@ export default function SignupPage() {
 
                                 <div className="space-y-3 rounded-2xl border border-[#eee6db] bg-[#fcfbf8] p-5">
                                     <label className="flex items-center gap-3 text-[15px] cursor-pointer group">
-                                        <input type="checkbox" className="w-5 h-5 accent-[#b8935f]" required />
+                                        <input
+                                            type="checkbox"
+                                            className="w-5 h-5 accent-[#b8935f]"
+                                            checked={isAllAgreed}
+                                            onChange={(event) => handleAllAgreementChange(event.target.checked)}
+                                        />
                                         <span className="group-hover:text-[#b8935f] transition-colors font-medium">전체 동의합니다.</span>
                                     </label>
 
                                     <div className="h-px bg-[#ece3d8]" />
 
-                                    {[
-                                        "[필수] 서비스 이용약관 동의",
-                                        "[필수] 개인정보 수집 및 이용 동의",
-                                        "[선택] 마케팅 정보 수신 동의",
-                                    ].map((item, idx) => (
+                                    {agreementItems.map((item) => (
                                         <div
-                                            key={idx}
-                                            className="flex items-center justify-between"
+                                            key={item.key}
+                                            className="space-y-2"
                                         >
-                                            <label className="flex items-center gap-3 text-[15px] text-[#4f483f] cursor-pointer">
-                                                <input type="checkbox" className="w-4 h-4 accent-[#b8935f]" required={item.includes("필수")} />
-                                                {item}
-                                            </label>
+                                            <div className="flex items-center justify-between">
+                                                <label className="flex items-center gap-3 text-[15px] text-[#4f483f] cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        className="w-4 h-4 accent-[#b8935f]"
+                                                        required={item.required}
+                                                        checked={agreements[item.key]}
+                                                        onChange={(event) => handleAgreementChange(item.key, event.target.checked)}
+                                                    />
+                                                    {item.label}
+                                                </label>
 
-                                            <button
-                                                type="button"
-                                                className="text-sm text-[#8b7d69] underline"
-                                            >
-                                                보기
-                                            </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setOpenAgreement((current) => current === item.key ? null : item.key)}
+                                                    className="text-sm text-[#8b7d69] underline"
+                                                >
+                                                    {openAgreement === item.key ? "닫기" : "보기"}
+                                                </button>
+                                            </div>
+                                            {openAgreement === item.key && (
+                                                <div className="rounded-xl border border-[#eadfce] bg-white/70 px-4 py-3 text-sm leading-6 text-[#6a635a]">
+                                                    {item.detail}
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>
@@ -389,9 +449,6 @@ export default function SignupPage() {
                             {/* feedback messages */}
                             {error && (
                                 <p className="text-red-500 text-sm text-center bg-red-50 py-3 rounded-xl border border-red-100">{error}</p>
-                            )}
-                            {message && (
-                                <p className="text-emerald-600 text-sm text-center bg-emerald-50 py-3 rounded-xl border border-emerald-100">{message}</p>
                             )}
 
                             {/* submit */}

@@ -173,14 +173,12 @@ function ConsultationSection() {
                                     <div className="font-sans">
                                         <strong className="text-xl font-semibold text-[#17130f]">{item.price}</strong>
                                     </div>
-                                    <a
-                                        href="https://booking.naver.com/booking/6/bizes/167387"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                    <Link
+                                        href="/submit"
                                         className="mt-5 inline-flex h-10 w-full items-center justify-center bg-[#a77b45] font-sans text-sm font-medium text-white transition-colors hover:bg-[#8f683b]"
                                     >
                                         상담 신청
-                                    </a>
+                                    </Link>
                                     <Link href={`/services/${item.slug}`} className="mt-2 inline-flex h-10 w-full items-center justify-center border border-[#b89768]/45 font-sans text-sm text-[#7a5a32] transition-colors hover:bg-[#f3eadf]">
                                         자세히 보기
                                     </Link>
@@ -375,21 +373,19 @@ function CtaSection() {
                 </div>
 
                 <div className="flex flex-col gap-4 sm:flex-row lg:min-w-[520px]">
-                    <a
-                        href="https://booking.naver.com/booking/6/bizes/167387"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    <Link
+                        href="/submit"
                         className="inline-flex min-h-[58px] flex-1 items-center justify-center gap-3 bg-[#b2864d] px-6 py-4 font-sans text-sm font-semibold leading-none text-white transition-colors hover:bg-[#c79a5d] sm:min-h-[52px] sm:px-8 sm:py-0"
                     >
                         상담 신청하기
                         <ArrowRight className="h-4 w-4" />
-                    </a>
+                    </Link>
                     <a
                         href="tel:063-285-7255"
                         className="inline-flex min-h-[58px] flex-1 items-center justify-center gap-3 border border-[#b2864d]/60 px-6 py-4 font-sans text-sm font-semibold leading-none text-[#ead6ba] transition-colors hover:bg-white/5 sm:min-h-[52px] sm:px-8 sm:py-0"
                     >
                         예약 문의하기
-                        <Send className="h-4 w-4" />
+                        <Phone className="h-4 w-4" />
                     </a>
                 </div>
             </div>

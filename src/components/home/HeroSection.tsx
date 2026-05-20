@@ -2,6 +2,7 @@
 
 "use client";
 
+import Link from "next/link";
 import {
     BookOpen,
     ShieldCheck,
@@ -67,15 +68,15 @@ export default function HeroSection() {
 
                         {/* CTA */}
                         <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center md:mt-12 lg:justify-start">
-                            <button className="flex h-14 w-full items-center justify-center gap-3 rounded-sm bg-[#C8A46B] px-8 text-base font-sans font-bold text-black transition hover:bg-[#d7b57c] sm:h-16 sm:w-auto sm:px-10 sm:text-lg">
+                            <Link href="/submit" className="flex h-14 w-full items-center justify-center gap-3 rounded-sm bg-[#C8A46B] px-8 text-base font-sans font-bold text-black transition hover:bg-[#d7b57c] sm:h-16 sm:w-auto sm:px-10 sm:text-lg">
                                 <Calendar className="h-5 w-5" />
                                 상담 신청
-                            </button>
+                            </Link>
 
-                            <button className="flex h-14 w-full items-center justify-center gap-3 rounded-sm border border-white/15 bg-white/[0.02] px-8 text-base font-sans font-medium text-white transition hover:border-[#C8A46B]/50 hover:bg-white/[0.04] sm:h-16 sm:w-auto sm:px-10 sm:text-lg">
+                            <Link href="/services" className="flex h-14 w-full items-center justify-center gap-3 rounded-sm border border-white/15 bg-white/[0.02] px-8 text-base font-sans font-medium text-white transition hover:border-[#C8A46B]/50 hover:bg-white/[0.04] sm:h-16 sm:w-auto sm:px-10 sm:text-lg">
                                 상담 분야 보기
                                 <span>→</span>
-                            </button>
+                            </Link>
                         </div>
                     </div>
 

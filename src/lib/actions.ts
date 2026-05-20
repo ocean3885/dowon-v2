@@ -423,6 +423,31 @@ export async function deleteConsultation(id: number) {
     }
 }
 
+export async function deleteSubmitApplication(id: number) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { success: false, message: '로그인이 필요합니다.' };
+    }
+
+    try {
+        const adminSupabase = await createAdminClient();
+        const { error } = await adminSupabase
+            .from('submits')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        revalidatePath('/my/applications');
+        return { success: true, message: '삭제되었습니다.' };
+    } catch (error) {
+        console.error('Submit application delete error:', error);
+        return { success: false, message: '삭제 중 오류가 발생했습니다.' };
+    }
+}
+
 export async function checkEmailDuplicate(email: string) {
     if (!email) return { success: false, message: '이메일을 입력해주세요.' };
     

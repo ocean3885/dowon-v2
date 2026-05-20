@@ -1,29 +1,29 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { CalendarCheck, Check, Clock3, MessageCircle, MoveRight } from 'lucide-react';
+import { CalendarCheck, Check, Clock3, MailCheck, MoveRight } from 'lucide-react';
 
 const guideItems = [
     {
-        icon: Clock3,
-        title: '평균 답변 시간',
-        value: '약 1~3시간',
-        description: '원장님 상황에 따라 달라질 수 있습니다.',
+        icon: MailCheck,
+        title: '이메일 인증',
+        value: '메일함 확인',
+        description: '가입한 이메일로 발송된 인증 메일을 확인해주세요.',
     },
     {
-        icon: MessageCircle,
-        title: '안내 방법',
-        value: '문자 또는 연락처',
-        description: '남겨주신 연락처로 안내드리겠습니다.',
+        icon: Clock3,
+        title: '인증 유효 시간',
+        value: '메일 안내 기준',
+        description: '메일이 보이지 않으면 스팸함도 함께 확인해주세요.',
     },
     {
         icon: CalendarCheck,
-        title: '상담 신청 확인',
-        value: '상담내역',
-        description: '로그인 회원은 상담내역 메뉴에서 확인할 수 있습니다.',
+        title: '가입 후 이용',
+        value: '로그인',
+        description: '인증 완료 후 도원의 상담 서비스를 이용할 수 있습니다.',
     },
 ];
 
-export default function SubmitCompletePage() {
+export default function SignupCompletePage() {
     return (
         <main className="min-h-screen overflow-hidden bg-[#f8f2e9] pt-20 text-[#211b16]">
             <section className="relative py-10 md:py-14">
@@ -56,9 +56,9 @@ export default function SubmitCompletePage() {
                             <Check className="h-6 w-6" strokeWidth={1.5} />
                         </div>
                         <h1 className="mt-5 font-serif text-3xl font-light leading-[1.3] tracking-normal text-[#211b16] break-keep md:text-5xl">
-                            상담 신청이
+                            회원가입이
                             <br />
-                            접수되었습니다
+                            완료되었습니다
                         </h1>
                         <div className="mx-auto mt-5 flex w-24 items-center justify-center gap-3">
                             <span className="h-px flex-1 bg-[#b1844d]" />
@@ -66,12 +66,12 @@ export default function SubmitCompletePage() {
                             <span className="h-px flex-1 bg-[#b1844d]" />
                         </div>
                         <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-[#554b42] break-keep md:text-lg">
-                            입력해주신 내용을 바탕으로 도원에서 차분히 상담을 준비하겠습니다.
+                            도원과 함께할 준비가 완료되었습니다. 이메일 인증을 마치면 서비스를 이용할 수 있습니다.
                         </p>
                     </div>
                 </div>
 
-                <div className="relative mt-5 h-[300px] w-full sm:h-[330px] md:mt-7 md:h-[360px]">
+                <div className="relative mt-12 h-[300px] w-full sm:h-[330px] md:mt-14 md:h-[360px]">
                     <div className="absolute bottom-0 left-0 h-28 w-56 opacity-[0.34] sm:h-36 sm:w-72 md:h-44 md:w-[360px]">
                         <Image
                             src="/bg_source/bg_mount1.webp"
@@ -95,15 +95,15 @@ export default function SubmitCompletePage() {
                     <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 flex-col items-center sm:bottom-4 md:bottom-5">
                         <div className="relative h-60 w-72 sm:h-[272px] sm:w-80">
                             <Image
-                                src="/bg_source/crane_writer.webp"
+                                src="/bg_source/crane_messenger.webp"
                                 alt=""
                                 fill
                                 sizes="(min-width: 640px) 320px, 288px"
-                                className="object-contain drop-shadow-[0_20px_45px_rgba(120,84,44,0.18)]"
+                                className="object-contain px-2 py-4 drop-shadow-[0_20px_45px_rgba(120,84,44,0.18)] sm:py-5"
                             />
                         </div>
                         <p className="mt-2 text-center font-serif text-lg text-[#6f4d27] break-keep sm:text-xl">
-                            당신의 흐름을 차분히 살펴보고 있습니다.
+                            새로운 흐름을 차분히 열어가겠습니다.
                         </p>
                         <div className="relative mt-2 h-6 w-6 opacity-[0.82] sm:h-8 sm:w-8">
                             <Image
@@ -137,17 +137,17 @@ export default function SubmitCompletePage() {
 
                     <div className="my-9 flex flex-col items-center justify-center gap-3 sm:my-10 sm:flex-row">
                         <Link
-                            href="/"
-                            className="inline-flex h-14 w-full items-center justify-center gap-3 rounded-md bg-[#bd8a4c] px-8 text-sm font-semibold text-white transition-colors hover:bg-[#aa793d] sm:h-16 sm:w-80"
+                            href="/login"
+                            className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-md bg-[#bd8a4c] px-8 text-sm font-semibold text-white transition-colors hover:bg-[#aa793d] sm:h-14 sm:w-80"
                         >
-                            메인으로 돌아가기
+                            로그인하러 가기
                             <MoveRight className="h-4 w-4" />
                         </Link>
                         <Link
-                            href="/services"
-                            className="inline-flex h-14 w-full items-center justify-center rounded-md border border-[#b1844d] px-8 text-sm font-semibold text-[#6f4d27] transition-colors hover:bg-[#fffaf2] sm:h-16 sm:w-80"
+                            href="/"
+                            className="inline-flex h-12 w-full items-center justify-center rounded-md border border-[#b1844d] px-8 text-sm font-semibold text-[#6f4d27] transition-colors hover:bg-[#fffaf2] sm:h-14 sm:w-80"
                         >
-                            상담 안내 보기
+                            메인으로 돌아가기
                         </Link>
                     </div>
 

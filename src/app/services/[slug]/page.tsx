@@ -160,15 +160,13 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
                             </ul>
                         </div>
 
-                        <a
-                            href="https://booking.naver.com/booking/6/bizes/167387"
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        <Link
+                            href="/submit"
                             className="mt-8 inline-flex min-h-[52px] w-full items-center justify-center gap-3 bg-[#a77b45] px-6 font-sans text-sm font-semibold text-white transition-colors hover:bg-[#8f683b]"
                         >
                             상담 신청하기
                             <ArrowRight className="h-4 w-4" />
-                        </a>
+                        </Link>
                     </aside>
                 </div>
             </section>

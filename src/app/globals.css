@@ -18,6 +18,10 @@
 
 @variant dark (&:where(.dark, .dark *));
 
+:root {
+  color-scheme: light;
+}
+
 /* Custom Utilities */
 .writing-vertical-rl {
   writing-mode: vertical-rl;

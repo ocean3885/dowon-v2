@@ -251,7 +251,7 @@ export default function Header({ initialUser }: { initialUser: User | null }) {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: "100%" }}
                         transition={{ duration: 0.3, type: "tween" }}
-                        className="fixed inset-0 z-40 bg-stone-950 flex flex-col items-center justify-center space-y-8 nav820:hidden"
+                        className="fixed inset-0 z-40 flex flex-col items-center gap-5 overflow-y-auto bg-stone-950 px-6 pb-8 pt-28 nav820:hidden"
                     >
                         {navItems.map((item) => (
                             <Link
@@ -259,7 +259,7 @@ export default function Header({ initialUser }: { initialUser: User | null }) {
                                 href={item.href}
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className={clsx(
-                                    "text-2xl font-sans font-bold tracking-widest",
+                                    "font-sans text-xl font-bold tracking-[0.18em]",
                                     pathname === item.href ? "text-amber-500" : "text-stone-300"
                                 )}
                             >
@@ -267,38 +267,38 @@ export default function Header({ initialUser }: { initialUser: User | null }) {
                             </Link>
                         ))}
                         {user ? (
-                            <div className="flex flex-col items-center gap-6 w-full px-8">
-                                <div className="flex flex-col items-center gap-3 py-6 border-b border-stone-800 w-full">
-                                    <div className="w-20 h-20 rounded-full bg-stone-800 border-2 border-amber-500/30 overflow-hidden shadow-xl flex items-center justify-center text-stone-400">
+                            <div className="mt-2 flex w-full max-w-sm flex-col items-center gap-4 border-t border-stone-800 pt-5">
+                                <div className="flex w-full items-center gap-3 rounded-2xl bg-stone-900/55 px-4 py-3">
+                                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-amber-500/30 bg-stone-800 text-stone-400 shadow-xl">
                                         {user.user_metadata?.avatar_url ? (
                                             <Image
                                                 src={user.user_metadata.avatar_url}
                                                 alt="Profile"
-                                                width={80}
-                                                height={80}
+                                                width={48}
+                                                height={48}
                                                 className="w-full h-full object-cover"
                                             />
                                         ) : (
-                                            <UserIcon size={40} />
+                                            <UserIcon size={24} />
                                         )}
                                     </div>
-                                    <div className="text-center">
-                                        <h3 className="text-xl font-bold text-stone-100">{user.user_metadata?.full_name || user.email?.split('@')[0]}</h3>
-                                        <p className="text-sm text-stone-500 mt-1">{user.email}</p>
+                                    <div className="min-w-0 text-left">
+                                        <h3 className="truncate text-sm font-bold text-stone-100">{user.user_metadata?.full_name || user.email?.split('@')[0]}</h3>
+                                        <p className="mt-0.5 truncate text-xs text-stone-500">{user.email}</p>
                                     </div>
                                 </div>
-                                <div className="flex flex-col gap-4 w-full">
+                                <div className="grid w-full gap-2">
                                     <Link
                                         href="/profile"
                                         onClick={() => setIsMobileMenuOpen(false)}
-                                        className="flex items-center justify-center gap-3 px-8 py-3 bg-stone-900 text-stone-300 rounded-full text-lg font-bold tracking-widest hover:bg-stone-800 transition-colors"
+                                        className="flex h-10 items-center justify-center gap-3 rounded-full bg-stone-900 px-6 text-sm font-bold tracking-widest text-stone-300 transition-colors hover:bg-stone-800"
                                     >
                                         프로필
                                     </Link>
                                     <Link
                                         href="/my/applications"
                                         onClick={() => setIsMobileMenuOpen(false)}
-                                        className="flex items-center justify-center gap-3 px-8 py-3 bg-stone-900 text-stone-300 rounded-full text-lg font-bold tracking-widest hover:bg-stone-800 transition-colors"
+                                        className="flex h-10 items-center justify-center gap-3 rounded-full bg-stone-900 px-6 text-sm font-bold tracking-widest text-stone-300 transition-colors hover:bg-stone-800"
                                     >
                                         상담내역
                                     </Link>
@@ -306,7 +306,7 @@ export default function Header({ initialUser }: { initialUser: User | null }) {
                                         <Link
                                             href="/admin"
                                             onClick={() => setIsMobileMenuOpen(false)}
-                                            className="flex items-center justify-center gap-3 px-8 py-3 border border-amber-500/30 text-amber-500 rounded-full text-lg font-bold tracking-widest hover:bg-amber-500/10 transition-colors"
+                                            className="flex h-10 items-center justify-center gap-3 rounded-full border border-amber-500/30 px-6 text-sm font-bold tracking-widest text-amber-500 transition-colors hover:bg-amber-500/10"
                                         >
                                             관리자 페이지
                                         </Link>
@@ -316,9 +316,9 @@ export default function Header({ initialUser }: { initialUser: User | null }) {
                                             handleLogout();
                                             setIsMobileMenuOpen(false);
                                         }}
-                                        className="flex items-center justify-center gap-3 px-8 py-3 border border-red-900/30 text-red-400 rounded-full text-lg font-bold tracking-widest hover:bg-red-950/20 transition-colors"
+                                        className="flex h-10 items-center justify-center gap-3 rounded-full border border-red-900/30 px-6 text-sm font-bold tracking-widest text-red-400 transition-colors hover:bg-red-950/20"
                                     >
-                                        LOGOUT <LogOut size={18} />
+                                        LOGOUT <LogOut size={16} />
                                     </button>
                                 </div>
                             </div>

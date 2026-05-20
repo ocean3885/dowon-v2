@@ -41,7 +41,7 @@ export default function LoginPage() {
                 alt="tree left top"
                 width={300}
                 height={300}
-                className="pointer-events-none absolute top-10 left-0 opacity-40 md:opacity-50 w-[200px] md:w-[300px] lg:w-[300px] z-0"
+                className="pointer-events-none absolute top-10 left-0 z-0 h-auto w-[200px] opacity-40 md:w-[300px] md:opacity-50 lg:w-[300px]"
                 style={{ height: 'auto' }}
             />
 
@@ -51,7 +51,7 @@ export default function LoginPage() {
                 alt="mountain left bottom"
                 width={700}
                 height={700}
-                className="pointer-events-none absolute bottom-0 left-0 opacity-30 md:opacity-40 w-[220px] md:w-[400px] lg:w-[550px]"
+                className="pointer-events-none absolute bottom-0 left-0 h-auto w-[220px] opacity-30 md:w-[400px] md:opacity-40 lg:w-[550px]"
                 style={{ height: 'auto' }}
             />
 
@@ -61,7 +61,7 @@ export default function LoginPage() {
                 alt="mountain right"
                 width={500}
                 height={500}
-                className="pointer-events-none absolute bottom-0 right-0 opacity-30 md:opacity-40 w-[200px] md:w-[350px] lg:w-[500px]"
+                className="pointer-events-none absolute bottom-0 right-0 h-auto w-[200px] opacity-30 md:w-[350px] md:opacity-40 lg:w-[500px]"
                 style={{ height: 'auto' }}
             />
 
