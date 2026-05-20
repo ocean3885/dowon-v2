@@ -144,7 +144,7 @@ function buildServiceDetails(formData: FormData, serviceType: string): ServiceDe
 
     return {
         familyName: getFormString(formData, 'namingFamilyName'),
-        generationNameUsage: getFormString(formData, 'namingGenerationNameUsage', 'use'),
+        generationNameUsage: getFormString(formData, 'namingGenerationNameUsage', 'none'),
         generationName: getFormString(formData, 'namingGenerationName') || null,
         preferredNames: getFormString(formData, 'namingPreferredNames') || null,
         hanjaUsage: getFormString(formData, 'namingHanjaUsage', 'optional'),

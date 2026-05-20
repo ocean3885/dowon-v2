@@ -36,7 +36,7 @@ export default async function RecentPostsSection() {
     return (
         <section className="relative overflow-hidden bg-[#f6f2eb] py-12 font-serif antialiased md:py-16 lg:py-20">
             <div
-                className="absolute inset-0 bg-cover bg-no-repeat bg-left opacity-30 pointer-events-none md:bg-center md:opacity-40"
+                className="absolute inset-0 bg-cover bg-no-repeat bg-left opacity-30 pointer-events-none md:bg-center"
                 style={{ backgroundImage: 'url("/home/right_blur_bg_bright.webp")' }}
             />
             <div className="absolute right-0 top-0 h-full w-[45%] bg-[radial-gradient(circle_at_right,rgba(207,170,109,0.18),transparent_62%)] pointer-events-none" />

@@ -609,8 +609,8 @@ function NamingDetailFields() {
                 <div>
                     <FieldLabel required>돌림자 여부</FieldLabel>
                     <div className="grid grid-cols-2 gap-3">
-                        <Segment name="namingGenerationNameUsage" value="use" label="사용" defaultChecked />
-                        <Segment name="namingGenerationNameUsage" value="none" label="없음" />
+                        <Segment name="namingGenerationNameUsage" value="use" label="사용" />
+                        <Segment name="namingGenerationNameUsage" value="none" label="없음" defaultChecked />
                     </div>
                     <input
                         name="namingGenerationName"

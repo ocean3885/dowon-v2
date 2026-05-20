@@ -112,7 +112,7 @@ export default function LookupPageClient() {
                     </div>
                 </div>
 
-                <form action={formAction} className="mt-8 rounded-lg border border-[#ded4c8] bg-white/82 p-5 shadow-[0_12px_35px_rgba(70,54,36,0.06)] sm:p-6">
+                <form action={formAction} autoComplete="off" className="mt-8 rounded-lg border border-[#ded4c8] bg-white/82 p-5 shadow-[0_12px_35px_rgba(70,54,36,0.06)] sm:p-6">
                     <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
                         <label>
                             <span className="mb-2 flex items-center gap-2 text-sm font-semibold text-[#5f554c]">
@@ -123,7 +123,7 @@ export default function LookupPageClient() {
                             <input
                                 type="tel"
                                 inputMode="numeric"
-                                autoComplete="tel"
+                                autoComplete="off"
                                 placeholder="신청 시 입력한 전화번호"
                                 required
                                 value={formatPhoneNumber(phone)}
@@ -140,6 +140,7 @@ export default function LookupPageClient() {
                             <input
                                 name="applicationPassword"
                                 type="password"
+                                autoComplete="new-password"
                                 placeholder="4자 이상"
                                 minLength={4}
                                 required

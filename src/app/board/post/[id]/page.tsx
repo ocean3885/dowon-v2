@@ -7,20 +7,7 @@ import { notFound } from 'next/navigation';
 async function getPostData(id: string) {
     const supabase = await createClient();
 
-    // Increment view count using rpc or update
-    // We'll use update for simplicity if we don't have a custom function
-    const { data: currentPost } = await supabase
-        .from('posts')
-        .select('view_count')
-        .eq('id', id)
-        .single();
-
-    if (currentPost) {
-        await supabase
-            .from('posts')
-            .update({ view_count: (currentPost.view_count || 0) + 1 })
-            .eq('id', id);
-    }
+    await supabase.rpc('increment_post_view', { post_id: Number(id) });
 
     const { data: post, error } = await supabase
         .from('posts')
