@@ -7,6 +7,24 @@ import DeleteBoardPostButton from '@/components/admin/DeleteBoardPostButton';
 
 export const dynamic = 'force-dynamic';
 
+type AdminPostRow = {
+    id: number;
+    title: string;
+    author: string | null;
+    view_count: number | null;
+    published_at: string | null;
+    categories?: { name?: string | null } | null;
+};
+
+type AdminPost = {
+    id: number;
+    title: string;
+    author: string | null;
+    viewCount: number;
+    publishedAt: string;
+    categoryName: string | null;
+};
+
 async function getAdminPosts(page: number, limit: number) {
     const supabase = await createClient();
     const from = (page - 1) * limit;
@@ -27,11 +45,11 @@ async function getAdminPosts(page: number, limit: number) {
 
     if (error) throw error;
 
-    const posts = (postsData || []).map((post: any) => ({
+    const posts: AdminPost[] = ((postsData || []) as AdminPostRow[]).map((post) => ({
         ...post,
-        viewCount: post.view_count,
-        publishedAt: post.published_at,
-        categoryName: post.categories?.name
+        viewCount: post.view_count ?? 0,
+        publishedAt: post.published_at || new Date().toISOString(),
+        categoryName: post.categories?.name || null
     }));
 
     return { posts, totalPosts: count || 0 };
@@ -100,7 +118,7 @@ export default async function AdminBoardPage(props: {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-stone-100">
-                            {posts.map((post: any) => (
+                            {posts.map((post) => (
                                 <tr key={post.id} className="hover:bg-stone-50">
                                     <td className="px-6 py-4 text-stone-500 text-sm">{post.id}</td>
                                     <td className="px-6 py-4 text-stone-600 text-sm">
@@ -144,7 +162,7 @@ export default async function AdminBoardPage(props: {
 
                 {/* Mobile Card View */}
                 <div className="block md:hidden">
-                    {posts.map((post: any) => (
+                    {posts.map((post) => (
                         <div key={post.id} className="p-4 border-b border-stone-100 space-y-3">
                             <div className="flex justify-between items-start">
                                 <span className="bg-stone-100 text-stone-600 px-2 py-1 rounded text-xs">

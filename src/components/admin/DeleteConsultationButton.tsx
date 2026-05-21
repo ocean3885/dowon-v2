@@ -2,9 +2,11 @@
 
 import { deleteConsultation } from '@/lib/actions';
 import { Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
 export default function DeleteConsultationButton({ id }: { id: number }) {
+    const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [showConfirm, setShowConfirm] = useState(false);
 
@@ -13,26 +15,27 @@ export default function DeleteConsultationButton({ id }: { id: number }) {
             const result = await deleteConsultation(id);
             if (!result.success) {
                 alert(result.message);
+                return;
             }
             setShowConfirm(false);
+            router.refresh();
         });
     };
 
     if (showConfirm) {
         return (
-            <div className="flex items-center gap-2">
-                <span className="text-xs text-stone-500 font-medium">정말 삭제하시겠습니까?</span>
+            <div className="flex items-center gap-1 rounded-full border border-red-100 bg-red-50 p-0.5">
                 <button
                     onClick={handleDelete}
                     disabled={isPending}
-                    className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 disabled:opacity-50"
+                    className="h-8 rounded-full bg-red-600 px-3 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
                 >
-                    {isPending ? '삭제 중...' : '확인'}
+                    {isPending ? '삭제 중' : '삭제'}
                 </button>
                 <button
                     onClick={() => setShowConfirm(false)}
                     disabled={isPending}
-                    className="text-xs bg-stone-200 text-stone-600 px-2 py-1 rounded hover:bg-stone-300"
+                    className="h-8 rounded-full px-3 text-sm font-semibold text-stone-500 hover:bg-white disabled:opacity-50"
                 >
                     취소
                 </button>
@@ -43,7 +46,7 @@ export default function DeleteConsultationButton({ id }: { id: number }) {
     return (
         <button
             onClick={() => setShowConfirm(true)}
-            className="text-stone-400 hover:text-red-500 transition-colors p-1"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-stone-200 text-stone-400 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-500"
             title="삭제"
         >
             <Trash2 size={16} />

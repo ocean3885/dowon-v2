@@ -1,15 +1,39 @@
 import BoardPostForm from '@/components/admin/BoardPostForm';
-import { getDb } from '@/lib/db';
+import { createClient } from '@/utils/supabase/server';
 import { notFound } from 'next/navigation';
 
 async function getCategories() {
-    const db = await getDb();
-    return db.all('SELECT id, name FROM categories WHERE isActive = 1 ORDER BY displayOrder ASC, id ASC');
+    const supabase = await createClient();
+    const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true })
+        .order('id', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
 }
 
 async function getPost(id: string) {
-    const db = await getDb();
-    return db.get('SELECT id, categoryId, title, content, author, imageUrl, thumbnailUrl FROM posts WHERE id = ?', id);
+    const supabase = await createClient();
+    const { data, error } = await supabase
+        .from('posts')
+        .select('id, category_id, title, content, author, image_url, thumbnail_url')
+        .eq('id', id)
+        .single();
+
+    if (error || !data) return null;
+
+    return {
+        id: data.id,
+        categoryId: data.category_id,
+        title: data.title,
+        content: data.content,
+        author: data.author,
+        imageUrl: data.image_url,
+        thumbnailUrl: data.thumbnail_url,
+    };
 }
 
 export default async function EditPostPage({ params }: { params: Promise<{ id: string }> }) {

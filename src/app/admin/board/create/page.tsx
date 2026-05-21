@@ -1,9 +1,17 @@
 import BoardPostForm from '@/components/admin/BoardPostForm';
-import { getDb } from '@/lib/db';
+import { createClient } from '@/utils/supabase/server';
 
 async function getCategories() {
-    const db = await getDb();
-    return db.all('SELECT id, name FROM categories WHERE isActive = 1 ORDER BY displayOrder ASC, id ASC');
+    const supabase = await createClient();
+    const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true })
+        .order('id', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
 }
 
 export default async function CreatePostPage() {

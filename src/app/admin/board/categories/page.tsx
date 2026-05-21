@@ -2,8 +2,18 @@
 
 import { useState, useEffect } from 'react';
 
+type Category = {
+    id: number;
+    name: string;
+    displayOrder: number;
+    postLimit: number;
+    isActive: boolean;
+};
+
+type CategoryUpdateField = 'name' | 'displayOrder' | 'postLimit' | 'isActive';
+
 export default function CategoryManagePage() {
-    const [categories, setCategories] = useState<any[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(false);
     const [newCategory, setNewCategory] = useState({ name: '', displayOrder: 0, postLimit: 5 });
 
@@ -17,7 +27,7 @@ export default function CategoryManagePage() {
         fetchCategories();
     }, []);
 
-    const handleUpdate = async (id: number, field: string, value: any) => {
+    const handleUpdate = async (id: number, field: CategoryUpdateField, value: string | number | boolean) => {
         await fetch('/api/categories', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },

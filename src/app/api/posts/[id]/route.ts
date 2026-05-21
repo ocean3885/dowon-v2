@@ -1,6 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDb } from '@/lib/db';
+import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
+
+type PostRow = {
+    id: number;
+    category_id: number | null;
+    title: string;
+    content: string;
+    author: string | null;
+    view_count: number | null;
+    image_url: string | null;
+    thumbnail_url: string | null;
+    published_at: string | null;
+    updated_at: string | null;
+    categories?: { name?: string | null } | null;
+};
+
+function mapPost(row: PostRow) {
+    return {
+        ...row,
+        categoryId: row.category_id,
+        categoryName: row.categories?.name,
+        viewCount: row.view_count ?? 0,
+        imageUrl: row.image_url,
+        thumbnailUrl: row.thumbnail_url,
+        publishedAt: row.published_at,
+        updatedAt: row.updated_at,
+    };
+}
 
 export async function GET(
     request: NextRequest,
@@ -9,24 +36,21 @@ export async function GET(
     const param = await params;
     const id = param.id;
 
-    const db = await getDb();
+    const supabase = await createClient();
 
-    // Increment view count
-    await db.run('UPDATE posts SET viewCount = viewCount + 1 WHERE id = ?', id);
+    await supabase.rpc('increment_post_view', { post_id: Number(id) });
 
-    const post = await db.get(
-        `SELECT p.*, c.name as categoryName 
-     FROM posts p 
-     LEFT JOIN categories c ON p.categoryId = c.id 
-     WHERE p.id = ?`,
-        id
-    );
+    const { data, error } = await supabase
+        .from('posts')
+        .select('*, categories(name)')
+        .eq('id', id)
+        .single();
 
-    if (!post) {
+    if (error || !data) {
         return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
 
-    return NextResponse.json(post);
+    return NextResponse.json(mapPost(data as PostRow));
 }
 
 export async function PUT(
@@ -37,26 +61,27 @@ export async function PUT(
     const id = param.id;
     const body = await request.json();
     const { categoryId, title, content, author, imageUrl, thumbnailUrl } = body;
-    const db = await getDb();
+    const supabase = await createClient();
 
-    const updates = [];
-    const values = [];
+    const updates: Record<string, string | number | null> = {};
 
-    if (categoryId) { updates.push('categoryId = ?'); values.push(categoryId); }
-    if (title) { updates.push('title = ?'); values.push(title); }
-    if (content) { updates.push('content = ?'); values.push(content); }
-    if (author) { updates.push('author = ?'); values.push(author); }
-    if (imageUrl !== undefined) { updates.push('imageUrl = ?'); values.push(imageUrl); }
-    if (thumbnailUrl !== undefined) { updates.push('thumbnailUrl = ?'); values.push(thumbnailUrl); }
+    if (categoryId) updates.category_id = Number(categoryId);
+    if (title) updates.title = title;
+    if (content) updates.content = content;
+    if (author) updates.author = author;
+    if (imageUrl !== undefined) updates.image_url = imageUrl;
+    if (thumbnailUrl !== undefined) updates.thumbnail_url = thumbnailUrl;
 
-    updates.push('updatedAt = CURRENT_TIMESTAMP');
+    updates.updated_at = new Date().toISOString();
 
-    values.push(id);
+    const { error } = await supabase
+        .from('posts')
+        .update(updates)
+        .eq('id', id);
 
-    await db.run(
-        `UPDATE posts SET ${updates.join(', ')} WHERE id = ?`,
-        ...values
-    );
+    if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
 
     revalidatePath('/');
     revalidatePath('/board');
@@ -72,17 +97,26 @@ export async function DELETE(
 ) {
     const param = await params;
     const id = param.id;
-    const db = await getDb();
+    const supabase = await createClient();
 
-    // Fetch the post before deleting to get its images
-    const post = await db.get('SELECT * FROM posts WHERE id = ?', id);
+    const { data: post, error: getError } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('id', id)
+        .single();
     
-    if (!post) {
+    if (getError || !post) {
         return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
 
-    // Delete from DB
-    await db.run('DELETE FROM posts WHERE id = ?', id);
+    const { error: deleteError } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', id);
+
+    if (deleteError) {
+        return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    }
 
     // Delete image files using fs
     try {
@@ -90,8 +124,8 @@ export async function DELETE(
         const path = await import('path');
         const urlsToDelete = new Set<string>();
 
-        if (post.imageUrl) urlsToDelete.add(post.imageUrl);
-        if (post.thumbnailUrl) urlsToDelete.add(post.thumbnailUrl);
+        if (post.image_url) urlsToDelete.add(post.image_url);
+        if (post.thumbnail_url) urlsToDelete.add(post.thumbnail_url);
 
         if (post.content) {
             const imgRegex = /<img[^>]+src="([^">]+)"/g;
@@ -110,7 +144,7 @@ export async function DELETE(
                     const u = new URL(rawUrl);
                     parsedUrl = u.pathname;
                 }
-            } catch (e) {}
+            } catch {}
 
             const url = decodeURIComponent(parsedUrl);
 
@@ -119,8 +153,9 @@ export async function DELETE(
                 const filePath = path.join(publicDir, url);
                 try {
                     await unlink(filePath);
-                } catch (e: any) {
-                    console.error('Failed to delete image file:', filePath, e.message);
+                } catch (e: unknown) {
+                    const message = e instanceof Error ? e.message : String(e);
+                    console.error('Failed to delete image file:', filePath, message);
                 }
                 
                 // Cleanup automatically generated thumbnails for this image as well
@@ -130,7 +165,7 @@ export async function DELETE(
                     const thumbUrl = `${directory}/${parsed.name}_thumb.jpg`;
                     const thumbPath = path.join(publicDir, thumbUrl);
                     await unlink(thumbPath);
-                } catch (e) {
+                } catch {
                     // Ignore errors for thumbnails not found
                 }
             }

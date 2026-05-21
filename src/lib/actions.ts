@@ -55,25 +55,18 @@ export type LookupGuestApplicationsState = {
     applications: GuestSubmitApplication[];
 };
 
-const submitServiceLabels: Record<string, string> = {
-    saju: '사주 종합 상담',
-    love: '연애 · 결혼 상담',
-    career: '진로 · 직업 상담',
-    wealth: '사업 · 재물 상담',
-    naming: '작명 · 개명 상담',
-    moving: '이사 · 택일 상담',
-};
-
-const calendarTypeLabels: Record<string, string> = {
-    solar: '양력',
-    lunar: '음력',
-    leap_lunar: '음력윤달',
-};
-
-const birthTimeAccuracyLabels: Record<string, string> = {
-    exact: '알고 있음',
-    approximate: '대략 앎',
-    unknown: '모름',
+export type AdminSubmitApplication = {
+    id: number;
+    name: string;
+    contact: string;
+    email: string | null;
+    birthDate: string | null;
+    createdAt: string;
+    notes: string | null;
+    serviceType: string;
+    serviceDetails: ServiceDetails | null;
+    consultationTargets: ConsultationTarget[] | null;
+    status: string;
 };
 
 function hashApplicationPassword(password: string) {
@@ -105,6 +98,16 @@ function normalizePhoneNumber(phone: string) {
 
 function getFormString(formData: FormData, name: string, fallback = '') {
     return String(formData.get(name) || fallback).trim();
+}
+
+function buildSiteUrl(headersList: Headers) {
+    const configuredUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    if (configuredUrl) return configuredUrl.replace(/\/$/, '');
+
+    const host = headersList.get('x-forwarded-host') || headersList.get('host');
+    const protocol = headersList.get('x-forwarded-proto') || 'https';
+
+    return host ? `${protocol}://${host}` : 'http://localhost:3000';
 }
 
 function buildBirthTime(formData: FormData, prefix: string) {
@@ -151,26 +154,6 @@ function buildServiceDetails(formData: FormData, serviceType: string): ServiceDe
         avoidedNames: getFormString(formData, 'namingAvoidedNames') || null,
         additionalRequests: getFormString(formData, 'namingAdditionalRequests') || null,
     };
-}
-
-function formatServiceDetailsForSms(details: ServiceDetails | null) {
-    if (!details) return '';
-
-    const generationNameUsage = details.generationNameUsage === 'none' ? '없음' : '사용';
-    const hanjaUsageLabels: Record<string, string> = {
-        required: '필수',
-        optional: '상관없음',
-        hangul: '한글 이름',
-    };
-
-    return `
-작명/개명 세부:
-성: ${details.familyName || '미입력'}
-돌림자: ${generationNameUsage}${details.generationName ? ` (${details.generationName})` : ''}
-선호 이름: ${details.preferredNames || '미입력'}
-한자 사용: ${details.hanjaUsage ? hanjaUsageLabels[details.hanjaUsage] || details.hanjaUsage : '미입력'}
-피하고 싶은 이름/한자: ${details.avoidedNames || '미입력'}
-추가 요청: ${details.additionalRequests || '미입력'}`;
 }
 
 export async function submitApplication(
@@ -241,6 +224,7 @@ export async function submitApplication(
     const forwardedFor = headersList.get('x-forwarded-for');
     const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : 'unknown';
     const userAgent = headersList.get('user-agent') || null;
+    const siteUrl = buildSiteUrl(headersList);
 
     try {
         const adminSupabase = await createAdminClient();
@@ -280,7 +264,8 @@ export async function submitApplication(
             };
         }
 
-        const { error: insertError } = await adminSupabase
+        const adminViewToken = randomBytes(24).toString('hex');
+        const { data: insertedApplication, error: insertError } = await adminSupabase
             .from('submits')
             .insert({
                 applicant_name: applicantName,
@@ -295,32 +280,17 @@ export async function submitApplication(
                 privacy_agreed: privacyAgreed,
                 ip_address: ip,
                 user_agent: userAgent,
-            });
+                admin_view_token: adminViewToken,
+            })
+            .select('id, admin_view_token')
+            .single();
 
         if (insertError) throw insertError;
 
-        const serviceName = submitServiceLabels[serviceType] || serviceType;
-        const serviceDetailSummary = formatServiceDetailsForSms(serviceDetails);
-        const targetSummary = consultationTargets
-            .map((target, index) => {
-                const targetName = target.name || '이름 미입력';
-                const calendarTypeName = calendarTypeLabels[target.calendarType] || target.calendarType;
-                const genderName = target.gender === 'male' ? '남성' : '여성';
-                const timeAccuracyName = birthTimeAccuracyLabels[target.birthTimeAccuracy] || target.birthTimeAccuracy;
-
-                return `${index + 1}. ${targetName} / ${target.birthDate}(${calendarTypeName}) / ${genderName} / ${timeAccuracyName}${target.birthTime ? ` ${target.birthTime}` : ''}`;
-            })
-            .join('\n');
+        const detailUrl = `${siteUrl}/submit/applications/${insertedApplication?.admin_view_token || adminViewToken}`;
 
         await sendSMS(`[도원 상담신청]
-신청인: ${applicantName}
-연락처: ${applicantPhone}
-이메일: ${applicantEmail || '미입력'}
-상담대상:
-${targetSummary}
-상담종류: ${serviceName}
-${serviceDetailSummary}
-내용: ${concern.substring(0, 500)}${concern.length > 500 ? '...' : ''}`);
+상세확인: ${detailUrl}`);
 
         revalidatePath('/submit');
         revalidatePath('/my/applications');
@@ -519,7 +489,7 @@ export async function deleteConsultation(id: number) {
 
     try {
         const { error } = await supabase
-            .from('consultations')
+            .from('submits')
             .delete()
             .eq('id', id);
         
@@ -530,6 +500,39 @@ export async function deleteConsultation(id: number) {
     } catch (error) {
         console.error('Delete error:', error);
         return { success: false, message: '삭제 중 오류가 발생했습니다.' };
+    }
+}
+
+export async function updateSubmitStatus(id: number, status: string) {
+    const allowedStatuses = ['pending', 'contacted', 'completed', 'cancelled'];
+    if (!allowedStatuses.includes(status)) {
+        return { success: false, message: '올바르지 않은 진행 상태입니다.' };
+    }
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        return { success: false, message: 'Unauthorized' };
+    }
+
+    try {
+        const { error } = await supabase
+            .from('submits')
+            .update({
+                status,
+                updated_at: new Date().toISOString(),
+            })
+            .eq('id', id);
+
+        if (error) throw error;
+
+        revalidatePath('/admin');
+        revalidatePath('/my/applications');
+        revalidatePath('/submit/lookup');
+        return { success: true, message: '진행 상태가 변경되었습니다.' };
+    } catch (error) {
+        console.error('Status update error:', error);
+        return { success: false, message: '진행 상태 변경 중 오류가 발생했습니다.' };
     }
 }
 
@@ -713,122 +716,35 @@ export async function getConsultations() {
     }
 
     const { data, error } = await supabase
-        .from('consultations')
-        .select('*')
+        .from('submits')
+        .select('id, applicant_name, applicant_phone, applicant_email, service_type, service_details, consultation_targets, concern, status, created_at')
         .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data;
-}
-
-// Blog Actions
-
-export async function createBlogPost(formData: FormData) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, message: 'Unauthorized' };
-
-    const title = formData.get('title') as string;
-    const summary = formData.get('summary') as string;
-    const contentUrl = formData.get('contentUrl') as string;
-    const thumbnailUrl = formData.get('thumbnailUrl') as string;
-    const category = formData.get('category') as string;
-    const publishedDate = formData.get('publishedDate') as string;
-
-    if (!title || !contentUrl) {
-        return { success: false, message: '제목과 링크는 필수입니다.' };
-    }
-
-    try {
-        const { error } = await supabase
-            .from('blog_posts')
-            .insert({
-                title,
-                summary,
-                content_url: contentUrl,
-                thumbnail_url: thumbnailUrl,
-                category,
-                published_date: publishedDate
-            });
-
-        if (error) throw error;
-
-        revalidatePath('/admin/blog');
-        revalidatePath('/');
-        return { success: true, message: '게시물이 등록되었습니다.' };
-    } catch (error) {
-        console.error('Blog create error:', error);
-        return { success: false, message: '등록 실패' };
-    }
-}
-
-export async function updateBlogPost(formData: FormData) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, message: 'Unauthorized' };
-
-    const id = formData.get('id') as string;
-    const title = formData.get('title') as string;
-    const summary = formData.get('summary') as string;
-    const contentUrl = formData.get('contentUrl') as string;
-    const thumbnailUrl = formData.get('thumbnailUrl') as string;
-    const category = formData.get('category') as string;
-    const publishedDate = formData.get('publishedDate') as string;
-
-    if (!id || !title || !contentUrl) {
-        return { success: false, message: '필수 항목을 입력해주세요.' };
-    }
-
-    try {
-        const { error } = await supabase
-            .from('blog_posts')
-            .update({
-                title,
-                summary,
-                content_url: contentUrl,
-                thumbnail_url: thumbnailUrl,
-                category,
-                published_date: publishedDate
-            })
-            .eq('id', id);
-
-        if (error) throw error;
-
-        revalidatePath('/admin/blog');
-        revalidatePath('/');
-        return { success: true, message: '게시물이 수정되었습니다.' };
-    } catch (error) {
-        console.error('Blog update error:', error);
-        return { success: false, message: '수정 실패' };
-    }
-}
-
-export async function getBlogPosts() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Unauthorized');
-
-    const { data, error } = await supabase
-        .from('blog_posts')
-        .select('*')
-        .order('published_date', { ascending: false })
-        .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return data;
-}
-
-export async function getSelectedBlogPosts() {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-        .from('blog_posts')
-        .select('*')
-        .eq('is_selected', true)
-        .order('published_date', { ascending: false })
-        .limit(4);
-
-    if (error) throw error;
-    return data;
+    return ((data || []) as Array<{
+        id: number;
+        applicant_name: string;
+        applicant_phone: string;
+        applicant_email: string | null;
+        service_type: string;
+        service_details: ServiceDetails | null;
+        consultation_targets: ConsultationTarget[] | null;
+        concern: string | null;
+        status: string;
+        created_at: string;
+    }>).map((application): AdminSubmitApplication => ({
+        id: application.id,
+        name: application.applicant_name,
+        contact: application.applicant_phone,
+        email: application.applicant_email,
+        birthDate: application.consultation_targets?.[0]?.birthDate || null,
+        createdAt: application.created_at,
+        notes: application.concern,
+        serviceType: application.service_type,
+        serviceDetails: application.service_details,
+        consultationTargets: application.consultation_targets,
+        status: application.status,
+    }));
 }
 
 export async function getRecentPosts() {
@@ -855,58 +771,6 @@ export async function getRecentPosts() {
         updatedAt: post.updated_at,
         viewCount: post.view_count,
     }));
-}
-
-export async function toggleBlogPostSelection(id: number) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false };
-
-    try {
-        const { data: post, error: getError } = await supabase
-            .from('blog_posts')
-            .select('is_selected')
-            .eq('id', id)
-            .single();
-
-        if (getError) throw getError;
-
-        const newState = !post.is_selected;
-
-        const { error: updateError } = await supabase
-            .from('blog_posts')
-            .update({ is_selected: newState })
-            .eq('id', id);
-
-        if (updateError) throw updateError;
-
-        revalidatePath('/admin/blog');
-        revalidatePath('/');
-        return { success: true };
-    } catch (error) {
-        return { success: false };
-    }
-}
-
-export async function deleteBlogPost(id: number) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false };
-
-    try {
-        const { error } = await supabase
-            .from('blog_posts')
-            .delete()
-            .eq('id', id);
-
-        if (error) throw error;
-
-        revalidatePath('/admin/blog');
-        revalidatePath('/');
-        return { success: true };
-    } catch (error) {
-        return { success: false };
-    }
 }
 
 export async function deleteBoardPost(id: number) {
@@ -945,8 +809,8 @@ export async function deleteBoardPost(id: number) {
             const path = await import('path');
             const urlsToDelete = new Set<string>();
 
-            if (post.imageUrl) urlsToDelete.add(post.imageUrl);
-            if (post.thumbnailUrl) urlsToDelete.add(post.thumbnailUrl);
+            if (post.image_url) urlsToDelete.add(post.image_url);
+            if (post.thumbnail_url) urlsToDelete.add(post.thumbnail_url);
 
             if (post.content) {
                 const imgRegex = /<img[^>]+src="([^">]+)"/g;
