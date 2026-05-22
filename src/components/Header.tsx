@@ -17,7 +17,7 @@ const navItems = [
     { name: '상담안내', href: '/services' },
     { name: '상담신청', href: '/submit' },
     { name: '인명용한자', href: '/hanja' },
-    { name: '만세력', href: '/calendar' },
+    { name: '만세력', href: '/bazi' },
     { name: '게시판', href: '/board' },
 ];
 
