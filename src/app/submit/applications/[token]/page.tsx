@@ -96,7 +96,7 @@ export default async function SubmitApplicationDetailPage({ params }: { params: 
     const application = data as SubmitDetail;
 
     return (
-        <main className="min-h-screen bg-stone-50 px-4 py-8 text-stone-800 sm:px-6">
+        <main className="min-h-screen bg-stone-50 px-4 pb-8 pt-28 text-stone-800 sm:px-6">
             <article className="mx-auto max-w-4xl rounded-lg border border-stone-200 bg-white p-5 shadow-sm sm:p-7">
                 <header className="border-b border-stone-100 pb-5">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">

@@ -111,7 +111,6 @@ export default async function HanjaPage(props: {
 
             <section className="relative mx-auto -mt-12 w-[min(1280px,calc(100%-32px))]">
                 <HanjaFilterPanel
-                    key={`hanja-filter-${strokes ?? 'all'}`}
                     search={search}
                     soundValue={sound.value}
                     elementValue={element.value}

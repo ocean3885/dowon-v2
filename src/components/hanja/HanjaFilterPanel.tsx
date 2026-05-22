@@ -20,6 +20,16 @@ type HanjaFilterPanelProps = {
 };
 
 const MAX_STROKES = 30;
+const strokeOptions = Array.from({ length: MAX_STROKES }, (_, index) => index + 1);
+const strokeGroups = [
+    { label: '1-5획', min: 1, max: 5 },
+    { label: '6-10획', min: 6, max: 10 },
+    { label: '11-15획', min: 11, max: 15 },
+    { label: '16-20획', min: 16, max: 20 },
+    { label: '21-30획', min: 21, max: MAX_STROKES },
+] as const;
+
+type StrokeGroup = (typeof strokeGroups)[number];
 
 export default function HanjaFilterPanel({
     search,
@@ -30,7 +40,8 @@ export default function HanjaFilterPanel({
     elementGroups,
 }: HanjaFilterPanelProps) {
     const router = useRouter();
-    const [strokes, setStrokes] = useState(activeStrokes ?? MAX_STROKES);
+    const [openStrokeGroup, setOpenStrokeGroup] = useState<StrokeGroup | null>(() => getStrokeGroup(activeStrokes));
+    const activeStrokeGroup = getStrokeGroup(activeStrokes);
 
     const applyFilter = (next: { sound?: string; element?: string; strokes?: number | null }) => {
         const query = new URLSearchParams();
@@ -44,7 +55,7 @@ export default function HanjaFilterPanel({
         if (nextStrokes !== null) query.set('strokes', String(nextStrokes));
 
         const serialized = query.toString();
-        router.push(serialized ? `/hanja?${serialized}` : '/hanja');
+        router.push(serialized ? `/hanja?${serialized}` : '/hanja', { scroll: false });
     };
 
     return (
@@ -84,7 +95,7 @@ export default function HanjaFilterPanel({
                     </div>
                 </FilterRow>
 
-                <div className="grid gap-4 border-t border-[#f0e7dc] pt-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+                <div className="grid gap-4 border-t border-[#f0e7dc] pt-4">
                     <FilterRow label="오행">
                         <div className="flex flex-wrap gap-2">
                             {elementGroups.map((group) => (
@@ -101,33 +112,43 @@ export default function HanjaFilterPanel({
                         </div>
                     </FilterRow>
 
-                    <FilterRow label="획수">
-                        <div className="grid w-full gap-2">
-                            <div className="flex items-center justify-between gap-3 text-xs font-semibold text-[#65584a]">
-                                <span>1획</span>
-                                <div className="flex items-center gap-2">
-                                    <span>{activeStrokes === null ? '전체' : `${strokes}획`}</span>
-                                    {activeStrokes !== null && (
-                                        <button
-                                            type="button"
-                                            onClick={() => applyFilter({ strokes: null })}
-                                            className="rounded-full border border-[#dfd0be] px-2 py-0.5 text-[#7d6650] transition-colors hover:bg-[#f7efe4]"
-                                        >
-                                            해제
-                                        </button>
-                                    )}
-                                </div>
+                    <FilterRow label="획수" separated>
+                        <div className="grid w-full gap-3">
+                            <div className="flex flex-wrap gap-2">
+                                <StrokeChoice
+                                    label="전체"
+                                    selected={activeStrokes === null}
+                                    onClick={() => {
+                                        setOpenStrokeGroup(null);
+                                        applyFilter({ strokes: null });
+                                    }}
+                                />
+                                {strokeGroups.map((group) => (
+                                    <StrokeChoice
+                                        key={group.label}
+                                        label={group.label}
+                                        selected={activeStrokeGroup?.label === group.label}
+                                        expanded={openStrokeGroup?.label === group.label}
+                                        onClick={() => setOpenStrokeGroup(group)}
+                                    />
+                                ))}
                             </div>
-                            <input
-                                type="range"
-                                min="1"
-                                max={MAX_STROKES}
-                                value={strokes}
-                                onChange={(event) => setStrokes(Number(event.target.value))}
-                                onPointerUp={(event) => applyFilter({ strokes: Number(event.currentTarget.value) })}
-                                onKeyUp={(event) => applyFilter({ strokes: Number(event.currentTarget.value) })}
-                                className="h-2 w-full cursor-pointer accent-[#ad7b42]"
-                            />
+
+                            {openStrokeGroup && (
+                                <div className="rounded-md border border-[#eee3d8] bg-[#fcfaf6] p-2.5">
+                                    <div className="grid grid-cols-5 gap-2 sm:grid-cols-6">
+                                        {getStrokeOptions(openStrokeGroup).map((stroke) => (
+                                            <StrokeChoice
+                                                key={stroke}
+                                                label={`${stroke}획`}
+                                                selected={activeStrokes === stroke}
+                                                onClick={() => applyFilter({ strokes: stroke })}
+                                                compact
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </FilterRow>
                 </div>
@@ -136,9 +157,50 @@ export default function HanjaFilterPanel({
     );
 }
 
-function FilterRow({ label, children }: { label: string; children: ReactNode }) {
+function StrokeChoice({
+    label,
+    selected,
+    onClick,
+    compact = false,
+    expanded = false,
+}: {
+    label: string;
+    selected: boolean;
+    onClick: () => void;
+    compact?: boolean;
+    expanded?: boolean;
+}) {
     return (
-        <div className="grid gap-3 md:grid-cols-[72px_minmax(0,1fr)] md:items-center">
+        <button
+            type="button"
+            aria-pressed={selected}
+            aria-expanded={expanded || undefined}
+            onClick={onClick}
+            className={`${compact ? 'h-9 px-1 text-xs' : 'h-9 px-3 text-sm'} rounded-md border transition-colors ${
+                selected
+                    ? 'border-[#b68853] bg-[#f7efe4] font-semibold text-[#48392b]'
+                    : expanded
+                        ? 'border-[#c9a06f] bg-[#fff7ec] text-[#5f4935]'
+                    : 'border-[#eadfd3] bg-[#fffdf9] text-[#786b5e] hover:bg-[#f7efe4]'
+            }`}
+        >
+            {label}
+        </button>
+    );
+}
+
+function getStrokeGroup(strokes: number | null) {
+    if (strokes === null) return null;
+    return strokeGroups.find((group) => strokes >= group.min && strokes <= group.max) || null;
+}
+
+function getStrokeOptions(group: StrokeGroup) {
+    return strokeOptions.filter((stroke) => stroke >= group.min && stroke <= group.max);
+}
+
+function FilterRow({ label, children, separated = false }: { label: string; children: ReactNode; separated?: boolean }) {
+    return (
+        <div className={`${separated ? 'border-t border-[#f0e7dc] pt-4' : ''} grid gap-3 md:grid-cols-[72px_minmax(0,1fr)] md:items-center`}>
             <p className="text-sm font-semibold text-[#534538]">{label}</p>
             {children}
         </div>

@@ -328,7 +328,7 @@ function DirectorSection() {
 function PhilosophySection() {
     return (
         <section className="relative overflow-hidden bg-[#171512] px-6 py-14 text-white lg:px-10">
-            <div className="absolute inset-y-0 left-0 w-1/3 opacity-[0.08] [background-image:radial-gradient(circle_at_0%_50%,#c59a61_0,transparent_42%)]" />
+            <div className="absolute inset-y-0 left-0 w-1/3 opacity-0 [background-image:radial-gradient(circle_at_0%_50%,#c59a61_0,transparent_42%)] sm:opacity-[0.08]" />
 
             <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.9fr_1.25fr] lg:items-center">
                 <div className="border-b border-white/10 pb-10 lg:border-b-0 lg:border-r lg:pb-0 lg:pr-12">
