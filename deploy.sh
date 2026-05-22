@@ -4,7 +4,7 @@ set -e
 
 # Configuration
 # Replace these with your actual server details
-SERVER_IP="1.234.23.176"
+SERVER_IP="1.234.44.174"
 REMOTE_USER="root" # CAUTION: Change this to your actual server username
 REMOTE_DIR="/var/www/dowon-v2" # CAUTION: Change this to your actual project path on the server
 

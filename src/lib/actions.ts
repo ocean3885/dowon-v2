@@ -26,6 +26,11 @@ type SubmitApplicationState = {
     message: string;
 };
 
+export type UpdateProfileState = {
+    success: boolean;
+    message: string;
+};
+
 type ConsultationTarget = {
     name: string | null;
     birthDate: string;
@@ -641,6 +646,87 @@ export async function signup(formData: FormData) {
     }
 
     return { success: true, message: '회원가입 확인 메일을 확인해주세요.' };
+}
+
+export async function updateProfile(
+    _prevState: UpdateProfileState,
+    formData: FormData
+): Promise<UpdateProfileState> {
+    const name = getFormString(formData, 'name');
+    const phone = normalizePhoneNumber(getFormString(formData, 'phone'));
+    const birthDate = getFormString(formData, 'birthDate');
+
+    if (!name) {
+        return { success: false, message: '이름을 입력해주세요.' };
+    }
+
+    if (phone && (phone.length < 10 || phone.length > 11)) {
+        return { success: false, message: '휴대폰 번호는 숫자 10~11자리로 입력해주세요.' };
+    }
+
+    if (birthDate && !/^\d{4}-\d{2}-\d{2}$/.test(birthDate)) {
+        return { success: false, message: '생년월일 형식을 확인해주세요.' };
+    }
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, message: '로그인이 필요합니다.' };
+    }
+
+    const adminSupabase = await createAdminClient();
+    const { error } = await adminSupabase
+        .from('members')
+        .update({
+            name,
+            phone: phone || null,
+            birth_date: birthDate || null,
+        })
+        .eq('id', user.id);
+
+    if (error) {
+        console.error('Profile update error:', error);
+        return { success: false, message: '프로필 저장 중 오류가 발생했습니다.' };
+    }
+
+    const { error: authError } = await supabase.auth.updateUser({
+        data: {
+            full_name: name,
+            phone: phone || null,
+        },
+    });
+
+    if (authError) {
+        console.error('Profile auth metadata update error:', authError);
+    }
+
+    revalidatePath('/profile');
+    revalidatePath('/profile/edit');
+    revalidatePath('/submit');
+
+    return { success: true, message: '프로필을 저장했습니다.' };
+}
+
+export async function deleteAccount() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, message: '로그인이 필요합니다.' };
+    }
+
+    const adminSupabase = await createAdminClient();
+    const { error } = await adminSupabase.auth.admin.deleteUser(user.id);
+
+    if (error) {
+        console.error('Account delete error:', error);
+        return { success: false, message: '회원 탈퇴 중 오류가 발생했습니다.' };
+    }
+
+    await supabase.auth.signOut();
+    revalidatePath('/', 'layout');
+    redirect('/');
 }
 
 export async function login(formData: FormData) {
