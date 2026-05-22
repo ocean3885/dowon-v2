@@ -16,7 +16,7 @@ export default async function AdminLayout({
         redirect('/login');
     }
 
-    // Check role in dowon.members
+    // Check role in members
     const { data: member } = await supabase
         .from('members')
         .select('role')

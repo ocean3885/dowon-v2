@@ -612,7 +612,7 @@ export async function signup(formData: FormData) {
         return { success: false, message: signUpError.message };
     }
 
-    // 2. Add to dowon.members Whitelist
+    // 2. Add to members whitelist
     if (data.user) {
         // Check if this is the first user
         const { count } = await adminSupabase

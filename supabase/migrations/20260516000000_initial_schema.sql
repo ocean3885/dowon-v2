@@ -1,20 +1,19 @@
 -- Initial Migration: Dowon Philosophy Center Schema
--- Created At: 2026-05-16
-
-CREATE SCHEMA IF NOT EXISTS dowon;
+-- Consolidated for a fresh Supabase project using the public schema.
 
 -- 1. Members Table (Whitelist for login)
--- This table identifies who is allowed to access the Dowon project.
-CREATE TABLE IF NOT EXISTS dowon.members (
+CREATE TABLE IF NOT EXISTS public.members (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT UNIQUE NOT NULL,
   name TEXT,
   role TEXT DEFAULT 'admin', -- 'admin', 'staff'
+  phone TEXT,
+  birth_date TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 2. Consultations Table
-CREATE TABLE IF NOT EXISTS dowon.consultations (
+CREATE TABLE IF NOT EXISTS public.consultations (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   name TEXT NOT NULL,
   gender TEXT, -- 'male', 'female'
@@ -30,7 +29,7 @@ CREATE TABLE IF NOT EXISTS dowon.consultations (
 );
 
 -- 3. Categories Table
-CREATE TABLE IF NOT EXISTS dowon.categories (
+CREATE TABLE IF NOT EXISTS public.categories (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   name TEXT NOT NULL,
   display_order INTEGER DEFAULT 0,
@@ -40,9 +39,9 @@ CREATE TABLE IF NOT EXISTS dowon.categories (
 );
 
 -- 4. Posts Table
-CREATE TABLE IF NOT EXISTS dowon.posts (
+CREATE TABLE IF NOT EXISTS public.posts (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  category_id BIGINT REFERENCES dowon.categories(id) ON DELETE SET NULL,
+  category_id BIGINT REFERENCES public.categories(id) ON DELETE SET NULL,
   title TEXT NOT NULL,
   content TEXT NOT NULL,
   author TEXT,
@@ -53,63 +52,174 @@ CREATE TABLE IF NOT EXISTS dowon.posts (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. Blog Posts (External links)
-CREATE TABLE IF NOT EXISTS dowon.blog_posts (
-  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-  title TEXT NOT NULL,
-  summary TEXT,
-  content_url TEXT NOT NULL,
-  thumbnail_url TEXT,
-  category TEXT,
-  published_date TEXT,
-  is_selected BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+-- 5. Inmyunghanja Table
+CREATE TABLE IF NOT EXISTS public.inmyunghanja (
+  pk BIGINT PRIMARY KEY,
+  pron TEXT,
+  char TEXT,
+  main_mean TEXT,
+  tot_stk INTEGER,
+  main_elem TEXT,
+  disused BOOLEAN DEFAULT FALSE,
+  rad_stk INTEGER,
+  rad TEXT,
+  rad_elem TEXT,
+  detail_mean TEXT,
+  meaning TEXT,
+  stk_info TEXT,
+  rad_id INTEGER,
+  no_rad_stk INTEGER,
+  rad_mean TEXT
 );
 
--- Enable RLS (Row Level Security)
-ALTER TABLE dowon.members ENABLE ROW LEVEL SECURITY;
-ALTER TABLE dowon.consultations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE dowon.categories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE dowon.posts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE dowon.blog_posts ENABLE ROW LEVEL SECURITY;
+-- 6. Submit Applications Table
+CREATE TABLE IF NOT EXISTS public.submits (
+  id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  applicant_name TEXT NOT NULL,
+  applicant_phone TEXT NOT NULL,
+  applicant_email TEXT,
+  application_password_hash TEXT,
+  consultation_targets JSONB NOT NULL DEFAULT '[]'::jsonb
+    CHECK (jsonb_typeof(consultation_targets) = 'array'),
+  service_type TEXT NOT NULL
+    CHECK (service_type IN ('saju', 'love', 'career', 'wealth', 'naming', 'moving')),
+  service_details JSONB,
+  concern TEXT,
+  privacy_agreed BOOLEAN NOT NULL DEFAULT FALSE,
+  status TEXT NOT NULL DEFAULT 'pending'
+    CHECK (status IN ('pending', 'contacted', 'completed', 'cancelled')),
+  ip_address TEXT,
+  user_agent TEXT,
+  admin_view_token TEXT UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
--- Create Policies
+CREATE INDEX IF NOT EXISTS submits_created_at_idx
+  ON public.submits (created_at DESC);
+
+CREATE INDEX IF NOT EXISTS submits_user_id_idx
+  ON public.submits (user_id);
+
+CREATE INDEX IF NOT EXISTS submits_phone_idx
+  ON public.submits (applicant_phone);
+
+CREATE INDEX IF NOT EXISTS submits_consultation_targets_idx
+  ON public.submits USING GIN (consultation_targets);
+
+CREATE INDEX IF NOT EXISTS submits_status_idx
+  ON public.submits (status);
+
+CREATE INDEX IF NOT EXISTS submits_admin_view_token_idx
+  ON public.submits (admin_view_token);
+
+-- Enable RLS (Row Level Security)
+ALTER TABLE public.members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.consultations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.inmyunghanja ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.submits ENABLE ROW LEVEL SECURITY;
 
 -- Members: Only authenticated users can see member list
-CREATE POLICY "Allow authenticated to read members" ON dowon.members FOR SELECT TO authenticated USING (TRUE);
+CREATE POLICY "Allow authenticated to read members"
+  ON public.members
+  FOR SELECT
+  TO authenticated
+  USING (TRUE);
 
--- Consultations: Admin (members) can read/delete/manage
-CREATE POLICY "Allow members to manage consultations" ON dowon.consultations FOR ALL TO authenticated 
-  USING (EXISTS (SELECT 1 FROM dowon.members WHERE id = (select auth.uid())));
+-- Consultations: Admin members can read/delete/manage
+CREATE POLICY "Allow members to manage consultations"
+  ON public.consultations
+  FOR ALL
+  TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.members WHERE id = (SELECT auth.uid())));
 
--- Categories: Public read, Admin manage
-CREATE POLICY "Allow public read for categories" ON dowon.categories FOR SELECT USING (TRUE);
-CREATE POLICY "Allow members to manage categories" ON dowon.categories FOR ALL TO authenticated 
-  USING (EXISTS (SELECT 1 FROM dowon.members WHERE id = (select auth.uid())));
+-- Categories: Public read, members manage
+CREATE POLICY "Allow public read for categories"
+  ON public.categories
+  FOR SELECT
+  USING (TRUE);
 
--- Posts: Public read, Admin manage
-CREATE POLICY "Allow public read for posts" ON dowon.posts FOR SELECT USING (TRUE);
-CREATE POLICY "Allow members to manage posts" ON dowon.posts FOR ALL TO authenticated 
-  USING (EXISTS (SELECT 1 FROM dowon.members WHERE id = (select auth.uid())));
+CREATE POLICY "Allow members to manage categories"
+  ON public.categories
+  FOR ALL
+  TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.members WHERE id = (SELECT auth.uid())));
 
--- Blog Posts: Public read, Admin manage
-CREATE POLICY "Allow public read for blog_posts" ON dowon.blog_posts FOR SELECT USING (TRUE);
-CREATE POLICY "Allow members to manage blog_posts" ON dowon.blog_posts FOR ALL TO authenticated 
-  USING (EXISTS (SELECT 1 FROM dowon.members WHERE id = (select auth.uid())));
+-- Posts: Public read, members manage
+CREATE POLICY "Allow public read for posts"
+  ON public.posts
+  FOR SELECT
+  USING (TRUE);
+
+CREATE POLICY "Allow members to manage posts"
+  ON public.posts
+  FOR ALL
+  TO authenticated
+  USING (EXISTS (SELECT 1 FROM public.members WHERE id = (SELECT auth.uid())));
+
+-- Inmyunghanja: Public read
+CREATE POLICY "Allow public read for inmyunghanja"
+  ON public.inmyunghanja
+  FOR SELECT
+  USING (TRUE);
+
+-- Submits: staff manage, signed-in users read their own applications
+CREATE POLICY "Allow staff to manage submits"
+  ON public.submits
+  FOR ALL
+  TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM public.members
+      WHERE id = (SELECT auth.uid())
+        AND role IN ('admin', 'staff')
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM public.members
+      WHERE id = (SELECT auth.uid())
+        AND role IN ('admin', 'staff')
+    )
+  );
+
+CREATE POLICY "Allow users to read own submits"
+  ON public.submits
+  FOR SELECT
+  TO authenticated
+  USING (user_id = (SELECT auth.uid()));
 
 -- Initial Data
-INSERT INTO dowon.categories (name, display_order, post_limit, is_active) VALUES 
-('공지사항', 1, 5, TRUE),
-('칼럼', 2, 6, TRUE),
-('자유게시판', 3, 5, TRUE);
+INSERT INTO public.categories (name, display_order, post_limit, is_active) VALUES
+  ('공지사항', 1, 5, TRUE),
+  ('칼럼', 2, 6, TRUE),
+  ('자유게시판', 3, 5, TRUE);
 
--- Grant Permissions (Ensure API and Roles can access the schema)
-GRANT USAGE ON SCHEMA dowon TO anon, authenticated, service_role;
-GRANT ALL ON ALL TABLES IN SCHEMA dowon TO anon, authenticated, service_role;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA dowon TO anon, authenticated, service_role;
-GRANT ALL ON ALL FUNCTIONS IN SCHEMA dowon TO anon, authenticated, service_role;
+-- Atomic post view counter increment function
+CREATE OR REPLACE FUNCTION public.increment_post_view(post_id BIGINT)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  UPDATE public.posts
+  SET view_count = COALESCE(view_count, 0) + 1
+  WHERE id = post_id;
+END;
+$$;
 
--- Future-proof: Grant permissions for any new tables created later
-ALTER DEFAULT PRIVILEGES IN SCHEMA dowon GRANT ALL ON TABLES TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA dowon GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA dowon GRANT ALL ON FUNCTIONS TO anon, authenticated, service_role;
+-- API role permissions
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon, authenticated, service_role;

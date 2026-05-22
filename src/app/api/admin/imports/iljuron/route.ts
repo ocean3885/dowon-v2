@@ -88,10 +88,10 @@ export async function POST(request: NextRequest) {
                     const destFilename = `${Date.now()}_${safeName}.png`;
                     const storagePath = `iljuron/${destFilename}`;
 
-                    // Upload to Supabase Storage (Bucket: 'langbridge')
+                    // Upload to Supabase Storage (Bucket: 'public-assets')
                     const { data: uploadData, error: uploadError } = await supabase
                         .storage
-                        .from('langbridge')
+                        .from('public-assets')
                         .upload(storagePath, fileBuffer, {
                             contentType: 'image/png',
                             upsert: true
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
                         // Get Public URL
                         const { data: publicUrlData } = supabase
                             .storage
-                            .from('langbridge')
+                            .from('public-assets')
                             .getPublicUrl(storagePath);
                         
                         imageUrl = publicUrlData.publicUrl;
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
 
                             const { error: thumbUploadError } = await supabase
                                 .storage
-                                .from('langbridge')
+                                .from('public-assets')
                                 .upload(thumbStoragePath, thumbBuffer, {
                                     contentType: 'image/png',
                                     upsert: true
@@ -129,7 +129,7 @@ export async function POST(request: NextRequest) {
                             if (!thumbUploadError) {
                                 const { data: thumbPublicUrlData } = supabase
                                     .storage
-                                    .from('langbridge')
+                                    .from('public-assets')
                                     .getPublicUrl(thumbStoragePath);
                                 thumbnailUrl = thumbPublicUrlData.publicUrl;
                             }
@@ -193,4 +193,3 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Import failed' }, { status: 500 });
     }
 }
-

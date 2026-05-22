@@ -36,14 +36,15 @@ export default function LoginPage() {
             </svg>
 
             {/* left top tree decor */}
-            <Image
-                src="/login/tree_rt.webp"
-                alt="tree left top"
-                width={300}
-                height={300}
-                className="pointer-events-none absolute top-10 left-0 z-0 h-auto w-[200px] opacity-40 md:w-[300px] md:opacity-50 lg:w-[300px]"
-                style={{ height: 'auto' }}
-            />
+            <div className="pointer-events-none absolute top-10 left-0 z-0 aspect-square w-[200px] opacity-40 md:w-[300px] md:opacity-50">
+                <Image
+                    src="/login/tree_rt.webp"
+                    alt="tree left top"
+                    fill
+                    sizes="(min-width: 768px) 300px, 200px"
+                    className="object-contain object-left-top"
+                />
+            </div>
 
             {/* left bottom mountain */}
             <Image
@@ -56,14 +57,15 @@ export default function LoginPage() {
             />
 
             {/* right mountain */}
-            <Image
-                src="/login/mountain_r.webp"
-                alt="mountain right"
-                width={500}
-                height={500}
-                className="pointer-events-none absolute bottom-0 right-0 h-auto w-[200px] opacity-30 md:w-[350px] md:opacity-40 lg:w-[500px]"
-                style={{ height: 'auto' }}
-            />
+            <div className="pointer-events-none absolute bottom-0 right-0 aspect-square w-[200px] opacity-30 md:w-[350px] md:opacity-40 lg:w-[500px]">
+                <Image
+                    src="/login/mountain_r.webp"
+                    alt="mountain right"
+                    fill
+                    sizes="(min-width: 1024px) 500px, (min-width: 768px) 350px, 200px"
+                    className="object-contain object-right-bottom"
+                />
+            </div>
 
             <section className="relative z-10 mx-auto flex min-h-screen max-w-[1440px] flex-col items-center justify-center gap-12 px-6 py-8 pt-32 md:gap-16 md:px-8 md:pt-40 lg:flex-row lg:gap-20 lg:px-16 lg:py-12 lg:pt-48">
                 {/* LEFT */}
