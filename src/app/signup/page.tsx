@@ -197,14 +197,15 @@ export default function SignupPage() {
                 />
 
                 {/* right mountain */}
-                <Image
-                    src="/login/mountain_r.webp"
-                    alt="mountain right"
-                    width={500}
-                    height={500}
-                    className="pointer-events-none absolute bottom-0 right-0 opacity-30 md:opacity-40 w-[200px] md:w-[350px] lg:w-[500px] z-0"
-                    style={{ height: 'auto' }}
-                />
+                <div className="pointer-events-none absolute bottom-0 right-0 z-0 aspect-square w-[200px] opacity-30 md:w-[350px] md:opacity-40 lg:w-[500px]">
+                    <Image
+                        src="/login/mountain_r.webp"
+                        alt="mountain right"
+                        fill
+                        sizes="(min-width: 1024px) 500px, (min-width: 768px) 350px, 200px"
+                        className="object-contain object-right-bottom"
+                    />
+                </div>
 
                 {/* LEFT */}
                 <div className="relative flex w-full flex-col justify-between overflow-hidden bg-transparent px-8 pt-16 lg:w-[44%] lg:px-16 lg:py-24">

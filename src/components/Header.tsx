@@ -182,7 +182,7 @@ export default function Header({ initialUser }: { initialUser: User | null }) {
                                                 <div className="w-5 h-5 flex items-center justify-center opacity-70">
                                                     <UserIcon size={16} />
                                                 </div>
-                                                프로필
+                                                마이페이지
                                             </Link>
                                             <Link
                                                 href="/my/applications"
@@ -293,7 +293,7 @@ export default function Header({ initialUser }: { initialUser: User | null }) {
                                         onClick={() => setIsMobileMenuOpen(false)}
                                         className="flex h-10 items-center justify-center gap-3 rounded-full bg-stone-900 px-6 text-sm font-bold tracking-widest text-stone-300 transition-colors hover:bg-stone-800"
                                     >
-                                        프로필
+                                        마이페이지
                                     </Link>
                                     <Link
                                         href="/my/applications"

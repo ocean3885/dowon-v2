@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { Sparkles } from 'lucide-react';
-import { createClient } from '@/utils/supabase/client';
-import type { BaziResult, PillarKey } from './types';
+import type { BaziAuthStatus, BaziResult, PillarKey } from './types';
 
 const pillarMeta: Record<PillarKey, { title: string; ganTenGodKey?: string; jiTenGodKey: string }> = {
     time: { title: '시주', ganTenGodKey: 'time_gan', jiTenGodKey: 'time_ji' },
@@ -93,42 +92,11 @@ export function SajuChart({ result }: { result: BaziResult }) {
     );
 }
 
-export function BaziInterpretationCard({ result }: { result: BaziResult }) {
-    const [supabase] = useState(() => createClient());
-    const [authStatus, setAuthStatus] = useState<'checking' | 'guest' | 'member'>('checking');
+export function BaziInterpretationCard({ result, authStatus }: { result: BaziResult; authStatus: BaziAuthStatus }) {
     const [requestStatus, setRequestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [requestMessage, setRequestMessage] = useState('');
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-
-    useEffect(() => {
-        let isMounted = true;
-
-        async function checkUser() {
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                const currentUser = user || (await supabase.auth.getSession()).data.session?.user || null;
-
-                if (isMounted) {
-                    setAuthStatus(currentUser ? 'member' : 'guest');
-                }
-            } catch {
-                if (isMounted) {
-                    setAuthStatus('guest');
-                }
-            }
-        }
-
-        checkUser();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setAuthStatus(session?.user ? 'member' : 'guest');
-        });
-
-        return () => {
-            isMounted = false;
-            subscription.unsubscribe();
-        };
-    }, [supabase]);
+    const isServiceReady = false;
 
     const handleFreeConsultation = async () => {
         if (authStatus !== 'member') return;
@@ -164,7 +132,7 @@ export function BaziInterpretationCard({ result }: { result: BaziResult }) {
             <div className="flex gap-3">
                 <Sparkles className="mt-1 h-6 w-6 shrink-0 text-[#b98451]" strokeWidth={1.4} />
                 <div className="min-w-0 flex-1">
-                    <CardTitle title="무료 사주 원국 해설" body="도원의 명식 분석 기준과 상담 흐름에 맞춘 전용 AI 해석 요청으로 원국 해설을 제공합니다." />
+                    <CardTitle title="무료 사주 원국 해설" body="지금 조회한 만세력 결과를 바탕으로 원국의 구조와 흐름을 자세히 풀어드립니다." />
                 </div>
             </div>
 
@@ -172,11 +140,20 @@ export function BaziInterpretationCard({ result }: { result: BaziResult }) {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                         <p className="mt-1 break-keep text-sm leading-6 text-[#7a6a5c]">
-                            일반적인 AI 질문보다 더 체계적인 형식으로 기본 성향과 흐름을 정리해 가입된 회원 이메일로 보내드립니다.
+                            현재 화면에 표시된 사주 정국, 오행 균형, 합충형파해 정보를 함께 반영해 기본 성향과 흐름을 정리하고 가입된 회원 이메일로 보내드립니다.
                         </p>
                     </div>
 
-                    {authStatus === 'member' ? (
+                    {!isServiceReady ? (
+                        <button
+                            type="button"
+                            disabled
+                            className="inline-flex h-11 shrink-0 cursor-not-allowed items-center justify-center gap-2 rounded-md bg-[#b8aa9c] px-5 text-sm font-semibold text-white opacity-75"
+                        >
+                            <Sparkles className="h-4 w-4" />
+                            무료상담신청
+                        </button>
+                    ) : authStatus === 'member' ? (
                         <button
 	                            type="button"
 	                            onClick={() => setIsConfirmOpen(true)}
@@ -216,7 +193,13 @@ export function BaziInterpretationCard({ result }: { result: BaziResult }) {
                     </p>
                 )}
 
-                {authStatus === 'guest' && (
+                {!isServiceReady ? (
+                    <div className="mt-4 border-t border-[#ead9c8] pt-4">
+                        <p className="break-keep text-sm leading-6 text-[#5d4c3d]">
+                            현재 서비스 준비중입니다.
+                        </p>
+                    </div>
+                ) : authStatus === 'guest' && (
                     <div className="mt-4 border-t border-[#ead9c8] pt-4">
                         <p className="break-keep text-sm leading-6 text-[#5d4c3d]">
                             무료 사주 원국 해설은 회원에게 제공됩니다.{' '}
@@ -233,7 +216,7 @@ export function BaziInterpretationCard({ result }: { result: BaziResult }) {
                     <div className="w-full max-w-md rounded-lg border border-[#eadfd4] bg-[#fffdf9] p-5 shadow-[0_24px_70px_rgba(24,17,11,0.28)]">
                         <h4 id="free-consultation-title" className="font-serif text-xl font-bold tracking-normal text-[#2a2018]">무료상담 신청 안내</h4>
                         <p className="mt-3 break-keep text-sm leading-7 text-[#66584c]">
-                            무료상담은 하루 1회 신청 가능하고, 상담 결과는 마이페이지 및 이메일에서 확인 가능합니다.
+                            현재 조회한 만세력 결과에 대한 자세한 원국 해설을 신청합니다. 무료상담은 하루 1회 신청 가능하고, 상담 결과는 마이페이지 및 이메일에서 확인 가능합니다.
                         </p>
                         <div className="mt-5 flex justify-end gap-2">
                             <button

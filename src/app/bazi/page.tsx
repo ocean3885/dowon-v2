@@ -16,7 +16,8 @@ import {
     Sun,
 } from 'lucide-react';
 import { BaziInterpretationCard, SajuChart } from '@/components/bazi/SajuChart';
-import type { BaziResult, DaewoonItem, PillarKey } from '@/components/bazi/types';
+import type { BaziAuthStatus, BaziResult, DaewoonItem, PillarKey } from '@/components/bazi/types';
+import { createClient } from '@/utils/supabase/client';
 
 type BaziFormValues = {
     year: string;
@@ -139,10 +140,42 @@ const privacyItems = [
 ] as const;
 
 export default function BaziPage() {
+    const [supabase] = useState(() => createClient());
     const [showResult, setShowResult] = useState(false);
     const [result, setResult] = useState<BaziResult | null>(null);
+    const [authStatus, setAuthStatus] = useState<BaziAuthStatus>('checking');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+
+    useEffect(() => {
+        let isMounted = true;
+
+        async function checkUser() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                const currentUser = user || (await supabase.auth.getSession()).data.session?.user || null;
+
+                if (isMounted) {
+                    setAuthStatus(currentUser ? 'member' : 'guest');
+                }
+            } catch {
+                if (isMounted) {
+                    setAuthStatus('guest');
+                }
+            }
+        }
+
+        checkUser();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setAuthStatus(session?.user ? 'member' : 'guest');
+        });
+
+        return () => {
+            isMounted = false;
+            subscription.unsubscribe();
+        };
+    }, [supabase]);
 
     useEffect(() => {
         if (!showResult) return;
@@ -246,7 +279,7 @@ export default function BaziPage() {
                                 <DecadeFlow result={result} />
                                 <ElementBalance result={result} />
                                 <TraitPanel result={result} />
-                                <BaziInterpretationCard result={result} />
+                                <BaziInterpretationCard result={result} authStatus={authStatus} />
                             </div>
 
                             <ConsultationBanner />
@@ -579,7 +612,7 @@ function getInteractionItems(result: BaziResult) {
 }
 
 function dedupeInteractionLabels(key: string, labels: string[]) {
-    if (!['half_haps', 'chungs', 'cheons', 'breaks'].includes(key)) return Array.from(new Set(labels));
+    if (!['six_haps', 'three_haps', 'half_haps', 'chungs', 'cheons', 'breaks', 'punishments'].includes(key)) return Array.from(new Set(labels));
 
     const seen = new Set<string>();
     return labels.filter((label) => {
@@ -596,15 +629,18 @@ function getBranchPairKey(label: string) {
     const branches = label.match(/[子丑寅卯辰巳午未申酉戌亥]/g);
     if (!branches || branches.length < 2) return '';
 
-    return branches.slice(0, 2).sort().join('');
+    return Array.from(new Set(branches)).sort().join('');
 }
 
 function normalizeInteractionByKey(key: string, value: unknown) {
     if (key === 'jahab') return normalizeJahabValue(value);
+    if (key === 'six_haps') return normalizeSixHapsValue(value);
+    if (key === 'three_haps') return normalizeThreeHapsValue(value);
     if (key === 'half_haps') return normalizeHalfHapsValue(value);
     if (key === 'chungs') return normalizeBranchPairValue(value, '충(沖)');
     if (key === 'cheons') return normalizeBranchPairValue(value, '천(穿)');
     if (key === 'breaks') return normalizeBranchPairValue(value, '파(破)');
+    if (key === 'punishments') return normalizePunishmentValue(value);
 
     return normalizeInteractionValue(value);
 }
@@ -674,6 +710,83 @@ function normalizeHalfHapsValue(value: unknown): string[] {
     return normalizeBranchPairValue(value, '반합');
 }
 
+function normalizeSixHapsValue(value: unknown): string[] {
+    return normalizeBranchPairValue(value, '육합');
+}
+
+function normalizeThreeHapsValue(value: unknown): string[] {
+    return normalizeBranchGroupValue(value, '삼합');
+}
+
+function normalizePunishmentValue(value: unknown): string[] {
+    if (!value) return [];
+
+    if (Array.isArray(value)) {
+        return value.flatMap(normalizePunishmentValue);
+    }
+
+    if (typeof value !== 'object') {
+        return normalizeInteractionValue(value);
+    }
+
+    const objectValue = value as Record<string, unknown>;
+    if (objectValue.exists === false || objectValue.active === false) return [];
+
+    const my = extractBranchText(objectValue.my);
+    const withBranch = extractBranchText(objectValue.with);
+    if (my && withBranch) return [`${my}${withBranch} 형(刑)`];
+
+    const explicitBranches = [
+        ...extractBranchTexts(objectValue.branches),
+        ...extractBranchTexts(objectValue.chars),
+        ...extractBranchTexts(objectValue.pair),
+    ];
+
+    if (explicitBranches.length >= 2) {
+        const type = firstInteractionText(objectValue.type) || firstInteractionText(objectValue.name) || firstInteractionText(objectValue.label);
+        return [`${type ? `${type} · ` : ''}${explicitBranches.join('')} 형(刑)`];
+    }
+
+    return Object.entries(objectValue)
+        .filter(([, childValue]) => typeof childValue !== 'boolean')
+        .flatMap(([, childValue]) => normalizePunishmentValue(childValue));
+}
+
+function normalizeBranchGroupValue(value: unknown, suffix: string): string[] {
+    if (!value) return [];
+
+    if (Array.isArray(value)) {
+        const isBranchList = value.every((item) => typeof item !== 'object' || item === null);
+        const branches = uniqueBranches(extractBranchTexts(value));
+        if (isBranchList && branches.length >= 3) return [`${branches.join('')} ${suffix}`];
+
+        return value.flatMap((item) => normalizeBranchGroupValue(item, suffix));
+    }
+
+    if (typeof value !== 'object') {
+        const branches = uniqueBranches(extractBranchTexts(value));
+        return branches.length >= 3 ? [`${branches.join('')} ${suffix}`] : normalizeInteractionValue(value);
+    }
+
+    const objectValue = value as Record<string, unknown>;
+    if (objectValue.exists === false || objectValue.active === false) return [];
+
+    const explicitBranches = uniqueBranches([
+        ...extractBranchTexts(objectValue.branches),
+        ...extractBranchTexts(objectValue.chars),
+        ...extractBranchTexts(objectValue.group),
+        ...extractBranchTexts(objectValue.members),
+    ]);
+
+    if (explicitBranches.length >= 3) {
+        return [`${explicitBranches.join('')} ${suffix}`];
+    }
+
+    return Object.entries(objectValue)
+        .filter(([, childValue]) => typeof childValue !== 'boolean')
+        .flatMap(([, childValue]) => normalizeBranchGroupValue(childValue, suffix));
+}
+
 function normalizeBranchPairValue(value: unknown, suffix: string): string[] {
     if (!value) return [];
 
@@ -707,6 +820,24 @@ function extractBranchText(value: unknown) {
 
     const text = JSON.stringify(value);
     return text.match(/[子丑寅卯辰巳午未申酉戌亥]/)?.[0] || '';
+}
+
+function extractBranchTexts(value: unknown): string[] {
+    if (!value) return [];
+
+    if (Array.isArray(value)) {
+        return value.flatMap(extractBranchTexts);
+    }
+
+    const text = typeof value === 'string' || typeof value === 'number'
+        ? String(value)
+        : JSON.stringify(value);
+
+    return text.match(/[子丑寅卯辰巳午未申酉戌亥]/g) || [];
+}
+
+function uniqueBranches(branches: string[]) {
+    return Array.from(new Set(branches));
 }
 
 function normalizeInteractionValue(value: unknown): string[] {

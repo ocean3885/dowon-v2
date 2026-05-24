@@ -1,5 +1,6 @@
 export type PillarKey = 'time' | 'day' | 'month' | 'year';
 export type PillarDetailKey = PillarKey | 'hour';
+export type BaziAuthStatus = 'checking' | 'guest' | 'member';
 
 export type BaziResult = {
     calendar?: {

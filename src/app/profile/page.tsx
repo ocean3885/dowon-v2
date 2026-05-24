@@ -98,7 +98,7 @@ export default async function ProfilePage() {
                     />
                     <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(22,18,14,0.9),rgba(22,18,14,0.64)_54%,rgba(22,18,14,0.28))]" />
                     <div className="relative max-w-2xl">
-                        <p className="font-serif text-lg text-[#d0a66d]">프로필</p>
+                        <p className="font-serif text-lg text-[#d0a66d]">MYPAGE</p>
                         <h1 className="mt-3 font-serif text-3xl font-light tracking-normal text-white sm:text-4xl">
                             {displayName}님의 마이페이지
                         </h1>
