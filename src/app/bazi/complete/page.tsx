@@ -1,54 +1,33 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { CalendarCheck, Check, Clock3, Landmark, MessageCircle, MoveRight } from 'lucide-react';
+import { CalendarCheck, Check, Clock3, Sparkles, MoveRight } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
 
 const guideItems = [
     {
         icon: Clock3,
-        title: '평균 답변 시간',
-        value: '약 1~3시간',
-        description: '원장님 상황에 따라 달라질 수 있습니다.',
+        title: '분석 소요 시간',
+        value: '약 2~3분',
+        description: 'AI가 사주 원국의 상호작용과 흐름을 깊이 있게 정밀 분석합니다.',
     },
     {
-        icon: MessageCircle,
-        title: '안내 방법',
-        value: '문자 또는 연락처',
-        description: '남겨주신 연락처로 안내드리겠습니다.',
+        icon: Sparkles,
+        title: '해설 제공 방식',
+        value: '마이페이지 보관함',
+        description: '저장된 분석 해설은 마이페이지에서 언제든지 다시 확인하실 수 있습니다.',
     },
     {
         icon: CalendarCheck,
-        title: '상담 신청 확인',
-        value: '신청서 확인',
-        description: '회원은 상담내역에서, 비회원은 신청서 조회에서 확인할 수 있습니다.',
+        title: '하루 신청 제한',
+        value: '매일 1회 제공',
+        description: '무료 사주 원국 해설은 매일 1회 신청하여 조회해 보실 수 있습니다.',
     },
 ];
 
-const paymentAccount = {
-    bank: '하나은행',
-    holder: '김종찬',
-    number: '7029-1100-3499-07',
-};
-
-const servicePaymentInfo: Record<string, { title: string; price: string }> = {
-    saju: { title: '사주 종합 상담', price: '40,000원' },
-    love: { title: '연애 · 결혼 상담', price: '80,000원' },
-    career: { title: '진로 · 직업 상담', price: '40,000원' },
-    wealth: { title: '사업 · 재물 상담', price: '40,000원' },
-    naming: { title: '작명 · 개명 상담', price: '200,000원' },
-    moving: { title: '이사 · 택일 상담', price: '100,000원' },
-};
-
-type SubmitCompletePageProps = {
-    searchParams?: Promise<{ service?: string }>;
-};
-
-export default async function SubmitCompletePage({ searchParams }: SubmitCompletePageProps) {
-    const params = await searchParams;
-    const selectedService = params?.service ? servicePaymentInfo[params.service] : null;
+export default async function BaziCompletePage() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const applicationLink = user ? '/my/applications' : '/submit/lookup';
+    const applicationLink = user ? '/my/bazi-consultations' : '/login';
 
     return (
         <main className="min-h-screen overflow-hidden bg-[#f8f2e9] pt-20 text-[#211b16]">
@@ -82,9 +61,9 @@ export default async function SubmitCompletePage({ searchParams }: SubmitComplet
                             <Check className="h-6 w-6" strokeWidth={1.5} />
                         </div>
                         <h1 className="mt-5 font-serif text-3xl font-light leading-[1.3] tracking-normal text-[#211b16] break-keep md:text-5xl">
-                            상담 신청이
+                            무료 사주 원국 해설
                             <br />
-                            접수되었습니다
+                            신청이 완료되었습니다
                         </h1>
                         <div className="mx-auto mt-5 flex w-24 items-center justify-center gap-3">
                             <span className="h-px flex-1 bg-[#b1844d]" />
@@ -92,13 +71,10 @@ export default async function SubmitCompletePage({ searchParams }: SubmitComplet
                             <span className="h-px flex-1 bg-[#b1844d]" />
                         </div>
                         <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-[#554b42] break-keep md:text-lg">
-                            입력해주신 내용을 바탕으로 도원에서 차분히 상담을 준비하겠습니다.
+                            AI가 명리학 관점으로 사주 원국을 정밀하게 풀이하고 있습니다.
+                            분석 및 작성이 완료되면 마이페이지에서 확인하실 수 있습니다.
                         </p>
                     </div>
-                </div>
-
-                <div className="relative mx-auto mt-7 max-w-6xl px-5 sm:px-6 lg:px-10">
-                    <PaymentNotice selectedService={selectedService} />
                 </div>
 
                 <div className="relative mt-6 h-[300px] w-full sm:h-[330px] md:mt-8 md:h-[360px]">
@@ -168,17 +144,17 @@ export default async function SubmitCompletePage({ searchParams }: SubmitComplet
 
                     <div className="my-9 flex flex-col items-center justify-center gap-3 sm:my-10 sm:flex-row">
                         <Link
-                            href="/"
+                            href={applicationLink}
                             className="inline-flex h-14 w-full items-center justify-center gap-3 rounded-md bg-[#bd8a4c] px-8 text-sm font-semibold text-white transition-colors hover:bg-[#aa793d] sm:h-16 sm:w-80"
                         >
-                            메인으로 돌아가기
+                            마이페이지에서 확인하기
                             <MoveRight className="h-4 w-4" />
                         </Link>
                         <Link
-                            href={applicationLink}
+                            href="/"
                             className="inline-flex h-14 w-full items-center justify-center rounded-md border border-[#b1844d] px-8 text-sm font-semibold text-[#6f4d27] transition-colors hover:bg-[#fffaf2] sm:h-16 sm:w-80"
                         >
-                            신청서 확인
+                            메인으로 돌아가기
                         </Link>
                     </div>
 
@@ -205,58 +181,5 @@ export default async function SubmitCompletePage({ searchParams }: SubmitComplet
                 </div>
             </section>
         </main>
-    );
-}
-
-function PaymentDetail({
-    label,
-    value,
-    description,
-    highlight = false,
-}: {
-    label: string;
-    value: string;
-    description?: string;
-    highlight?: boolean;
-}) {
-    return (
-        <div className="rounded-md border border-[#e3d6c7] bg-white/58 px-4 py-3">
-            <p className="text-xs font-semibold text-[#827467]">{label}</p>
-            <p className={`mt-1 break-keep text-base font-semibold ${highlight ? 'text-[#a87943]' : 'text-[#2a2119]'}`}>
-                {value}
-            </p>
-            {description && <p className="mt-1 text-xs text-[#827467]">{description}</p>}
-        </div>
-    );
-}
-
-function PaymentNotice({ selectedService }: { selectedService: { title: string; price: string } | null }) {
-    return (
-        <div className="rounded-lg border border-[#d7c5b0] bg-[#fffaf2]/76 px-5 py-5 shadow-[0_14px_42px_rgba(70,54,36,0.07)] sm:px-6">
-            <div className="flex flex-col gap-4 sm:flex-row">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#eadbc8] text-[#9b6f3d]">
-                    <Landmark className="h-6 w-6" strokeWidth={1.5} />
-                </div>
-                <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-[#6f4d27]">입금 안내</p>
-                    <div className="mt-3 grid gap-3 md:grid-cols-3">
-                        <PaymentDetail label="상담 종류" value={selectedService?.title || '신청 상담'} />
-                        <PaymentDetail label="상담 비용" value={selectedService?.price || '개별 안내'} highlight />
-                        <PaymentDetail
-                            label="입금 계좌"
-                            value={`${paymentAccount.bank} ${paymentAccount.number}`}
-                            description={`예금주: ${paymentAccount.holder}`}
-                        />
-                    </div>
-                    <p className="mt-2 text-sm leading-7 text-[#554b42] break-keep sm:text-base">
-                        위 상담 비용을 신청인 이름으로 입금해 주세요.
-                        입금 확인이 완료되면 도원에서 상담 준비를 시작하겠습니다.
-                    </p>
-                    <p className="mt-2 text-xs leading-6 text-[#827467] break-keep">
-                        입금자명이 신청인 이름과 다를 경우 확인이 지연될 수 있습니다.
-                    </p>
-                </div>
-            </div>
-        </div>
     );
 }

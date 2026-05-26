@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Sparkles } from 'lucide-react';
 import type { BaziAuthStatus, BaziResult, PillarKey } from './types';
+import { getStoredUserId } from '@/utils/supabase/client';
 
 const pillarMeta: Record<PillarKey, { title: string; ganTenGodKey?: string; jiTenGodKey: string }> = {
     time: { title: '시주', ganTenGodKey: 'time_gan', jiTenGodKey: 'time_ji' },
@@ -92,39 +94,107 @@ export function SajuChart({ result }: { result: BaziResult }) {
     );
 }
 
-export function BaziInterpretationCard({ result, authStatus }: { result: BaziResult; authStatus: BaziAuthStatus }) {
+export function BaziInterpretationCard({
+    result,
+    authStatus,
+    subjectName,
+    birthParams,
+}: {
+    result: BaziResult;
+    authStatus: BaziAuthStatus;
+    subjectName?: string;
+    birthParams?: {
+        year: string;
+        month: string;
+        day: string;
+        hour: string;
+        min: string;
+        sl: string;
+        gen: string;
+    };
+}) {
+    const router = useRouter();
     const [requestStatus, setRequestStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [requestMessage, setRequestMessage] = useState('');
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-    const isServiceReady = false;
+    const [hasSubmittedToday, setHasSubmittedToday] = useState(false);
+    const isServiceReady = true;
+
+    useEffect(() => {
+        if (authStatus !== 'member') return;
+
+        let isMounted = true;
+
+        // 1. Instant synchronous check from browser local storage to prevent duplicate clicks during background request
+        try {
+            const todayStr = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+            const userId = getStoredUserId();
+            if (userId) {
+                const storedDate = localStorage.getItem(`bazi_submitted_date_${userId}`);
+                if (storedDate === todayStr) {
+                    setHasSubmittedToday(true);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to read Bazi submit date from local storage:', e);
+        }
+
+        // 2. Perform deep asynchronous check with the backend status API
+        const checkDailyStatus = async () => {
+            try {
+                const response = await fetch('/api/bazi/free-consultation/status');
+                const data = await response.json();
+                if (isMounted) {
+                    if (data.isAdmin) {
+                        // Administrators have no daily limit. Clear any local state blocks.
+                        setHasSubmittedToday(false);
+                        const userId = getStoredUserId();
+                        if (userId) {
+                            localStorage.removeItem(`bazi_submitted_date_${userId}`);
+                        }
+                    } else if (data.hasRequestedToday) {
+                        setHasSubmittedToday(true);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to check daily free Bazi status:', err);
+            }
+        };
+
+        checkDailyStatus();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [authStatus]);
 
     const handleFreeConsultation = async () => {
         if (authStatus !== 'member') return;
 
-        setRequestStatus('loading');
-        setRequestMessage('');
-
+        // Immediately set local storage submission lock block before redirecting to prevent duplicate clicks
         try {
-            const response = await fetch('/api/bazi/free-consultation', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ result }),
-            });
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data?.message || '무료 해설 신청에 실패했습니다.');
+            const todayStr = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+            const userId = getStoredUserId();
+            if (userId) {
+                localStorage.setItem(`bazi_submitted_date_${userId}`, todayStr);
             }
-
-            setRequestStatus('success');
-            setRequestMessage(data?.message || '무료 사주 원국 해설을 이메일로 발송했습니다.');
-            setIsConfirmOpen(false);
-        } catch (error) {
-            setRequestStatus('error');
-            setRequestMessage(error instanceof Error ? error.message : '무료 해설 신청에 실패했습니다.');
+        } catch (e) {
+            console.error('Failed to set local storage submission block lock:', e);
         }
+
+        setHasSubmittedToday(true);
+        setIsConfirmOpen(false);
+        router.push('/bazi/complete');
+
+        fetch('/api/bazi/free-consultation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ result, subjectName, birthParams }),
+        }).catch((error) => {
+            console.error('Background consultation registration failed:', error);
+        });
     };
 
     return (
@@ -132,7 +202,7 @@ export function BaziInterpretationCard({ result, authStatus }: { result: BaziRes
             <div className="flex gap-3">
                 <Sparkles className="mt-1 h-6 w-6 shrink-0 text-[#b98451]" strokeWidth={1.4} />
                 <div className="min-w-0 flex-1">
-                    <CardTitle title="무료 사주 원국 해설" body="지금 조회한 만세력 결과를 바탕으로 원국의 구조와 흐름을 자세히 풀어드립니다." />
+                    <CardTitle title="무료 사주 원국 해설" body="도원만의 사주 분석 기준을 바탕으로 AI가 원국의 구조와 흐름을 차분히 정리해드립니다." />
                 </div>
             </div>
 
@@ -140,7 +210,7 @@ export function BaziInterpretationCard({ result, authStatus }: { result: BaziRes
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                         <p className="mt-1 break-keep text-sm leading-6 text-[#7a6a5c]">
-                            현재 화면에 표시된 사주 정국, 오행 균형, 합충형파해 정보를 함께 반영해 기본 성향과 흐름을 정리하고 가입된 회원 이메일로 보내드립니다.
+                            현재 화면에 표시된 사주 정국, 오행 균형, 합충형파해를 도원의 분석 관점으로 반영해 AI 해설로 일목요연하게 정리해 드립니다.
                         </p>
                     </div>
 
@@ -154,15 +224,26 @@ export function BaziInterpretationCard({ result, authStatus }: { result: BaziRes
                             무료상담신청
                         </button>
                     ) : authStatus === 'member' ? (
-                        <button
-	                            type="button"
-	                            onClick={() => setIsConfirmOpen(true)}
-	                            disabled={requestStatus === 'loading'}
-                            className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-[#2d241c] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#46382c] disabled:cursor-wait disabled:bg-[#76695d]"
-                        >
-                            <Sparkles className="h-4 w-4" />
-                            {requestStatus === 'loading' ? '신청 중' : '무료상담신청'}
-                        </button>
+                        hasSubmittedToday ? (
+                            <button
+                                type="button"
+                                disabled
+                                className="inline-flex h-11 shrink-0 cursor-not-allowed items-center justify-center gap-2 rounded-md bg-[#dcd2c4] px-5 text-sm font-semibold text-[#807060]"
+                            >
+                                <Sparkles className="h-4 w-4" />
+                                오늘 신청 완료
+                            </button>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => setIsConfirmOpen(true)}
+                                disabled={requestStatus === 'loading'}
+                                className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-md bg-[#2d241c] px-5 text-sm font-semibold text-white transition-colors hover:bg-[#46382c] disabled:cursor-wait disabled:bg-[#76695d]"
+                            >
+                                <Sparkles className="h-4 w-4" />
+                                {requestStatus === 'loading' ? '신청 중' : '무료상담신청'}
+                            </button>
+                        )
                     ) : authStatus === 'checking' ? (
                         <button
                             type="button"
@@ -202,10 +283,22 @@ export function BaziInterpretationCard({ result, authStatus }: { result: BaziRes
                 ) : authStatus === 'guest' && (
                     <div className="mt-4 border-t border-[#ead9c8] pt-4">
                         <p className="break-keep text-sm leading-6 text-[#5d4c3d]">
-                            무료 사주 원국 해설은 회원에게 제공됩니다.{' '}
+                            무료 사주 원국 해설은 회원전용 서비스 입니다.{' '}
                             <Link href="/signup" className="font-semibold text-[#8d5e2f] underline underline-offset-4 hover:text-[#5d3f23]">
                                 회원가입 후 신청해주세요.
                             </Link>
+                        </p>
+                    </div>
+                )}
+
+                {isServiceReady && authStatus === 'member' && hasSubmittedToday && (
+                    <div className="mt-4 border-t border-[#ead9c8] pt-4">
+                        <p className="break-keep text-sm leading-6 text-[#865d30]">
+                            오늘 이미 무료 사주 원국 해설을 신청하셨습니다. 무료상담 서비스는 하루 1회 신청 가능합니다.{' '}
+                            <Link href="/my/bazi-consultations" className="font-semibold text-[#a06828] underline underline-offset-4 hover:text-[#5d3f23]">
+                                마이페이지 사주 보관함
+                            </Link>
+                            에서 결과(약 5분 소요)를 확인해 보세요!
                         </p>
                     </div>
                 )}
@@ -216,7 +309,7 @@ export function BaziInterpretationCard({ result, authStatus }: { result: BaziRes
                     <div className="w-full max-w-md rounded-lg border border-[#eadfd4] bg-[#fffdf9] p-5 shadow-[0_24px_70px_rgba(24,17,11,0.28)]">
                         <h4 id="free-consultation-title" className="font-serif text-xl font-bold tracking-normal text-[#2a2018]">무료상담 신청 안내</h4>
                         <p className="mt-3 break-keep text-sm leading-7 text-[#66584c]">
-                            현재 조회한 만세력 결과에 대한 자세한 원국 해설을 신청합니다. 무료상담은 하루 1회 신청 가능하고, 상담 결과는 마이페이지 및 이메일에서 확인 가능합니다.
+                            현재 조회한 만세력 결과를 도원만의 사주 분석 기준으로 살피고, AI가 정리한 원국 해설을 신청합니다. 무료상담은 하루 1회 신청 가능하고, 상담 결과는 마이페이지에서 확인 가능합니다.
                         </p>
                         <div className="mt-5 flex justify-end gap-2">
                             <button

@@ -2,6 +2,10 @@ export type PillarKey = 'time' | 'day' | 'month' | 'year';
 export type PillarDetailKey = PillarKey | 'hour';
 export type BaziAuthStatus = 'checking' | 'guest' | 'member';
 
+export type BaziSubject = {
+    name?: string | null;
+};
+
 export type BaziResult = {
     calendar?: {
         solar?: { year?: number; month?: string | number; day?: string | number };
@@ -23,6 +27,15 @@ export type BaziResult = {
         baby_10?: Array<[number, string, string]>;
     };
     meta?: { gender?: string; ddi?: string };
+    birth_params?: {
+        year: string;
+        month: string;
+        day: string;
+        hour: string;
+        min: string;
+        sl: string;
+        gen: string;
+    };
     analysis?: {
         summary?: {
             branch_interactions?: string[];

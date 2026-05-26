@@ -8,11 +8,13 @@ import {
     LogOut,
     Mail,
     Phone,
+    Sparkles,
     UserRound,
 } from 'lucide-react';
 import { logout } from '@/lib/actions';
 import DeleteAccountButton from '@/components/profile/DeleteAccountButton';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
+import type { BaziResult } from '@/components/bazi/types';
 
 type MemberRow = {
     email: string | null;
@@ -29,6 +31,16 @@ type RecentSubmitRow = {
     created_at: string;
 };
 
+type RecentFreeBaziRow = {
+    id: string;
+    subject_name: string | null;
+    request_date_kst: string;
+    bazi_result: BaziResult;
+    result_text: string | null;
+    status: string | null;
+    created_at: string;
+};
+
 const serviceLabels: Record<string, string> = {
     saju: '사주 종합 상담',
     love: '연애 · 결혼 상담',
@@ -40,13 +52,15 @@ const serviceLabels: Record<string, string> = {
 
 const statusLabels: Record<string, string> = {
     pending: '접수',
-    contacted: '연락완료',
+    paid: '입금완료',
+    contacted: '입금완료',
     completed: '상담완료',
     cancelled: '취소',
 };
 
 const statusStyles: Record<string, string> = {
     pending: 'border-[#d6bd9a] bg-[#fff7eb] text-[#8a5a20]',
+    paid: 'border-[#b9c8dd] bg-[#eef5ff] text-[#315f99]',
     contacted: 'border-[#b9c8dd] bg-[#eef5ff] text-[#315f99]',
     completed: 'border-[#b8d4c1] bg-[#eefaf1] text-[#347247]',
     cancelled: 'border-[#e2b8b8] bg-[#fff0f0] text-[#a64242]',
@@ -61,7 +75,7 @@ export default async function ProfilePage() {
     }
 
     const adminSupabase = await createAdminClient();
-    const [{ data: memberData }, { data: submitData, error: submitError }] = await Promise.all([
+    const [{ data: memberData }, { data: submitData, error: submitError }, { data: freeBaziData, error: freeBaziError }] = await Promise.all([
         adminSupabase
             .from('members')
             .select('email, name, phone, birth_date, created_at')
@@ -73,14 +87,24 @@ export default async function ProfilePage() {
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(5),
+        adminSupabase
+            .from('free_bazi_consultations')
+            .select('id, subject_name, request_date_kst, bazi_result, result_text, status, created_at')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(3),
     ]);
 
     if (submitError) {
         console.error('Recent profile applications query error:', submitError);
     }
+    if (freeBaziError) {
+        console.error('Recent free bazi consultations query error:', freeBaziError);
+    }
 
     const member = memberData as MemberRow | null;
     const applications = (submitData || []) as RecentSubmitRow[];
+    const freeBaziConsultations = (freeBaziData || []) as RecentFreeBaziRow[];
     const displayName = member?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || '회원';
 
     return (
@@ -152,68 +176,133 @@ export default async function ProfilePage() {
                         </section>
                     </div>
 
-                    <section className="rounded-lg border border-[#ded4c8] bg-white/82 p-5 shadow-[0_18px_55px_rgba(70,54,36,0.08)] sm:p-6">
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                            <div>
-                                <p className="text-sm font-semibold text-[#a87943]">상담 신청</p>
-                                <h2 className="mt-2 font-serif text-2xl text-[#241c15]">최근 신청 현황</h2>
-                            </div>
-                            <Link
-                                href="/my/applications"
-                                className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[#bd8a4c] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#aa793d]"
-                            >
-                                전체 보기
-                                <ArrowRight className="h-4 w-4" />
-                            </Link>
-                        </div>
-
-                        {submitError ? (
-                            <div className="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-5 text-sm leading-7 text-red-700">
-                                최근 신청 내역을 불러오지 못했습니다.
-                            </div>
-                        ) : applications.length === 0 ? (
-                            <div className="mt-6 rounded-md border border-[#eee2d3] bg-[#fcfaf6] px-5 py-10 text-center">
-                                <ClipboardList className="mx-auto h-10 w-10 text-[#a87943]" strokeWidth={1.5} />
-                                <p className="mt-4 text-base font-semibold text-[#2a2119]">최근 상담 신청이 없습니다.</p>
-                                <p className="mt-2 text-sm leading-7 text-[#746a61]">신청서를 접수하면 진행 상태가 이곳에 표시됩니다.</p>
+                    <div className="grid content-start gap-5">
+                        <section className="rounded-lg border border-[#ded4c8] bg-white/82 p-5 shadow-[0_18px_55px_rgba(70,54,36,0.08)] sm:p-6">
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                                <div>
+                                    <p className="text-sm font-semibold text-[#a87943]">상담 신청</p>
+                                    <h2 className="mt-2 font-serif text-2xl text-[#241c15]">최근 신청 현황</h2>
+                                </div>
                                 <Link
-                                    href="/submit"
-                                    className="mt-5 inline-flex h-11 items-center justify-center rounded-md border border-[#d7c6af] px-5 text-sm font-semibold text-[#66584a] transition-colors hover:bg-[#f7efe4]"
+                                    href="/my/applications"
+                                    className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[#bd8a4c] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#aa793d]"
                                 >
-                                    상담 신청하기
+                                    전체 보기
+                                    <ArrowRight className="h-4 w-4" />
                                 </Link>
                             </div>
-                        ) : (
-                            <div className="mt-6 grid gap-3">
-                                {applications.map((application) => (
-                                    <article
-                                        key={application.id}
-                                        className="flex flex-col gap-4 rounded-md border border-[#eee2d3] bg-[#fcfaf6] px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+
+                            {submitError ? (
+                                <div className="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-5 text-sm leading-7 text-red-700">
+                                    최근 신청 내역을 불러오지 못했습니다.
+                                </div>
+                            ) : applications.length === 0 ? (
+                                <div className="mt-6 rounded-md border border-[#eee2d3] bg-[#fcfaf6] px-5 py-10 text-center">
+                                    <ClipboardList className="mx-auto h-10 w-10 text-[#a87943]" strokeWidth={1.5} />
+                                    <p className="mt-4 text-base font-semibold text-[#2a2119]">최근 상담 신청이 없습니다.</p>
+                                    <p className="mt-2 text-sm leading-7 text-[#746a61]">신청서를 접수하면 진행 상태가 이곳에 표시됩니다.</p>
+                                    <Link
+                                        href="/submit"
+                                        className="mt-5 inline-flex h-11 items-center justify-center rounded-md border border-[#d7c6af] px-5 text-sm font-semibold text-[#66584a] transition-colors hover:bg-[#f7efe4]"
                                     >
-                                        <div className="min-w-0">
-                                            <div className="flex flex-wrap items-center gap-2">
-                                                <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusStyles[application.status] || statusStyles.pending}`}>
-                                                    {statusLabels[application.status] || application.status}
-                                                </span>
-                                                <span className="text-sm font-semibold text-[#2a2119]">
-                                                    {serviceLabels[application.service_type] || application.service_type}
-                                                </span>
-                                            </div>
-                                            <p className="mt-3 text-sm text-[#746a61]">
-                                                접수일 {formatDate(application.created_at)}
-                                            </p>
-                                        </div>
-                                        <Link
-                                            href="/my/applications"
-                                            className="inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-[#d7c6af] px-4 text-sm font-semibold text-[#66584a] transition-colors hover:bg-[#f7efe4]"
+                                        상담 신청하기
+                                    </Link>
+                                </div>
+                            ) : (
+                                <div className="mt-6 grid gap-3">
+                                    {applications.map((application) => (
+                                        <article
+                                            key={application.id}
+                                            className="flex flex-col gap-4 rounded-md border border-[#eee2d3] bg-[#fcfaf6] px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
                                         >
-                                            상세 보기
-                                        </Link>
-                                    </article>
-                                ))}
+                                            <div className="min-w-0">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${statusStyles[application.status] || statusStyles.pending}`}>
+                                                        {statusLabels[application.status] || application.status}
+                                                    </span>
+                                                    <span className="text-sm font-semibold text-[#2a2119]">
+                                                        {serviceLabels[application.service_type] || application.service_type}
+                                                    </span>
+                                                </div>
+                                                <p className="mt-3 text-sm text-[#746a61]">
+                                                    접수일 {formatDate(application.created_at)}
+                                                </p>
+                                            </div>
+                                            <Link
+                                                href="/my/applications"
+                                                className="inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-[#d7c6af] px-4 text-sm font-semibold text-[#66584a] transition-colors hover:bg-[#f7efe4]"
+                                            >
+                                                상세 보기
+                                            </Link>
+                                        </article>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+
+                        <section className="rounded-lg border border-[#ded4c8] bg-white/82 p-5 shadow-[0_18px_55px_rgba(70,54,36,0.08)] sm:p-6">
+                            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                                <div>
+                                    <p className="text-sm font-semibold text-[#a87943]">AI 원국 해설</p>
+                                    <h2 className="mt-2 font-serif text-2xl text-[#241c15]">최근 무료 해설</h2>
+                                </div>
+                                <Link
+                                    href="/my/bazi-consultations"
+                                    className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[#bd8a4c] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#aa793d]"
+                                >
+                                    전체 보기
+                                    <ArrowRight className="h-4 w-4" />
+                                </Link>
                             </div>
-                        )}
-                    </section>
+
+                            {freeBaziError ? (
+                                <div className="mt-6 rounded-md border border-red-200 bg-red-50 px-4 py-5 text-sm leading-7 text-red-700">
+                                    최근 무료 해설을 불러오지 못했습니다.
+                                </div>
+                            ) : freeBaziConsultations.length === 0 ? (
+                                <div className="mt-6 rounded-md border border-[#eee2d3] bg-[#fcfaf6] px-5 py-8 text-center">
+                                    <Sparkles className="mx-auto h-10 w-10 text-[#a87943]" strokeWidth={1.5} />
+                                    <p className="mt-4 text-base font-semibold text-[#2a2119]">최근 무료 해설이 없습니다.</p>
+                                    <p className="mt-2 text-sm leading-7 text-[#746a61]">만세력 조회 후 무료상담신청을 하면 이곳에 표시됩니다.</p>
+                                </div>
+                            ) : (
+                                <div className="mt-6 grid gap-3">
+                                    {freeBaziConsultations.map((consultation) => (
+                                        <article
+                                            key={consultation.id}
+                                            className="flex flex-col gap-4 rounded-md border border-[#eee2d3] bg-[#fcfaf6] px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+                                        >
+                                            <div className="min-w-0">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="inline-flex h-6 items-center rounded-full bg-[#f7efe5] px-2.5 text-xs font-semibold text-[#7a542a]">
+                                                        {consultation.request_date_kst}
+                                                    </span>
+                                                    <span className="text-xs text-[#746a61]">
+                                                        신청일 {formatDateTime(consultation.created_at)}
+                                                    </span>
+                                                </div>
+                                                <h3 className="mt-3 font-serif text-lg text-[#2a2119] break-keep">
+                                                    {formatBaziTitle(consultation)}
+                                                </h3>
+                                                {(consultation.status || 'completed') === 'pending' && (
+                                                    <p className="mt-2 text-sm font-semibold text-[#a87943]">분석중입니다...</p>
+                                                )}
+                                                {(consultation.status || 'completed') === 'failed' && (
+                                                    <p className="mt-2 text-sm font-semibold text-red-600">해설 생성에 실패했습니다.</p>
+                                                )}
+                                            </div>
+                                            <Link
+                                                href="/my/bazi-consultations"
+                                                className="inline-flex h-10 shrink-0 items-center justify-center rounded-md border border-[#d7c6af] px-4 text-sm font-semibold text-[#66584a] transition-colors hover:bg-[#f7efe4]"
+                                            >
+                                                해설 보기
+                                            </Link>
+                                        </article>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+                    </div>
                 </div>
             </section>
         </main>
@@ -284,4 +373,37 @@ function formatDate(value?: string | null) {
         month: '2-digit',
         day: '2-digit',
     }).format(new Date(value));
+}
+
+function formatDateTime(value?: string | null) {
+    if (!value) return '-';
+
+    return new Intl.DateTimeFormat('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(new Date(value));
+}
+
+function formatBaziTitle(consultation: RecentFreeBaziRow) {
+    const pillars = formatBaziPillars(consultation.bazi_result);
+    return consultation.subject_name ? `${consultation.subject_name} · ${pillars}` : pillars;
+}
+
+function formatBaziPillars(result: BaziResult) {
+    const pillars = result.four_pillars;
+    const year = formatStemBranch(pillars?.year);
+    const month = formatStemBranch(pillars?.month);
+    const day = formatStemBranch(pillars?.day);
+    const time = formatStemBranch(pillars?.time);
+
+    return [year, month, day, time].filter(Boolean).join(' · ') || '사주 원국 해설';
+}
+
+function formatStemBranch(pillar?: NonNullable<BaziResult['four_pillars']>[keyof NonNullable<BaziResult['four_pillars']>]) {
+    const gan = pillar?.gan?.ch || pillar?.gan?.kr || '';
+    const ji = pillar?.ji?.ch || pillar?.ji?.kr || '';
+    return `${gan}${ji}`.trim();
 }

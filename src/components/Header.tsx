@@ -10,7 +10,7 @@ import clsx from 'clsx';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 
-import { User } from '@supabase/supabase-js';
+import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 
 const navItems = [
     { name: '철학원소개', href: '/about' },
@@ -44,7 +44,7 @@ export default function Header({ initialUser }: { initialUser: User | null }) {
         };
         getUser();
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
             setUser(session?.user ?? null);
             if (session?.user) {
                 const { data: member } = await supabase.from('members').select('role').eq('id', session.user.id).single();

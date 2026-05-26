@@ -15,11 +15,13 @@ import {
     Sprout,
     Sun,
 } from 'lucide-react';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { BaziInterpretationCard, SajuChart } from '@/components/bazi/SajuChart';
 import type { BaziAuthStatus, BaziResult, DaewoonItem, PillarKey } from '@/components/bazi/types';
 import { createClient } from '@/utils/supabase/client';
 
 type BaziFormValues = {
+    subjectName: string;
     year: string;
     month: string;
     day: string;
@@ -139,10 +141,33 @@ const privacyItems = [
     { icon: ScrollText, title: '전문 상담 연계', body: '맞춤 상담 지원' },
 ] as const;
 
+type AuthStatusResponse = {
+    authenticated?: boolean;
+};
+
+function withAuthTimeout(check: Promise<BaziAuthStatus>, timeoutMs = 5000) {
+    return Promise.race<BaziAuthStatus>([
+        check,
+        new Promise((resolve) => {
+            window.setTimeout(() => resolve('guest'), timeoutMs);
+        }),
+    ]);
+}
+
 export default function BaziPage() {
     const [supabase] = useState(() => createClient());
     const [showResult, setShowResult] = useState(false);
     const [result, setResult] = useState<BaziResult | null>(null);
+    const [subjectName, setSubjectName] = useState('');
+    const [birthParams, setBirthParams] = useState<{
+        year: string;
+        month: string;
+        day: string;
+        hour: string;
+        min: string;
+        sl: string;
+        gen: string;
+    } | null>(null);
     const [authStatus, setAuthStatus] = useState<BaziAuthStatus>('checking');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -150,25 +175,63 @@ export default function BaziPage() {
     useEffect(() => {
         let isMounted = true;
 
-        async function checkUser() {
+        async function checkUserWithBrowserClient() {
             try {
-                const { data: { user } } = await supabase.auth.getUser();
-                const currentUser = user || (await supabase.auth.getSession()).data.session?.user || null;
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.user) {
+                    return 'member';
+                }
 
-                if (isMounted) {
-                    setAuthStatus(currentUser ? 'member' : 'guest');
+                const { data: { user } } = await supabase.auth.getUser();
+                return user ? 'member' : 'guest';
+            } catch {
+                return 'guest';
+            }
+        }
+
+        async function checkUser() {
+            const controller = new AbortController();
+            const timeoutId = window.setTimeout(() => controller.abort(), 5000);
+
+            try {
+                const response = await fetch('/api/auth/status', {
+                    cache: 'no-store',
+                    signal: controller.signal,
+                });
+
+                if (response.ok) {
+                    const data = await response.json() as AuthStatusResponse;
+                    if (isMounted) {
+                        setAuthStatus(data.authenticated ? 'member' : 'guest');
+                    }
+                    return;
                 }
             } catch {
-                if (isMounted) {
-                    setAuthStatus('guest');
-                }
+                // Fall back to the browser client below.
+            } finally {
+                window.clearTimeout(timeoutId);
+            }
+
+            const nextStatus = await withAuthTimeout(checkUserWithBrowserClient());
+            if (isMounted) {
+                setAuthStatus(nextStatus);
             }
         }
 
         checkUser();
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setAuthStatus(session?.user ? 'member' : 'guest');
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+            if (session?.user) {
+                setAuthStatus('member');
+                return;
+            }
+
+            if (event === 'INITIAL_SESSION') {
+                checkUser();
+                return;
+            }
+
+            setAuthStatus('guest');
         });
 
         return () => {
@@ -191,7 +254,8 @@ export default function BaziPage() {
         setError('');
 
         try {
-            const params = new URLSearchParams(values);
+            const { subjectName: nextSubjectName, ...baziParams } = values;
+            const params = new URLSearchParams(baziParams);
             const response = await fetch(`/api/bazi?${params.toString()}`);
             const data = await response.json();
 
@@ -200,10 +264,14 @@ export default function BaziPage() {
             }
 
             setResult(data);
+            setSubjectName(nextSubjectName.trim());
+            setBirthParams(baziParams);
             setShowResult(true);
         } catch (requestError) {
             setShowResult(false);
             setResult(null);
+            setSubjectName('');
+            setBirthParams(null);
             setError(requestError instanceof Error ? requestError.message : '만세력 정보를 불러오지 못했습니다.');
         } finally {
             setIsLoading(false);
@@ -213,6 +281,8 @@ export default function BaziPage() {
     const handleReset = () => {
         setShowResult(false);
         setResult(null);
+        setSubjectName('');
+        setBirthParams(null);
         setError('');
     };
 
@@ -279,7 +349,7 @@ export default function BaziPage() {
                                 <DecadeFlow result={result} />
                                 <ElementBalance result={result} />
                                 <TraitPanel result={result} />
-                                <BaziInterpretationCard result={result} authStatus={authStatus} />
+                                <BaziInterpretationCard result={result} authStatus={authStatus} subjectName={subjectName} birthParams={birthParams || undefined} />
                             </div>
 
                             <ConsultationBanner />
@@ -319,6 +389,7 @@ function BaziForm({
                 const formData = new FormData(event.currentTarget);
 
                 onAnalyze({
+                    subjectName: String(formData.get('subjectName') || '').trim(),
                     year: String(formData.get('year') || ''),
                     month: String(Number(formData.get('month') || '0')),
                     day: String(Number(formData.get('day') || '0')),
@@ -338,6 +409,18 @@ function BaziForm({
 
             <fieldset className="space-y-5">
                 <legend className="sr-only">사주 정보 입력</legend>
+
+                <div>
+                    <label htmlFor={`${birthTimeId}-subject-name`} className="text-sm font-semibold text-[#56483c]">이름</label>
+                    <input
+                        id={`${birthTimeId}-subject-name`}
+                        name="subjectName"
+                        type="text"
+                        maxLength={30}
+                        placeholder="예) 홍길동"
+                        className="mt-2 h-12 w-full rounded-md border border-[#e4d8cb] bg-white/72 px-3 text-sm text-[#493b2d] outline-none transition placeholder:text-[#aa9d90] focus:border-[#ad7b42]"
+                    />
+                </div>
 
                 <div>
                     <label className="text-sm font-semibold text-[#56483c]">생년월일</label>

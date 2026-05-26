@@ -52,13 +52,15 @@ const serviceLabels: Record<string, string> = {
 
 const statusLabels: Record<string, string> = {
     pending: '접수',
-    contacted: '연락완료',
+    paid: '입금완료',
+    contacted: '입금완료',
     completed: '상담완료',
     cancelled: '취소',
 };
 
 const statusStyles: Record<string, string> = {
     pending: 'border-amber-200 bg-amber-50 text-amber-700',
+    paid: 'border-blue-200 bg-blue-50 text-blue-700',
     contacted: 'border-blue-200 bg-blue-50 text-blue-700',
     completed: 'border-emerald-200 bg-emerald-50 text-emerald-700',
     cancelled: 'border-red-200 bg-red-50 text-red-700',

@@ -3,6 +3,7 @@ import BookingSection from '@/components/common/BookingSection';
 import HeroSection from '@/components/home/HeroSection';
 import CounselingPhilosophySection from '@/components/home/CounselingPhilosophySection';
 import CounselingCategorySection from '@/components/home/CounselingCategorySection';
+import BaziServiceSection from '@/components/home/BaziServiceSection';
 import PhilosophySection from '@/components/home/PhilosophySection';
 import NamingSection from '@/components/home/NamingSection';
 import ReviewSection from '@/components/home/ReviewSection';
@@ -14,6 +15,7 @@ export default function Home() {
       <HeroSection />
       <CounselingPhilosophySection />
       <CounselingCategorySection />
+      <BaziServiceSection />
       <PhilosophySection />
       <NamingSection />
       <NamingInfoSection />

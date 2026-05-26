@@ -47,13 +47,15 @@ const serviceLabels: Record<string, string> = {
 
 const statusLabels: Record<string, string> = {
     pending: '접수',
-    contacted: '연락완료',
+    paid: '입금완료',
+    contacted: '입금완료',
     completed: '상담완료',
     cancelled: '취소',
 };
 
 const statusStyles: Record<string, string> = {
     pending: 'border-[#d6bd9a] bg-[#fff7eb] text-[#8a5a20]',
+    paid: 'border-[#b9c8dd] bg-[#eef5ff] text-[#315f99]',
     contacted: 'border-[#b9c8dd] bg-[#eef5ff] text-[#315f99]',
     completed: 'border-[#b8d4c1] bg-[#eefaf1] text-[#347247]',
     cancelled: 'border-[#e2b8b8] bg-[#fff0f0] text-[#a64242]',

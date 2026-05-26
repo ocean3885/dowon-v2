@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS public.consultations (
   contact TEXT NOT NULL,
   service_type TEXT NOT NULL,
   notes TEXT,
-  status TEXT DEFAULT 'pending', -- 'pending', 'contacted', 'completed', 'cancelled'
+  status TEXT DEFAULT 'pending', -- 'pending', 'paid', 'completed', 'cancelled'
   ip_address TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS public.submits (
   concern TEXT,
   privacy_agreed BOOLEAN NOT NULL DEFAULT FALSE,
   status TEXT NOT NULL DEFAULT 'pending'
-    CHECK (status IN ('pending', 'contacted', 'completed', 'cancelled')),
+    CHECK (status IN ('pending', 'paid', 'completed', 'cancelled')),
   ip_address TEXT,
   user_agent TEXT,
   admin_view_token TEXT UNIQUE,
