@@ -251,20 +251,32 @@ function buildPrompt(result: BaziResult) {
     const time = formatPillar(pillars.time);
     const currentYear = getKstYear();
     const currentDaewoon = result.daewoon?.current || findCurrentDaewoon(result.daewoon?.list || [], currentYear);
-    const currentSewoon = getYearGanji(currentYear);
+    const hasCurrentDaewoon = Boolean(currentDaewoon);
+    const currentSewoon = hasCurrentDaewoon ? getYearGanji(currentYear) : null;
+
+    const introLines = [
+        `[성별: ${gender}]인 분이 [년주: ${year} / 월주: ${month} / 일주: ${day} / 시주: ${time}] 명식으로 태어났습니다.`,
+    ];
+
+    if (currentDaewoon && currentSewoon) {
+        introLines.push(`[현재 운 흐름: 현재 대운 ${formatDaewoon(currentDaewoon)} / 현재 세운 ${currentYear}년 ${currentSewoon.gan}${currentSewoon.ji}]입니다.`);
+    }
+
+    const guidelineLines = [
+        '성향, 적성, 재물, 배우자, 건강을 위주로 상세히 풀이해 주세요.',
+        ...(hasCurrentDaewoon ? ['원국의 사주가 현재 대운과 현재 세운을 만났을 때 어떻게 작용하는지 별도 항목으로 풀이해 주세요.'] : []),
+        '단순한 결과 나열이 아닌, "왜 그렇게 분석되는지" 글자 간의 관계(합, 충, 형, 천, 파, 묘고 등)를 구체적으로 짚어가며 논리적으로 설명해 주세요.',
+        '전문적인 명리 용어를 쓰되 일반인도 충분히 이해할 수 있도록 정중하고 친절한 한국어 경어체(~합니다, ~입니다)로 작성해 주세요.',
+        '화면 렌더링을 위해 마크다운 기호(###, **, *, -, _ 등)는 사용하지 마세요.',
+        '대신 대제목은 "[1. 성향 분석]"과 같은 대괄호 형태로 구분하고, 문단 구분을 위해 줄바꿈(엔터)을 활용해 주세요.',
+    ].map((line, index) => `${index + 1}. ${line}`);
 
     return [
-        `[성별: ${gender}]인 분이 [년주: ${year} / 월주: ${month} / 일주: ${day} / 시주: ${time}] 명식으로 태어났습니다.`,
-        `[현재 운 흐름: 현재 대운 ${formatDaewoon(currentDaewoon)} / 현재 세운 ${currentYear}년 ${currentSewoon.gan}${currentSewoon.ji}]입니다.`,
+        ...introLines,
         `해당 사주 원국을 '맹파명리학(盲派命理)' 관점으로 아주 깊이 있게 분석해 주세요.`,
         '',
         '[작성 및 출력 형식 가이드라인]',
-        '1. 성향, 적성, 재물, 배우자, 건강을 위주로 상세히 풀이해 주세요.',
-        '2. 원국의 사주가 현재 대운과 현재 세운을 만났을 때 어떻게 작용하는지 별도 항목으로 풀이해 주세요.',
-        '3. 단순한 결과 나열이 아닌, "왜 그렇게 분석되는지" 글자 간의 관계(합, 충, 형, 천, 파, 묘고 등)를 구체적으로 짚어가며 논리적으로 설명해 주세요.',
-        '4. 전문적인 명리 용어를 쓰되 일반인도 충분히 이해할 수 있도록 정중하고 친절한 한국어 경어체(~합니다, ~입니다)로 작성해 주세요.',
-        '5. 화면 렌더링을 위해 마크다운 기호(###, **, *, -, _ 등)는 사용하지 마세요.',
-        '   대신 대제목은 "[1. 성향 분석]"과 같은 대괄호 형태로 구분하고, 문단 구분을 위해 줄바꿈(엔터)을 활용해 주세요.',
+        ...guidelineLines,
     ].join('\n');
 }
 
