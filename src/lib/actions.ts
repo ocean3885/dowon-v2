@@ -8,6 +8,7 @@ import { redirect } from 'next/navigation';
 
 import { sendSMS } from './aligo';
 import { getPositionLabel, getPositionOptionsForChar, getTenStar, parseDayPillar } from './saju-relations';
+import { claimGuestBaziConsultationsForUser } from './guest-bazi-claim';
 
 type RecentPostRow = {
     id: number;
@@ -891,7 +892,7 @@ export async function signup(formData: FormData) {
         email,
         password,
         options: {
-            emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback`,
+            emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/callback?claimGuestBazi=1`,
             data: {
                 full_name: name,
                 phone: phone,
@@ -929,6 +930,9 @@ export async function signup(formData: FormData) {
             // but for this project's logic, we should.
             return { success: false, message: '회원 목록 등록에 실패했습니다.' };
         }
+
+        await claimGuestBaziConsultationsForUser(data.user.id);
+        revalidatePath('/my/bazi-consultations');
     }
 
     return { success: true, message: '회원가입 확인 메일을 확인해주세요.' };

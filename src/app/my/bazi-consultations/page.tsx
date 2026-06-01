@@ -1,10 +1,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { ArrowRight, ChevronLeft, ChevronRight, FileText, Sparkles } from 'lucide-react';
 import { createAdminClient, createClient } from '@/utils/supabase/server';
 import type { BaziResult } from '@/components/bazi/types';
 import { BaziConsultationItem } from '@/components/bazi/BaziConsultationItem';
+
+const GUEST_ID_COOKIE = 'dowon_bazi_guest_id';
 
 type FreeBaziConsultationRow = {
     id: string;
@@ -23,6 +26,10 @@ export default async function MyBaziConsultationsPage({ searchParams }: { search
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
+        if (await hasGuestBaziConsultations()) {
+            redirect('/bazi/guest-consultations');
+        }
+
         redirect('/login');
     }
 
@@ -173,6 +180,28 @@ export default async function MyBaziConsultationsPage({ searchParams }: { search
             </section>
         </main>
     );
+}
+
+async function hasGuestBaziConsultations() {
+    const cookieStore = await cookies();
+    const guestId = cookieStore.get(GUEST_ID_COOKIE)?.value;
+
+    if (!guestId) return false;
+
+    const adminSupabase = await createAdminClient();
+    const { count, error } = await adminSupabase
+        .from('guest_bazi_consultations')
+        .select('id', { count: 'exact', head: true })
+        .eq('guest_id', guestId)
+        .is('claimed_user_id', null)
+        .gt('expires_at', new Date().toISOString());
+
+    if (error) {
+        console.error('Guest free bazi consultations redirect check error:', error);
+        return false;
+    }
+
+    return Boolean(count && count > 0);
 }
 
 function PageBackdrop() {

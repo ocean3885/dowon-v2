@@ -16,7 +16,7 @@ type FreeBaziConsultationRow = {
     created_at: string;
 };
 
-export function BaziConsultationItem({ consultation }: { consultation: FreeBaziConsultationRow }) {
+export function BaziConsultationItem({ consultation, readOnly = false }: { consultation: FreeBaziConsultationRow; readOnly?: boolean }) {
     const router = useRouter();
     const [isExpanded, setIsExpanded] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
@@ -183,14 +183,16 @@ export function BaziConsultationItem({ consultation }: { consultation: FreeBaziC
                             <h2 className="break-keep font-serif text-xl text-[#2a2119]">
                                 {formatBaziTitle(consultation, currentName)}
                             </h2>
-                            <button
-                                type="button"
-                                onClick={() => setIsEditing(true)}
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#d7c6af]/60 bg-white/60 text-[#66584a] hover:bg-[#f7efe4] hover:text-[#7a542a] transition-all ml-1 shadow-sm"
-                                title="이름 수정"
-                            >
-                                <Edit2 className="h-3 w-3" />
-                            </button>
+                            {!readOnly && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsEditing(true)}
+                                    className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#d7c6af]/60 bg-white/60 text-[#66584a] hover:bg-[#f7efe4] hover:text-[#7a542a] transition-all ml-1 shadow-sm"
+                                    title="이름 수정"
+                                >
+                                    <Edit2 className="h-3 w-3" />
+                                </button>
+                            )}
                         </div>
                     )}
                     {renderBirthDetails(consultation) && (
@@ -199,9 +201,11 @@ export function BaziConsultationItem({ consultation }: { consultation: FreeBaziC
                         </p>
                     )}
                 </div>
-                <div className="shrink-0 self-start sm:self-center">
-                    <DeleteBaziConsultationButton id={consultation.id} />
-                </div>
+                {!readOnly && (
+                    <div className="shrink-0 self-start sm:self-center">
+                        <DeleteBaziConsultationButton id={consultation.id} />
+                    </div>
+                )}
             </div>
 
             {/* Interpretation Text Container with smooth transition */}

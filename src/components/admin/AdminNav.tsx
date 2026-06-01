@@ -9,6 +9,7 @@ export default function AdminNav() {
 
     const navItems = [
         { name: '상담 내역', href: '/admin' },
+        { name: '회원 관리', href: '/admin/members' },
         { name: '게시판 관리', href: '/admin/board' },
         { name: '사주 관계 해설', href: '/admin/saju-relations' },
     ];

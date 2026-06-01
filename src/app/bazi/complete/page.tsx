@@ -24,10 +24,16 @@ const guideItems = [
     },
 ];
 
-export default async function BaziCompletePage() {
+type SearchParams = Promise<{ guest?: string }>;
+
+export default async function BaziCompletePage({ searchParams }: { searchParams: SearchParams }) {
+    const params = await searchParams;
+    const isGuest = params.guest === '1';
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    const applicationLink = user ? '/my/bazi-consultations' : '/login';
+    const applicationLink = isGuest ? '/bazi/guest-consultations' : user ? '/my/bazi-consultations' : '/login';
+    const applicationLabel = isGuest ? '비회원 해설 보관함에서 확인하기' : '마이페이지에서 확인하기';
+    const storageLabel = isGuest ? '이 브라우저의 비회원 해설 보관함' : '마이페이지';
 
     return (
         <main className="min-h-screen overflow-hidden bg-[#f8f2e9] pt-20 text-[#211b16]">
@@ -72,7 +78,7 @@ export default async function BaziCompletePage() {
                         </div>
                         <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-[#554b42] break-keep md:text-lg">
                             AI가 명리학 관점으로 사주 원국을 정밀하게 풀이하고 있습니다.
-                            분석 및 작성이 완료되면 마이페이지에서 확인하실 수 있습니다.
+                            분석 및 작성이 완료되면 {storageLabel}에서 확인하실 수 있습니다.
                         </p>
                     </div>
                 </div>
@@ -127,18 +133,25 @@ export default async function BaziCompletePage() {
                 <div className="relative mx-auto max-w-6xl px-5 sm:px-6 lg:px-10">
                     <div className="mt-6 rounded-lg border border-[#ded4c8] bg-white/62 p-5 shadow-[0_18px_55px_rgba(70,54,36,0.08)] sm:p-6">
                         <div className="grid gap-4 md:grid-cols-3 md:divide-x md:divide-[#e4dbd1]">
-                            {guideItems.map((item) => (
+                            {guideItems.map((item) => {
+                                const value = isGuest && item.title === '해설 제공 방식' ? '비회원 해설 보관함' : item.value;
+                                const description = isGuest && item.title === '해설 제공 방식'
+                                    ? '저장된 분석 해설은 현재 브라우저의 비회원 해설 보관함에서 다시 확인하실 수 있습니다.'
+                                    : item.description;
+
+                                return (
                                 <div key={item.title} className="flex gap-4 md:px-5 first:md:pl-0 last:md:pr-0">
                                     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#f1e6d7] text-[#a87943]">
                                         <item.icon className="h-7 w-7" strokeWidth={1.5} />
                                     </div>
                                     <div>
                                         <p className="text-sm font-semibold text-[#6f665d]">{item.title}</p>
-                                        <p className="mt-2 text-xl font-semibold text-[#2a2119]">{item.value}</p>
-                                        <p className="mt-2 text-xs leading-6 text-[#746a61] break-keep">{item.description}</p>
+                                        <p className="mt-2 text-xl font-semibold text-[#2a2119]">{value}</p>
+                                        <p className="mt-2 text-xs leading-6 text-[#746a61] break-keep">{description}</p>
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -147,7 +160,7 @@ export default async function BaziCompletePage() {
                             href={applicationLink}
                             className="inline-flex h-14 w-full items-center justify-center gap-3 rounded-md bg-[#bd8a4c] px-8 text-sm font-semibold text-white transition-colors hover:bg-[#aa793d] sm:h-16 sm:w-80"
                         >
-                            마이페이지에서 확인하기
+                            {applicationLabel}
                             <MoveRight className="h-4 w-4" />
                         </Link>
                         <Link
