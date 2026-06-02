@@ -150,6 +150,7 @@ export default function SubmitPageClient({ initialApplicant, initialIsLoggedIn }
         const formData = new FormData(form);
         const getValue = (name: string) => String(formData.get(name) || '').trim();
         const serviceType = String(formData.get('serviceType') || '');
+        const consultationMethod = String(formData.get('consultationMethod') || '');
         const namingFamilyName = String(formData.get('namingFamilyName') || '').trim();
         const applicationPassword = getValue('applicationPassword');
         const applicantPhone = getValue('applicantPhone');
@@ -163,6 +164,7 @@ export default function SubmitPageClient({ initialApplicant, initialIsLoggedIn }
             const birthTimeHour = getValue(`${prefix}BirthTimeHour`);
             const hasAnyValue = Boolean(
                 getValue(`${prefix}Name`) ||
+                getValue(`${prefix}Occupation`) ||
                 birthDate ||
                 calendarType ||
                 gender ||
@@ -202,6 +204,8 @@ export default function SubmitPageClient({ initialApplicant, initialIsLoggedIn }
             message = target2Message;
         } else if (!serviceType) {
             message = '상담 종류를 선택해주세요.';
+        } else if (!consultationMethod) {
+            message = '상담 방법을 선택해주세요.';
         } else if (serviceType === 'naming' && !namingFamilyName) {
             message = '작명 · 개명 상담은 성(姓)을 입력해주세요.';
         }
@@ -292,9 +296,28 @@ export default function SubmitPageClient({ initialApplicant, initialIsLoggedIn }
                         </div>
                     </FormRow>
 
+                    <FormRow title="상담 일정" description="원하시는 상담 방식과 가능한 날짜를 알려주세요.">
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            <div>
+                                <FieldLabel required>상담방법</FieldLabel>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <Segment name="consultationMethod" value="visit" label="방문" />
+                                    <Segment name="consultationMethod" value="phone" label="전화" />
+                                </div>
+                            </div>
+                            <TextField
+                                label="상담희망일"
+                                name="preferredConsultationDate"
+                                placeholder="예) 2026.06.15 오후 2시 / 2026.06.16 오전 11시"
+                                optional
+                            />
+                        </div>
+                    </FormRow>
+
                     <FormRow title="상담대상 정보" description="상담을 받을 분의 생년월일시와 성별을 입력해주세요.">
                         <div className="grid gap-6 lg:grid-cols-2">
-                            <TextField label="상담대상 이름" name="target1Name" placeholder="이름을 입력해주세요" optional className="lg:col-span-2" />
+                            <TextField label="상담대상 이름" name="target1Name" placeholder="이름을 입력해주세요" optional />
+                            <TextField label="직업" name="target1Occupation" placeholder="예) 회사원, 자영업, 학생" optional />
                             <div className="lg:col-span-2">
                                 <FieldLabel required>생년월일</FieldLabel>
                                 <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto]">
@@ -329,7 +352,8 @@ export default function SubmitPageClient({ initialApplicant, initialIsLoggedIn }
 
                     <FormRow title="추가 상담대상" description="궁합처럼 대상자가 두 명인 경우에만 입력해주세요.">
                         <div className="grid gap-6 lg:grid-cols-2">
-                            <TextField label="상담대상 2 이름" name="target2Name" placeholder="이름을 입력해주세요" optional className="lg:col-span-2" />
+                            <TextField label="상담대상 2 이름" name="target2Name" placeholder="이름을 입력해주세요" optional />
+                            <TextField label="직업" name="target2Occupation" placeholder="예) 회사원, 자영업, 학생" optional />
                             <div className="lg:col-span-2">
                                 <FieldLabel>생년월일</FieldLabel>
                                 <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto_auto]">

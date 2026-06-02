@@ -35,6 +35,7 @@ export type UpdateProfileState = {
 
 type ConsultationTarget = {
     name: string | null;
+    occupation: string | null;
     birthDate: string;
     calendarType: string;
     gender: string;
@@ -172,17 +173,19 @@ function buildBirthTime(formData: FormData, prefix: string) {
 function buildConsultationTarget(formData: FormData, index: 1 | 2): ConsultationTarget | null {
     const prefix = `target${index}`;
     const name = getFormString(formData, `${prefix}Name`);
+    const occupation = getFormString(formData, `${prefix}Occupation`);
     const birthDate = getFormString(formData, `${prefix}BirthDate`);
     const calendarType = getFormString(formData, `${prefix}CalendarType`, index === 1 ? 'solar' : '');
     const gender = getFormString(formData, `${prefix}Gender`);
     const birthTimeAccuracy = getFormString(formData, `${prefix}BirthTimeAccuracy`, index === 1 ? 'exact' : '');
     const birthTime = buildBirthTime(formData, prefix);
-    const hasAnyValue = Boolean(name || birthDate || calendarType || gender || birthTimeAccuracy || birthTime);
+    const hasAnyValue = Boolean(name || occupation || birthDate || calendarType || gender || birthTimeAccuracy || birthTime);
 
     if (!hasAnyValue) return null;
 
     return {
         name: name || null,
+        occupation: occupation || null,
         birthDate,
         calendarType,
         gender,
@@ -192,9 +195,17 @@ function buildConsultationTarget(formData: FormData, index: 1 | 2): Consultation
 }
 
 function buildServiceDetails(formData: FormData, serviceType: string): ServiceDetails | null {
-    if (serviceType !== 'naming') return null;
+    const details: ServiceDetails = {
+        consultationMethod: getFormString(formData, 'consultationMethod') || null,
+        preferredConsultationDate: getFormString(formData, 'preferredConsultationDate') || null,
+    };
+
+    if (serviceType !== 'naming') {
+        return Object.values(details).some(Boolean) ? details : null;
+    }
 
     return {
+        ...details,
         familyName: getFormString(formData, 'namingFamilyName'),
         generationNameUsage: getFormString(formData, 'namingGenerationNameUsage', 'none'),
         generationName: getFormString(formData, 'namingGenerationName') || null,
@@ -259,6 +270,10 @@ export async function submitApplication(
 
     if (!serviceType) {
         return { success: false, message: '상담 종류를 선택해주세요.' };
+    }
+
+    if (!serviceDetails?.consultationMethod) {
+        return { success: false, message: '상담 방법을 선택해주세요.' };
     }
 
     if (serviceType === 'naming' && !serviceDetails?.familyName) {
@@ -339,7 +354,8 @@ export async function submitApplication(
         const detailUrl = `${siteUrl}/submit/applications/${insertedApplication?.admin_view_token || adminViewToken}`;
 
         await sendSMS(`[도원 상담신청]
-상세확인: ${detailUrl}`);
+상세확인
+${detailUrl}`);
 
         revalidatePath('/submit');
         revalidatePath('/my/applications');

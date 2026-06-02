@@ -53,6 +53,11 @@ const hanjaUsageLabels: Record<string, string> = {
     hangul: '한글 이름',
 };
 
+const consultationMethodLabels: Record<string, string> = {
+    visit: '방문',
+    phone: '전화',
+};
+
 const inputClassName = 'h-12 w-full rounded-md border border-[#d8c8b5] bg-white px-4 text-sm text-[#2a2119] outline-none transition-colors placeholder:text-[#a59a8d] focus:border-[#a87943]';
 
 function normalizePhoneNumber(value: string) {
@@ -229,6 +234,7 @@ function ApplicationCard({ application }: { application: GuestSubmitApplication 
                             <div key={`${target.name || 'target'}-${index}`} className="rounded-md border border-[#eee2d3] bg-white/68 p-4">
                                 <p className="font-serif text-lg text-[#2a2119]">{target.name || `상담대상 ${index + 1}`}</p>
                                 <dl className="mt-3 grid gap-2 text-sm text-[#6a5f55]">
+                                    <DetailRow label="직업" value={target.occupation} />
                                     <DetailRow label="생년월일" value={target.birthDate} />
                                     <DetailRow label="달력" value={formatCalendarType(target.calendarType)} />
                                     <DetailRow label="성별" value={formatGender(target.gender)} />
@@ -242,6 +248,14 @@ function ApplicationCard({ application }: { application: GuestSubmitApplication 
                         </p>
                     )}
                 </div>
+            </div>
+
+            <div className="mt-5">
+                <p className="text-sm font-semibold text-[#6f665d]">상담 일정</p>
+                <dl className="mt-3 grid gap-3 rounded-md border border-[#eee2d3] bg-white/68 p-4 text-sm text-[#6a5f55] md:grid-cols-2">
+                    <DetailRow label="상담방법" value={formatConsultationMethod(application.service_details?.consultationMethod)} />
+                    <DetailRow label="희망일" value={application.service_details?.preferredConsultationDate} />
+                </dl>
             </div>
 
             {application.service_type === 'naming' && (
@@ -331,4 +345,8 @@ function formatGenerationName(details?: ServiceDetails | null) {
 
 function formatHanjaUsage(value?: string | null) {
     return value ? hanjaUsageLabels[value] || value : '-';
+}
+
+function formatConsultationMethod(value?: string | null) {
+    return value ? consultationMethodLabels[value] || value : '-';
 }

@@ -7,6 +7,7 @@ import DeleteSubmitApplicationButton from '@/components/my/DeleteSubmitApplicati
 
 type ConsultationTarget = {
     name?: string | null;
+    occupation?: string | null;
     birthDate?: string | null;
     calendarType?: string | null;
     gender?: string | null;
@@ -15,6 +16,8 @@ type ConsultationTarget = {
 };
 
 type ServiceDetails = {
+    consultationMethod?: string | null;
+    preferredConsultationDate?: string | null;
     familyName?: string | null;
     generationNameUsage?: string | null;
     generationName?: string | null;
@@ -70,6 +73,11 @@ const hanjaUsageLabels: Record<string, string> = {
     required: '필수',
     optional: '상관없음',
     hangul: '한글 이름',
+};
+
+const consultationMethodLabels: Record<string, string> = {
+    visit: '방문',
+    phone: '전화',
 };
 
 export default async function MyApplicationsPage() {
@@ -213,6 +221,7 @@ export default async function MyApplicationsPage() {
                                                             {target.name || `상담대상 ${index + 1}`}
                                                         </p>
                                                         <dl className="mt-3 grid gap-2 text-sm text-[#6a5f55]">
+                                                            <DetailRow label="직업" value={target.occupation} />
                                                             <DetailRow label="생년월일" value={target.birthDate} />
                                                             <DetailRow label="달력" value={formatCalendarType(target.calendarType)} />
                                                             <DetailRow label="성별" value={formatGender(target.gender)} />
@@ -226,6 +235,14 @@ export default async function MyApplicationsPage() {
                                                 </p>
                                             )}
                                         </div>
+                                    </div>
+
+                                    <div className="mt-5">
+                                        <p className="text-sm font-semibold text-[#6f665d]">상담 일정</p>
+                                        <dl className="mt-3 grid gap-3 rounded-md border border-[#eee2d3] bg-white/68 p-4 text-sm text-[#6a5f55] md:grid-cols-2">
+                                            <DetailRow label="상담방법" value={formatConsultationMethod(application.service_details?.consultationMethod)} />
+                                            <DetailRow label="희망일" value={application.service_details?.preferredConsultationDate} />
+                                        </dl>
                                     </div>
 
                                     {application.service_type === 'naming' && (
@@ -327,4 +344,8 @@ function formatGenerationName(details?: ServiceDetails | null) {
 
 function formatHanjaUsage(value?: string | null) {
     return value ? hanjaUsageLabels[value] || value : '-';
+}
+
+function formatConsultationMethod(value?: string | null) {
+    return value ? consultationMethodLabels[value] || value : '-';
 }

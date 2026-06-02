@@ -11,6 +11,7 @@ export const metadata = {
 
 type ConsultationTarget = {
     name?: string | null;
+    occupation?: string | null;
     birthDate?: string | null;
     calendarType?: string | null;
     gender?: string | null;
@@ -19,6 +20,8 @@ type ConsultationTarget = {
 };
 
 type ServiceDetails = {
+    consultationMethod?: string | null;
+    preferredConsultationDate?: string | null;
     familyName?: string | null;
     generationNameUsage?: string | null;
     generationName?: string | null;
@@ -75,6 +78,11 @@ const hanjaUsageLabels: Record<string, string> = {
     required: '필수',
     optional: '상관없음',
     hangul: '한글 이름',
+};
+
+const consultationMethodLabels: Record<string, string> = {
+    visit: '방문',
+    phone: '전화',
 };
 
 export default async function SubmitApplicationDetailPage({ params }: { params: Promise<{ token: string }> }) {
@@ -136,6 +144,7 @@ export default async function SubmitApplicationDetailPage({ params }: { params: 
                                         {target.name || `상담대상 ${index + 1}`}
                                     </p>
                                     <dl className="mt-3 grid gap-2.5 text-base text-stone-600">
+                                        <DetailRow label="직업" value={target.occupation} />
                                         <DetailRow label="생년월일" value={target.birthDate} />
                                         <DetailRow label="달력" value={formatCalendarType(target.calendarType)} />
                                         <DetailRow label="성별" value={formatGender(target.gender)} />
@@ -149,6 +158,14 @@ export default async function SubmitApplicationDetailPage({ params }: { params: 
                             </p>
                         )}
                     </div>
+                </section>
+
+                <section className="mt-6">
+                    <SectionTitle title="상담 일정" />
+                    <dl className="mt-3 grid gap-2.5 rounded-lg border border-stone-100 bg-white p-4 text-base text-stone-600 md:grid-cols-2">
+                        <DetailRow label="상담방법" value={formatConsultationMethod(application.service_details?.consultationMethod)} />
+                        <DetailRow label="희망일" value={application.service_details?.preferredConsultationDate} />
+                    </dl>
                 </section>
 
                 {application.service_type === 'naming' && (
@@ -246,4 +263,8 @@ function formatGenerationName(details?: ServiceDetails | null) {
 
 function formatHanjaUsage(value?: string | null) {
     return value ? hanjaUsageLabels[value] || value : '-';
+}
+
+function formatConsultationMethod(value?: string | null) {
+    return value ? consultationMethodLabels[value] || value : '-';
 }
