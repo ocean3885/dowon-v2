@@ -330,7 +330,7 @@ export function BaziInterpretationCard({
                     <div className="w-full max-w-md rounded-lg border border-[#eadfd4] bg-[#fffdf9] p-5 shadow-[0_24px_70px_rgba(24,17,11,0.28)]">
                         <h4 id="free-consultation-title" className="font-serif text-xl font-bold tracking-normal text-[#2a2018]">무료상담 신청 안내</h4>
                         <p className="mt-3 break-keep text-sm leading-7 text-[#66584c]">
-                            현재 조회한 만세력 결과를 도원만의 사주 분석 기준으로 살피고, AI가 정리한 원국 해설을 신청합니다. 무료상담은 하루 1회 신청 가능하고, 상담 결과는 {authStatus === 'member' ? '마이페이지' : '이 브라우저의 비회원 해설 보관함'}에서 확인 가능합니다.
+                            현재 조회한 만세력 결과를 도원만의 사주 분석 기준으로 살피고, AI가 정리한 원국 해설을 신청합니다. 생성에는 보통 5~10분 정도 소요됩니다. 무료상담은 하루 1회 신청 가능하고, 상담 결과는 {authStatus === 'member' ? '마이페이지' : '이 브라우저의 비회원 해설 보관함'}에서 확인 가능합니다.
                         </p>
                         <div className="mt-5 flex justify-end gap-2">
                             <button

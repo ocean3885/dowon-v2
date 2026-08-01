@@ -412,6 +412,7 @@ function BaziForm({
     const [storageMessage, setStorageMessage] = useState('');
 
     const canUseStorage = authStatus === 'member';
+    const isStorageBusy = storageStatus === 'loading' || storageStatus === 'saving' || storageStatus === 'deleting';
 
     useEffect(() => {
         if (!isStorageOpen || !canUseStorage) return;
@@ -611,6 +612,25 @@ function BaziForm({
                 </p>
             )}
 
+            {canUseStorage && (
+                <div className="mt-5">
+                    <button
+                        type="button"
+                        onClick={saveCurrentProfile}
+                        disabled={isStorageBusy}
+                        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border border-[#d8c7b5] bg-white/72 px-5 text-sm font-semibold text-[#6a4d33] transition hover:border-[#b88b57] hover:bg-[#fbf4ec] disabled:cursor-wait disabled:bg-[#eee5dc] disabled:text-[#928578]"
+                    >
+                        <Save className="h-4 w-4" />
+                        {storageStatus === 'saving' ? '저장 중' : '현재 정보 저장'}
+                    </button>
+                    {storageMessage && (
+                        <p className={`mt-3 rounded-md px-3 py-2 text-sm leading-6 ${storageStatus === 'error' ? 'bg-[#fff2ec] text-[#a05738]' : 'bg-[#eef8ef] text-[#357247]'}`}>
+                            {storageMessage}
+                        </p>
+                    )}
+                </div>
+            )}
+
             <button disabled={isLoading} className="mt-6 inline-flex h-14 w-full items-center justify-center gap-3 rounded-md bg-[#11100e] px-5 text-base font-semibold text-white transition hover:bg-[#2a211a] disabled:cursor-wait disabled:bg-[#5f554d]">
                 {isLoading ? '확인하는 중' : '만세력 확인하기'}
                 <ArrowRight className="h-5 w-5" />
@@ -633,9 +653,7 @@ function BaziForm({
                     profiles={savedProfiles}
                     status={storageStatus}
                     message={storageMessage}
-                    currentValues={formValues}
                     onClose={() => setIsStorageOpen(false)}
-                    onSave={saveCurrentProfile}
                     onLoad={applySavedProfile}
                     onDelete={deleteSavedProfile}
                 />
@@ -723,9 +741,7 @@ function BaziProfileStorageModal({
     profiles,
     status,
     message,
-    currentValues,
     onClose,
-    onSave,
     onLoad,
     onDelete,
 }: {
@@ -733,14 +749,11 @@ function BaziProfileStorageModal({
     profiles: SavedBaziProfile[];
     status: 'idle' | 'loading' | 'saving' | 'deleting' | 'error';
     message: string;
-    currentValues: BaziFormValues;
     onClose: () => void;
-    onSave: () => void;
     onLoad: (profile: SavedBaziProfile) => void;
     onDelete: (id: string) => void;
 }) {
     const isBusy = status === 'loading' || status === 'saving' || status === 'deleting';
-    const currentLabel = getSavedProfileLabel(currentValues);
 
     return (
         <div className="fixed inset-0 z-[85] flex items-center justify-center bg-black/45 px-4" role="dialog" aria-modal="true" aria-labelledby="bazi-profile-storage-title">
@@ -773,31 +786,13 @@ function BaziProfileStorageModal({
                     </div>
                 ) : (
                     <div className="overflow-y-auto px-5 py-5">
-                        <section className="rounded-md border border-[#ead9c8] bg-[#fbf5ef] p-4">
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="min-w-0">
-                                    <p className="text-xs font-semibold text-[#9a7046]">현재 입력값</p>
-                                    <p className="mt-1 break-keep text-sm font-semibold leading-6 text-[#3d3026]">{currentLabel}</p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={onSave}
-                                    disabled={isBusy}
-                                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-[#2d241c] px-4 text-sm font-semibold text-white transition hover:bg-[#46382c] disabled:cursor-wait disabled:bg-[#76695d]"
-                                >
-                                    <Save className="h-4 w-4" />
-                                    {status === 'saving' ? '저장 중' : '현재 정보 저장'}
-                                </button>
-                            </div>
-                        </section>
-
                         {message && (
-                            <p className={`mt-3 rounded-md px-3 py-2 text-sm leading-6 ${status === 'error' ? 'bg-[#fff2ec] text-[#a05738]' : 'bg-[#eef8ef] text-[#357247]'}`}>
+                            <p className={`rounded-md px-3 py-2 text-sm leading-6 ${status === 'error' ? 'bg-[#fff2ec] text-[#a05738]' : 'bg-[#eef8ef] text-[#357247]'}`}>
                                 {message}
                             </p>
                         )}
 
-                        <section className="mt-4">
+                        <section className={message ? 'mt-4' : ''}>
                             <div className="mb-2 flex items-center justify-between">
                                 <h4 className="text-sm font-bold text-[#56483c]">저장된 정보</h4>
                                 <span className="text-xs font-medium text-[#9a8d80]">{profiles.length}개</span>

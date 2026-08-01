@@ -21,11 +21,15 @@ export function BaziConsultationItem({
     readOnly = false,
     initiallyExpanded = false,
     hideExpandToggle = false,
+    deleteRedirectTo,
+    spaciousText = false,
 }: {
     consultation: FreeBaziConsultationRow;
     readOnly?: boolean;
     initiallyExpanded?: boolean;
     hideExpandToggle?: boolean;
+    deleteRedirectTo?: string;
+    spaciousText?: boolean;
 }) {
     const router = useRouter();
     const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
@@ -129,7 +133,7 @@ export function BaziConsultationItem({
                 </div>
                 {!readOnly && (
                     <div className="shrink-0 self-start sm:self-center">
-                        <DeleteBaziConsultationButton id={consultation.id} />
+                        <DeleteBaziConsultationButton id={consultation.id} redirectTo={deleteRedirectTo} />
                     </div>
                 )}
             </div>
@@ -145,7 +149,7 @@ export function BaziConsultationItem({
                             분석중입니다...
                         </div>
                         <p className="mt-3 break-keep">
-                            해설 생성이 완료되면 이곳에 자동으로 표시됩니다. 잠시 후 새로고침하거나 다시 확인해주세요.
+                            해설 생성에는 보통 5~10분 정도 소요됩니다. 완료되면 이곳에 자동으로 표시되니 여유를 두고 다시 확인해주세요.
                         </p>
                     </div>
                 ) : isFailed ? (
@@ -154,7 +158,7 @@ export function BaziConsultationItem({
                     </div>
                 ) : (
                     <div
-                        className={`whitespace-pre-wrap rounded-md border border-[#eee2d3] bg-[#fcfaf6] px-4 py-4 text-sm leading-8 text-[#4f463e] md:px-6 md:py-6 md:text-base md:leading-9 transition-all duration-300 ${
+                        className={`whitespace-pre-wrap rounded-md border border-[#eee2d3] bg-[#fcfaf6] px-4 py-4 text-sm leading-8 text-[#4f463e] md:px-6 md:py-6 md:text-base md:leading-9 ${spaciousText ? 'xl:text-lg xl:leading-10' : ''} transition-all duration-300 ${
                             isExpanded || hideExpandToggle ? 'max-h-none pb-4' : 'max-h-36 overflow-hidden pb-12'
                         }`}
                     >

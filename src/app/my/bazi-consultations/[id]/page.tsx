@@ -54,7 +54,20 @@ export default async function MyBaziConsultationDetailPage({ params }: { params:
                 </Link>
 
                 <div className="mt-5">
-                    <BaziConsultationItem consultation={data as FreeBaziConsultationRow} initiallyExpanded hideExpandToggle />
+                    <BaziConsultationItem
+                        consultation={data as FreeBaziConsultationRow}
+                        initiallyExpanded
+                        hideExpandToggle
+                        deleteRedirectTo="/my/bazi-consultations"
+                        spaciousText
+                    />
+                </div>
+
+                <div className="mt-8 flex justify-center">
+                    <Link href="/my/bazi-consultations" className="inline-flex h-10 items-center gap-2 rounded-md border border-[#ded4c8] bg-white/82 px-4 text-sm font-semibold text-[#66584a] transition hover:bg-[#f7efe4] hover:text-[#7a542a]">
+                        <ArrowLeft className="h-4 w-4" />
+                        목록으로
+                    </Link>
                 </div>
             </section>
         </main>

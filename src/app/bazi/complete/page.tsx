@@ -7,8 +7,8 @@ const guideItems = [
     {
         icon: Clock3,
         title: '분석 소요 시간',
-        value: '약 2~3분',
-        description: 'AI가 사주 원국의 상호작용과 흐름을 깊이 있게 정밀 분석합니다.',
+        value: '약 5~10분',
+        description: 'AI가 사주 원국의 상호작용과 흐름을 깊이 있게 정밀 분석합니다. 여유를 두고 확인해주세요.',
     },
     {
         icon: Sparkles,
@@ -78,7 +78,7 @@ export default async function BaziCompletePage({ searchParams }: { searchParams:
                         </div>
                         <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-[#554b42] break-keep md:text-lg">
                             AI가 명리학 관점으로 사주 원국을 정밀하게 풀이하고 있습니다.
-                            분석 및 작성이 완료되면 {storageLabel}에서 확인하실 수 있습니다.
+                            분석 및 작성에는 보통 5~10분 정도 소요되며, 완료되면 {storageLabel}에서 확인하실 수 있습니다.
                         </p>
                     </div>
                 </div>

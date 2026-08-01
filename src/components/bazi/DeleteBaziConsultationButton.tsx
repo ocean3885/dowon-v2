@@ -5,7 +5,7 @@ import { useState, useTransition } from 'react';
 import { Trash2 } from 'lucide-react';
 import { deleteFreeBaziConsultation } from '@/lib/actions';
 
-export function DeleteBaziConsultationButton({ id }: { id: string }) {
+export function DeleteBaziConsultationButton({ id, redirectTo }: { id: string; redirectTo?: string }) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [showConfirm, setShowConfirm] = useState(false);
@@ -20,6 +20,11 @@ export function DeleteBaziConsultationButton({ id }: { id: string }) {
             }
 
             setShowConfirm(false);
+            if (redirectTo) {
+                router.replace(redirectTo);
+                return;
+            }
+
             router.refresh();
         });
     };

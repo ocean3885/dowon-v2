@@ -16,6 +16,9 @@ import {
 
 export type BaziConsultationTable = 'free_bazi_consultations' | 'guest_bazi_consultations';
 
+const FINALIZE_STEP_RESULT_CHAR_LIMIT = 4800;
+const COMPACTED_STEP_RESULT_MAX_TOKENS = 1800;
+
 export async function generateAndStoreBaziInterpretation({
     consultationId,
     result,
@@ -129,7 +132,7 @@ async function runBaziGenerationPipeline(adminSupabase: SupabaseClient, result: 
         throw new Error('사주 해설 분석 단계가 모두 실패했습니다.');
     }
 
-    const stepResultsText = buildStepResultsText(successfulStepResults);
+    const stepResultsText = await buildFinalStepResultsText(successfulStepResults, config);
     const finalPrompt = renderBaziPromptTemplate(config.finalize.userPromptTemplate, result, {
         stepResults: stepResultsText,
     });
@@ -154,6 +157,50 @@ async function runBaziGenerationPipeline(adminSupabase: SupabaseClient, result: 
         promptVersion: config.version,
         metadata,
     };
+}
+
+async function buildFinalStepResultsText(results: BaziPromptStepResult[], config: BaziPromptPipelineConfig) {
+    const compactedResults = await Promise.all(results.map(async (result) => {
+        const content = result.content.trim();
+        if (content.length <= FINALIZE_STEP_RESULT_CHAR_LIMIT) return result;
+
+        try {
+            const compactedContent = await requestDeepSeekCompletion({
+                model: config.model || DEEPSEEK_MODEL,
+                systemPrompt: '당신은 사주 분석 초안을 최종 편집 단계에 전달하기 좋게 압축하는 한국어 편집자입니다. 핵심 판단, 명식 근거, 주의점, 조언은 보존하고 반복 표현만 줄입니다.',
+                userPrompt: [
+                    `[${result.label}] 분석 초안이 너무 깁니다.`,
+                    '아래 내용을 최종 상담문 작성에 필요한 핵심 근거 중심으로 압축해 주세요.',
+                    '새로운 해석을 추가하지 말고, 원문에 있는 중요한 판단과 근거를 빠뜨리지 마세요.',
+                    '마크다운 기호는 쓰지 말고 자연스러운 한국어 문단으로 정리해 주세요.',
+                    '',
+                    content,
+                ].join('\n'),
+                maxTokens: COMPACTED_STEP_RESULT_MAX_TOKENS,
+                temperature: 0.2,
+                errorLabel: `DeepSeek bazi step compaction failed: ${result.key}`,
+            });
+
+            return {
+                ...result,
+                content: compactedContent,
+            };
+        } catch (error) {
+            console.error(`Bazi step compaction fallback used: ${result.key}`, error);
+            return {
+                ...result,
+                content: [
+                    content.slice(0, Math.floor(FINALIZE_STEP_RESULT_CHAR_LIMIT * 0.65)),
+                    '',
+                    content.slice(-Math.floor(FINALIZE_STEP_RESULT_CHAR_LIMIT * 0.35)),
+                    '',
+                    '[압축 단계 실패로 원문의 앞부분과 끝부분을 함께 전달했습니다.]',
+                ].join('\n'),
+            };
+        }
+    }));
+
+    return buildStepResultsText(compactedResults);
 }
 
 async function runBaziAnalysisStep(
