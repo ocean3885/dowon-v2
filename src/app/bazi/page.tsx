@@ -5,15 +5,20 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import {
     ArrowRight,
+    Bookmark,
     Clock3,
     Compass,
     Flower2,
+    FolderOpen,
     Lightbulb,
     RefreshCw,
+    Save,
     ScrollText,
     Sparkles,
     Sprout,
     Sun,
+    Trash2,
+    X,
 } from 'lucide-react';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { BaziInterpretationCard, SajuChart } from '@/components/bazi/SajuChart';
@@ -29,6 +34,13 @@ type BaziFormValues = {
     min: string;
     sl: string;
     gen: string;
+};
+
+type SavedBaziProfile = BaziFormValues & {
+    id: string;
+    label: string;
+    createdAt?: string;
+    updatedAt?: string;
 };
 
 const pillarOrder: PillarKey[] = ['time', 'day', 'month', 'year'];
@@ -319,14 +331,14 @@ export default function BaziPage() {
                     </div>
 
                     <div className="hidden lg:block">
-                        <BaziForm birthTimeId="desktop-birth-time" error={error} isLoading={isLoading} onAnalyze={handleAnalyze} onReset={handleReset} />
+                        <BaziForm birthTimeId="desktop-birth-time" authStatus={authStatus} error={error} isLoading={isLoading} onAnalyze={handleAnalyze} onReset={handleReset} />
                     </div>
                 </div>
             </section>
 
             <div className="relative mx-auto w-[min(1180px,calc(100%-24px))]">
                 <div className="relative z-10 -mt-10 lg:hidden">
-                    <BaziForm birthTimeId="mobile-birth-time" error={error} isLoading={isLoading} onAnalyze={handleAnalyze} onReset={handleReset} />
+                    <BaziForm birthTimeId="mobile-birth-time" authStatus={authStatus} error={error} isLoading={isLoading} onAnalyze={handleAnalyze} onReset={handleReset} />
                 </div>
 
                 <div className={`grid gap-4 pt-4 lg:gap-7 lg:pt-8 ${showResult ? '' : 'mx-auto max-w-6xl'}`}>
@@ -364,12 +376,14 @@ export default function BaziPage() {
 
 function BaziForm({
     birthTimeId,
+    authStatus,
     error,
     isLoading,
     onAnalyze,
     onReset,
 }: {
     birthTimeId: string;
+    authStatus: BaziAuthStatus;
     error: string;
     isLoading: boolean;
     onAnalyze: (values: BaziFormValues) => void;
@@ -381,30 +395,165 @@ function BaziForm({
     const defaultDay = String(defaultDateTime.getDate()).padStart(2, '0');
     const defaultHour = String(defaultDateTime.getHours()).padStart(2, '0');
     const defaultMinute = String(defaultDateTime.getMinutes()).padStart(2, '0');
+    const defaultValues: BaziFormValues = {
+        subjectName: '',
+        year: defaultYear,
+        month: defaultMonth,
+        day: defaultDay,
+        hour: defaultHour,
+        min: defaultMinute,
+        sl: 'sol',
+        gen: '남',
+    };
+    const [formValues, setFormValues] = useState<BaziFormValues>(defaultValues);
+    const [isStorageOpen, setIsStorageOpen] = useState(false);
+    const [savedProfiles, setSavedProfiles] = useState<SavedBaziProfile[]>([]);
+    const [storageStatus, setStorageStatus] = useState<'idle' | 'loading' | 'saving' | 'deleting' | 'error'>('idle');
+    const [storageMessage, setStorageMessage] = useState('');
+
+    const canUseStorage = authStatus === 'member';
+
+    useEffect(() => {
+        if (!isStorageOpen || !canUseStorage) return;
+
+        loadSavedProfiles();
+    }, [isStorageOpen, canUseStorage]);
+
+    const updateFormValue = (key: keyof BaziFormValues, value: string) => {
+        setFormValues((current) => ({ ...current, [key]: value }));
+    };
+
+    const resetCurrentForm = () => {
+        setFormValues(defaultValues);
+        onReset();
+    };
+
+    const submitValues = () => {
+        onAnalyze({
+            subjectName: formValues.subjectName.trim(),
+            year: formValues.year,
+            month: String(Number(formValues.month || '0')),
+            day: String(Number(formValues.day || '0')),
+            hour: String(Number(formValues.hour || '0')),
+            min: String(Number(formValues.min || '0')),
+            sl: formValues.sl || 'sol',
+            gen: formValues.gen || '남',
+        });
+    };
+
+    async function loadSavedProfiles() {
+        setStorageStatus('loading');
+        setStorageMessage('');
+
+        try {
+            const response = await fetch('/api/bazi/saved-profiles', { cache: 'no-store' });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data?.message || '저장된 사주 정보를 불러오지 못했습니다.');
+            }
+
+            setSavedProfiles(data.profiles || []);
+            setStorageStatus('idle');
+        } catch (requestError) {
+            setStorageStatus('error');
+            setStorageMessage(requestError instanceof Error ? requestError.message : '저장된 사주 정보를 불러오지 못했습니다.');
+        }
+    }
+
+    async function saveCurrentProfile() {
+        if (!canUseStorage) {
+            setStorageMessage('로그인 후 사주 정보를 저장할 수 있습니다.');
+            return;
+        }
+
+        setStorageStatus('saving');
+        setStorageMessage('');
+
+        try {
+            const response = await fetch('/api/bazi/saved-profiles', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formValues),
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data?.message || '사주 정보 저장에 실패했습니다.');
+            }
+
+            setSavedProfiles(data.profiles || []);
+            setStorageStatus('idle');
+            setStorageMessage('현재 입력값을 저장했습니다.');
+        } catch (requestError) {
+            setStorageStatus('error');
+            setStorageMessage(requestError instanceof Error ? requestError.message : '사주 정보 저장에 실패했습니다.');
+        }
+    }
+
+    async function deleteSavedProfile(id: string) {
+        setStorageStatus('deleting');
+        setStorageMessage('');
+
+        try {
+            const response = await fetch(`/api/bazi/saved-profiles?id=${encodeURIComponent(id)}`, {
+                method: 'DELETE',
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data?.message || '저장된 사주 정보 삭제에 실패했습니다.');
+            }
+
+            setSavedProfiles(data.profiles || []);
+            setStorageStatus('idle');
+        } catch (requestError) {
+            setStorageStatus('error');
+            setStorageMessage(requestError instanceof Error ? requestError.message : '저장된 사주 정보 삭제에 실패했습니다.');
+        }
+    }
+
+    function applySavedProfile(profile: SavedBaziProfile) {
+        setFormValues({
+            subjectName: profile.subjectName || '',
+            year: profile.year,
+            month: profile.month.padStart(2, '0'),
+            day: profile.day.padStart(2, '0'),
+            hour: profile.hour.padStart(2, '0'),
+            min: profile.min.padStart(2, '0'),
+            sl: profile.sl || 'sol',
+            gen: profile.gen || '남',
+        });
+        setIsStorageOpen(false);
+        setStorageMessage('');
+    }
 
     return (
         <form
             onSubmit={(event) => {
                 event.preventDefault();
-                const formData = new FormData(event.currentTarget);
-
-                onAnalyze({
-                    subjectName: String(formData.get('subjectName') || '').trim(),
-                    year: String(formData.get('year') || ''),
-                    month: String(Number(formData.get('month') || '0')),
-                    day: String(Number(formData.get('day') || '0')),
-                    hour: String(Number(formData.get('hour') || '0')),
-                    min: String(Number(formData.get('min') || '0')),
-                    sl: String(formData.get('sl') || 'sol'),
-                    gen: String(formData.get('gen') || '남'),
-                });
+                submitValues();
             }}
-            onReset={onReset}
+            onReset={(event) => {
+                event.preventDefault();
+                resetCurrentForm();
+            }}
             className="rounded-lg border border-[#eadfd4] bg-[rgba(255,252,248,0.97)] p-5 shadow-[0_14px_44px_rgba(44,30,18,0.14)] backdrop-blur"
         >
-            <div className="mb-5">
-                <h2 className="font-serif text-2xl font-bold tracking-normal text-[#281d15]">사주 정보 입력</h2>
-                <p className="mt-2 text-sm text-[#75685e]">정확한 해석을 위해 정보를 입력해주세요.</p>
+            <div className="mb-5 flex items-start justify-between gap-3">
+                <div>
+                    <h2 className="font-serif text-2xl font-bold tracking-normal text-[#281d15]">사주 정보 입력</h2>
+                    <p className="mt-2 text-sm text-[#75685e]">정확한 해석을 위해 정보를 입력해주세요.</p>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => setIsStorageOpen(true)}
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[#e1d1c0] bg-white/78 text-[#7a542a] transition hover:border-[#b88b57] hover:bg-[#fbf4ec]"
+                    aria-label="저장한 사주 정보"
+                    title="저장한 사주 정보"
+                >
+                    <Bookmark className="h-4 w-4" />
+                </button>
             </div>
 
             <fieldset className="space-y-5">
@@ -417,6 +566,8 @@ function BaziForm({
                         name="subjectName"
                         type="text"
                         maxLength={30}
+                        value={formValues.subjectName}
+                        onChange={(event) => updateFormValue('subjectName', event.target.value)}
                         placeholder="예) 홍길동"
                         className="mt-2 h-12 w-full rounded-md border border-[#e4d8cb] bg-white/72 px-3 text-sm text-[#493b2d] outline-none transition placeholder:text-[#aa9d90] focus:border-[#ad7b42]"
                     />
@@ -425,9 +576,9 @@ function BaziForm({
                 <div>
                     <label className="text-sm font-semibold text-[#56483c]">생년월일</label>
                     <div className="mt-2 grid grid-cols-[1.14fr_.85fr_.85fr] gap-2">
-                        <SelectBox label="년도" name="year" defaultValue={defaultYear} values={years} suffix="년" />
-                        <SelectBox label="월" name="month" defaultValue={defaultMonth} values={months} suffix="월" />
-                        <SelectBox label="일" name="day" defaultValue={defaultDay} values={days} suffix="일" />
+                        <SelectBox label="년도" name="year" value={formValues.year} onChange={(value) => updateFormValue('year', value)} values={years} suffix="년" />
+                        <SelectBox label="월" name="month" value={formValues.month} onChange={(value) => updateFormValue('month', value)} values={months} suffix="월" />
+                        <SelectBox label="일" name="day" value={formValues.day} onChange={(value) => updateFormValue('day', value)} values={days} suffix="일" />
                     </div>
                 </div>
 
@@ -439,18 +590,19 @@ function BaziForm({
                         { label: '음력', value: 'lun' },
                         { label: '음력윤달', value: 'lun_y' },
                     ]}
-                    defaultValue="sol"
+                    value={formValues.sl}
+                    onChange={(value) => updateFormValue('sl', value)}
                 />
 
                 <div>
                     <label htmlFor={birthTimeId} className="text-sm font-semibold text-[#56483c]">출생시간</label>
                     <div className="mt-2 grid grid-cols-2 gap-2">
-                        <SelectBox label="시" name="hour" defaultValue={defaultHour} values={hours} suffix="시" id={birthTimeId} />
-                        <SelectBox label="분" name="min" defaultValue={defaultMinute} values={minutes} suffix="분" />
+                        <SelectBox label="시" name="hour" value={formValues.hour} onChange={(value) => updateFormValue('hour', value)} values={hours} suffix="시" id={birthTimeId} />
+                        <SelectBox label="분" name="min" value={formValues.min} onChange={(value) => updateFormValue('min', value)} values={minutes} suffix="분" />
                     </div>
                 </div>
 
-                <ToggleGroup title="성별" name="gen" options={[{ label: '남성', value: '남' }, { label: '여성', value: '여' }]} defaultValue="남" />
+                <ToggleGroup title="성별" name="gen" options={[{ label: '남성', value: '남' }, { label: '여성', value: '여' }]} value={formValues.gen} onChange={(value) => updateFormValue('gen', value)} />
             </fieldset>
 
             {error && (
@@ -474,6 +626,20 @@ function BaziForm({
                     입력 초기화
                 </button>
             </div>
+
+            {isStorageOpen && (
+                <BaziProfileStorageModal
+                    authStatus={authStatus}
+                    profiles={savedProfiles}
+                    status={storageStatus}
+                    message={storageMessage}
+                    currentValues={formValues}
+                    onClose={() => setIsStorageOpen(false)}
+                    onSave={saveCurrentProfile}
+                    onLoad={applySavedProfile}
+                    onDelete={deleteSavedProfile}
+                />
+            )}
         </form>
     );
 }
@@ -484,14 +650,16 @@ function SelectBox({
     name,
     values,
     suffix,
-    defaultValue,
+    value,
+    onChange,
 }: {
     id?: string;
     label: string;
     name: string;
     values: readonly string[];
     suffix: string;
-    defaultValue: string;
+    value: string;
+    onChange: (value: string) => void;
 }) {
     return (
         <label className="flex min-w-0 items-center gap-1">
@@ -500,7 +668,8 @@ function SelectBox({
                 id={id}
                 aria-label={label}
                 name={name}
-                defaultValue={defaultValue}
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
                 className="h-12 min-w-0 flex-1 rounded-md border border-[#e4d8cb] bg-white/72 px-3 text-sm text-[#493b2d] outline-none transition focus:border-[#ad7b42]"
             >
                 {values.map((value) => (
@@ -516,12 +685,14 @@ function ToggleGroup({
     title,
     name,
     options,
-    defaultValue,
+    value,
+    onChange,
 }: {
     title: string;
     name: string;
     options: readonly { label: string; value: string }[];
-    defaultValue: string;
+    value: string;
+    onChange: (value: string) => void;
 }) {
     return (
         <fieldset>
@@ -529,7 +700,14 @@ function ToggleGroup({
             <div className={`mt-2 grid gap-2 ${options.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 {options.map((option) => (
                     <label key={option.value} className="cursor-pointer">
-                        <input type="radio" name={name} value={option.value} defaultChecked={option.value === defaultValue} className="peer sr-only" />
+                        <input
+                            type="radio"
+                            name={name}
+                            value={option.value}
+                            checked={option.value === value}
+                            onChange={() => onChange(option.value)}
+                            className="peer sr-only"
+                        />
                         <span className="flex h-12 items-center justify-center rounded-md border border-[#e4d8cb] bg-white/62 text-sm font-semibold text-[#75685e] transition peer-checked:border-[#a97945] peer-checked:bg-[#a97945] peer-checked:text-white">
                             {option.label}
                         </span>
@@ -538,6 +716,156 @@ function ToggleGroup({
             </div>
         </fieldset>
     );
+}
+
+function BaziProfileStorageModal({
+    authStatus,
+    profiles,
+    status,
+    message,
+    currentValues,
+    onClose,
+    onSave,
+    onLoad,
+    onDelete,
+}: {
+    authStatus: BaziAuthStatus;
+    profiles: SavedBaziProfile[];
+    status: 'idle' | 'loading' | 'saving' | 'deleting' | 'error';
+    message: string;
+    currentValues: BaziFormValues;
+    onClose: () => void;
+    onSave: () => void;
+    onLoad: (profile: SavedBaziProfile) => void;
+    onDelete: (id: string) => void;
+}) {
+    const isBusy = status === 'loading' || status === 'saving' || status === 'deleting';
+    const currentLabel = getSavedProfileLabel(currentValues);
+
+    return (
+        <div className="fixed inset-0 z-[85] flex items-center justify-center bg-black/45 px-4" role="dialog" aria-modal="true" aria-labelledby="bazi-profile-storage-title">
+            <div className="max-h-[min(720px,calc(100vh-48px))] w-full max-w-lg overflow-hidden rounded-lg border border-[#eadfd4] bg-[#fffdf9] shadow-[0_24px_70px_rgba(24,17,11,0.28)]">
+                <div className="flex items-start justify-between gap-4 border-b border-[#eadfd4] px-5 py-4">
+                    <div>
+                        <h3 id="bazi-profile-storage-title" className="font-serif text-xl font-bold tracking-normal text-[#2a2018]">사주 정보 저장함</h3>
+                        <p className="mt-1 break-keep text-sm leading-6 text-[#74675b]">자주 보는 생년월일시를 계정에 저장하고 다시 불러옵니다.</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[#7b6a5a] transition hover:bg-[#f6eee5]"
+                        aria-label="닫기"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
+
+                {authStatus === 'checking' ? (
+                    <div className="px-5 py-8 text-center text-sm font-medium text-[#6f6257]">회원 정보를 확인하고 있습니다.</div>
+                ) : authStatus !== 'member' ? (
+                    <div className="px-5 py-7">
+                        <div className="rounded-md border border-[#ead9c8] bg-[#fbf5ef] px-4 py-5 text-center">
+                            <p className="break-keep text-sm leading-7 text-[#5d4c3d]">로그인 후 사주 정보를 저장하고 계정별로 다시 불러올 수 있습니다.</p>
+                            <Link href="/login" className="mt-4 inline-flex h-10 items-center justify-center rounded-md bg-[#2d241c] px-4 text-sm font-semibold text-white transition hover:bg-[#46382c]">
+                                로그인하기
+                            </Link>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="overflow-y-auto px-5 py-5">
+                        <section className="rounded-md border border-[#ead9c8] bg-[#fbf5ef] p-4">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-w-0">
+                                    <p className="text-xs font-semibold text-[#9a7046]">현재 입력값</p>
+                                    <p className="mt-1 break-keep text-sm font-semibold leading-6 text-[#3d3026]">{currentLabel}</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={onSave}
+                                    disabled={isBusy}
+                                    className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-md bg-[#2d241c] px-4 text-sm font-semibold text-white transition hover:bg-[#46382c] disabled:cursor-wait disabled:bg-[#76695d]"
+                                >
+                                    <Save className="h-4 w-4" />
+                                    {status === 'saving' ? '저장 중' : '현재 정보 저장'}
+                                </button>
+                            </div>
+                        </section>
+
+                        {message && (
+                            <p className={`mt-3 rounded-md px-3 py-2 text-sm leading-6 ${status === 'error' ? 'bg-[#fff2ec] text-[#a05738]' : 'bg-[#eef8ef] text-[#357247]'}`}>
+                                {message}
+                            </p>
+                        )}
+
+                        <section className="mt-4">
+                            <div className="mb-2 flex items-center justify-between">
+                                <h4 className="text-sm font-bold text-[#56483c]">저장된 정보</h4>
+                                <span className="text-xs font-medium text-[#9a8d80]">{profiles.length}개</span>
+                            </div>
+
+                            {status === 'loading' ? (
+                                <div className="rounded-md border border-[#eadfd4] bg-white/70 px-4 py-6 text-center text-sm text-[#73675c]">불러오는 중입니다.</div>
+                            ) : profiles.length === 0 ? (
+                                <div className="rounded-md border border-dashed border-[#dccbbb] bg-white/60 px-4 py-6 text-center">
+                                    <FolderOpen className="mx-auto h-6 w-6 text-[#b88b57]" />
+                                    <p className="mt-2 text-sm leading-6 text-[#73675c]">아직 저장된 사주 정보가 없습니다.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {profiles.map((profile) => (
+                                        <article key={profile.id} className="rounded-md border border-[#eadfd4] bg-white/72 p-3">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <h5 className="break-keep text-sm font-bold leading-6 text-[#3d3026]">{profile.label}</h5>
+                                                    <p className="mt-1 text-xs leading-5 text-[#84776b]">{formatSavedProfileDetails(profile)}</p>
+                                                </div>
+                                                <div className="flex shrink-0 items-center gap-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onLoad(profile)}
+                                                        disabled={isBusy}
+                                                        className="inline-flex h-8 items-center justify-center rounded-md bg-[#8f6235] px-3 text-xs font-semibold text-white transition hover:bg-[#714b28] disabled:cursor-wait disabled:bg-[#b8aa9c]"
+                                                    >
+                                                        적용
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onDelete(profile.id)}
+                                                        disabled={isBusy}
+                                                        className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[#9a4b34] transition hover:bg-[#fff2ec] disabled:cursor-wait disabled:opacity-50"
+                                                        aria-label={`${profile.label} 삭제`}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    ))}
+                                </div>
+                            )}
+                        </section>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function getSavedProfileLabel(values: BaziFormValues) {
+    const name = values.subjectName.trim();
+    if (name) return name;
+
+    return `${values.year}.${values.month.padStart(2, '0')}.${values.day.padStart(2, '0')} ${values.hour.padStart(2, '0')}:${values.min.padStart(2, '0')}`;
+}
+
+function formatSavedProfileDetails(values: BaziFormValues) {
+    const calendarLabel = values.sl === 'lun'
+        ? '음력'
+        : values.sl === 'lun_y'
+            ? '음력윤달'
+            : '양력';
+
+    return `${calendarLabel} ${values.year}.${values.month.padStart(2, '0')}.${values.day.padStart(2, '0')} ${values.hour.padStart(2, '0')}:${values.min.padStart(2, '0')} · ${values.gen}`;
 }
 
 function FeatureStrip({ expanded = false }: { expanded?: boolean }) {

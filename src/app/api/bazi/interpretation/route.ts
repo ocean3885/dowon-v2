@@ -1,9 +1,8 @@
 import { createHash } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import type { BaziResult } from '@/components/bazi/types';
+import { DEEPSEEK_API_URL, DEEPSEEK_MODEL } from '@/lib/deepseek';
 
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
-const DEEPSEEK_MODEL = 'deepseek-chat';
 const cache = new Map<string, string>();
 
 export async function POST(request: NextRequest) {

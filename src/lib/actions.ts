@@ -7,8 +7,12 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { sendSMS } from './aligo';
-import { getPositionLabel, getPositionOptionsForChar, getTenStar, parseDayPillar } from './saju-relations';
 import { claimGuestBaziConsultationsForUser } from './guest-bazi-claim';
+import {
+    BAZI_PROMPT_SETTING_KEY,
+    defaultBaziPromptPipelineConfig,
+    normalizeBaziPromptPipelineConfig,
+} from './bazi-prompt-config';
 
 type RecentPostRow = {
     id: number;
@@ -29,6 +33,11 @@ type SubmitApplicationState = {
 };
 
 export type UpdateProfileState = {
+    success: boolean;
+    message: string;
+};
+
+export type BaziPromptPipelineFormState = {
     success: boolean;
     message: string;
 };
@@ -77,43 +86,6 @@ export type AdminSubmitApplication = {
     status: string;
 };
 
-export type SajuRelationReadingStatus = 'draft' | 'approved' | 'archived';
-export type SajuRelationReadingSource = 'manual' | 'deepseek';
-
-export type SajuRelationReadingFormState = {
-    success: boolean;
-    message: string;
-};
-
-export type SajuRelationReading = {
-    id: number;
-    relation_type: string;
-    relation_key: string;
-    day_pillar: string;
-    day_stem: string;
-    day_branch: string;
-    actor_char: string;
-    target_char: string;
-    actor_ten_star: string | null;
-    target_ten_star: string | null;
-    ten_star_pair: string | null;
-    actor_position: string;
-    target_position: string;
-    palace_pair: string | null;
-    title: string;
-    summary: string;
-    detail: string;
-    status: SajuRelationReadingStatus;
-    source: SajuRelationReadingSource;
-    prompt_version: string | null;
-    model: string | null;
-    generated_at: string | null;
-    reviewed_at: string | null;
-    reviewed_by: string | null;
-    created_at: string;
-    updated_at: string;
-};
-
 function hashApplicationPassword(password: string) {
     const salt = randomBytes(16).toString('hex');
     const hash = scryptSync(password, salt, 64).toString('hex');
@@ -143,11 +115,6 @@ function normalizePhoneNumber(phone: string) {
 
 function getFormString(formData: FormData, name: string, fallback = '') {
     return String(formData.get(name) || fallback).trim();
-}
-
-function getOptionalFormString(formData: FormData, name: string) {
-    const value = getFormString(formData, name);
-    return value || null;
 }
 
 function buildSiteUrl(headersList: Headers) {
@@ -601,221 +568,58 @@ export async function updateSubmitStatus(id: number, status: string) {
     }
 }
 
-function buildSajuRelationReadingPayload(formData: FormData) {
-    const relationType = getFormString(formData, 'relation_type');
-    const relationKey = getFormString(formData, 'relation_key');
-    const dayPillar = getFormString(formData, 'day_pillar');
-    const actorChar = getFormString(formData, 'actor_char');
-    const targetChar = getFormString(formData, 'target_char');
-    const actorPosition = getFormString(formData, 'actor_position');
-    const targetPosition = getFormString(formData, 'target_position');
-    const title = getFormString(formData, 'title');
-    const summary = getFormString(formData, 'summary');
-    const detail = getFormString(formData, 'detail');
-    const status = getFormString(formData, 'status', 'draft') as SajuRelationReadingStatus;
-    const source = getFormString(formData, 'source', 'manual') as SajuRelationReadingSource;
+export async function updateBaziPromptPipelineConfig(
+    _prevState: BaziPromptPipelineFormState,
+    formData: FormData
+): Promise<BaziPromptPipelineFormState> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    const allowedStatuses: SajuRelationReadingStatus[] = ['draft', 'approved', 'archived'];
-    const allowedSources: SajuRelationReadingSource[] = ['manual', 'deepseek'];
-
-    if (
-        !relationType ||
-        !relationKey ||
-        !dayPillar ||
-        !actorChar ||
-        !targetChar ||
-        !actorPosition ||
-        !targetPosition ||
-        !title ||
-        !summary ||
-        !detail
-    ) {
-        return { error: '필수 항목을 입력해주세요.' };
+    if (!user) {
+        return { success: false, message: '로그인이 필요합니다.' };
     }
 
-    const parsedDayPillar = parseDayPillar(dayPillar);
-    if (!parsedDayPillar) {
-        return { error: '올바르지 않은 기준 일주입니다.' };
+    const adminSupabase = await createAdminClient();
+    const { data: member, error: memberError } = await adminSupabase
+        .from('members')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    if (memberError || member?.role !== 'admin') {
+        return { success: false, message: '관리자 권한이 필요합니다.' };
     }
 
-    if (!allowedStatuses.includes(status)) {
-        return { error: '올바르지 않은 상태값입니다.' };
+    const intent = getFormString(formData, 'intent', 'save');
+    let value = defaultBaziPromptPipelineConfig;
+
+    if (intent !== 'reset') {
+        try {
+            value = normalizeBaziPromptPipelineConfig(JSON.parse(getFormString(formData, 'config')));
+        } catch {
+            return { success: false, message: '프롬프트 설정 형식이 올바르지 않습니다.' };
+        }
     }
 
-    if (!allowedSources.includes(source)) {
-        return { error: '올바르지 않은 생성 출처입니다.' };
-    }
-
-    const { dayStem, dayBranch } = parsedDayPillar;
-    const actorPositionOptions = getPositionOptionsForChar(actorChar, dayStem, dayBranch);
-    const targetPositionOptions = getPositionOptionsForChar(targetChar, dayStem, dayBranch);
-
-    if (!actorPositionOptions.some((option) => option.value === actorPosition)) {
-        return { error: '작용 글자에 맞는 작용 위치를 선택해주세요.' };
-    }
-
-    if (!targetPositionOptions.some((option) => option.value === targetPosition)) {
-        return { error: '대상 글자에 맞는 대상 위치를 선택해주세요.' };
-    }
-
-    const actorTenStar = getTenStar(dayStem, actorChar);
-    const targetTenStar = getTenStar(dayStem, targetChar);
-    const tenStarPair = actorTenStar && targetTenStar ? `${actorTenStar}-${targetTenStar}` : null;
-    const palacePair = `${getPositionLabel(actorPosition)}-${getPositionLabel(targetPosition)}`;
-
-    return {
-        payload: {
-            relation_type: relationType,
-            relation_key: relationKey,
-            day_pillar: dayPillar,
-            day_stem: dayStem,
-            day_branch: dayBranch,
-            actor_char: actorChar,
-            target_char: targetChar,
-            actor_ten_star: actorTenStar,
-            target_ten_star: targetTenStar,
-            ten_star_pair: tenStarPair,
-            actor_position: actorPosition,
-            target_position: targetPosition,
-            palace_pair: palacePair,
-            title,
-            summary,
-            detail,
-            status,
-            source,
-            prompt_version: getOptionalFormString(formData, 'prompt_version'),
-            model: getOptionalFormString(formData, 'model'),
-            reviewed_at: status === 'approved' ? new Date().toISOString() : null,
+    const { error } = await adminSupabase
+        .from('service_settings')
+        .upsert({
+            key: BAZI_PROMPT_SETTING_KEY,
+            value,
             updated_at: new Date().toISOString(),
-        },
+        });
+
+    if (error) {
+        console.error('Update bazi prompt pipeline setting error:', error);
+        return { success: false, message: '프롬프트 설정 저장 중 오류가 발생했습니다.' };
+    }
+
+    revalidatePath('/admin/bazi-consultations');
+    revalidatePath('/admin/bazi-prompts');
+    return {
+        success: true,
+        message: intent === 'reset' ? '기본 프롬프트 설정으로 복원했습니다.' : '프롬프트 설정을 저장했습니다.',
     };
-}
-
-export async function createSajuRelationReading(
-    _prevState: SajuRelationReadingFormState,
-    formData: FormData
-): Promise<SajuRelationReadingFormState> {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        return { success: false, message: '로그인이 필요합니다.' };
-    }
-
-    const result = buildSajuRelationReadingPayload(formData);
-    if (result.error || !result.payload) {
-        return { success: false, message: result.error || '입력값을 확인해주세요.' };
-    }
-
-    try {
-        const { error } = await supabase
-            .from('saju_relation_readings')
-            .insert({
-                ...result.payload,
-                reviewed_by: result.payload.status === 'approved' ? user.id : null,
-            });
-
-        if (error) throw error;
-
-        revalidatePath('/admin/saju-relations');
-        return { success: true, message: '사주 관계 해설이 등록되었습니다.' };
-    } catch (error) {
-        console.error('Create saju relation reading error:', error);
-        return { success: false, message: '등록 중 오류가 발생했습니다. 중복 조합이 있는지 확인해주세요.' };
-    }
-}
-
-export async function updateSajuRelationReading(
-    id: number,
-    _prevState: SajuRelationReadingFormState,
-    formData: FormData
-): Promise<SajuRelationReadingFormState> {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        return { success: false, message: '로그인이 필요합니다.' };
-    }
-
-    const result = buildSajuRelationReadingPayload(formData);
-    if (result.error || !result.payload) {
-        return { success: false, message: result.error || '입력값을 확인해주세요.' };
-    }
-
-    try {
-        const { error } = await supabase
-            .from('saju_relation_readings')
-            .update({
-                ...result.payload,
-                reviewed_by: result.payload.status === 'approved' ? user.id : null,
-            })
-            .eq('id', id);
-
-        if (error) throw error;
-
-        revalidatePath('/admin/saju-relations');
-        revalidatePath(`/admin/saju-relations/edit/${id}`);
-        return { success: true, message: '사주 관계 해설이 수정되었습니다.' };
-    } catch (error) {
-        console.error('Update saju relation reading error:', error);
-        return { success: false, message: '수정 중 오류가 발생했습니다. 중복 조합이 있는지 확인해주세요.' };
-    }
-}
-
-export async function updateSajuRelationReadingStatus(id: number, status: string) {
-    const allowedStatuses: SajuRelationReadingStatus[] = ['draft', 'approved', 'archived'];
-    if (!allowedStatuses.includes(status as SajuRelationReadingStatus)) {
-        return { success: false, message: '올바르지 않은 상태값입니다.' };
-    }
-
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        return { success: false, message: '로그인이 필요합니다.' };
-    }
-
-    try {
-        const { error } = await supabase
-            .from('saju_relation_readings')
-            .update({
-                status,
-                reviewed_at: status === 'approved' ? new Date().toISOString() : null,
-                reviewed_by: status === 'approved' ? user.id : null,
-                updated_at: new Date().toISOString(),
-            })
-            .eq('id', id);
-
-        if (error) throw error;
-
-        revalidatePath('/admin/saju-relations');
-        return { success: true, message: '상태가 변경되었습니다.' };
-    } catch (error) {
-        console.error('Update saju relation reading status error:', error);
-        return { success: false, message: '상태 변경 중 오류가 발생했습니다.' };
-    }
-}
-
-export async function deleteSajuRelationReading(id: number) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        return { success: false, message: '로그인이 필요합니다.' };
-    }
-
-    try {
-        const { error } = await supabase
-            .from('saju_relation_readings')
-            .delete()
-            .eq('id', id);
-
-        if (error) throw error;
-
-        revalidatePath('/admin/saju-relations');
-        return { success: true, message: '삭제되었습니다.' };
-    } catch (error) {
-        console.error('Delete saju relation reading error:', error);
-        return { success: false, message: '삭제 중 오류가 발생했습니다.' };
-    }
 }
 
 export async function deleteSubmitApplication(id: number) {

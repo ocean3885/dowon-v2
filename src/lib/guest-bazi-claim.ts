@@ -15,6 +15,8 @@ type GuestBaziConsultationRow = {
     status: string | null;
     completed_at: string | null;
     error_message: string | null;
+    prompt_version: string | null;
+    generation_metadata: unknown;
     created_at: string;
 };
 
@@ -33,7 +35,7 @@ export async function claimGuestBaziConsultationsForUser(userId: string) {
 async function claimGuestBaziConsultations(adminSupabase: SupabaseClient, userId: string, guestId: string) {
     const { data, error } = await adminSupabase
         .from('guest_bazi_consultations')
-        .select('id, request_date_kst, subject_name, bazi_result, prompt, result_text, status, completed_at, error_message, created_at')
+        .select('id, request_date_kst, subject_name, bazi_result, prompt, result_text, status, completed_at, error_message, prompt_version, generation_metadata, created_at')
         .eq('guest_id', guestId)
         .is('claimed_user_id', null)
         .gt('expires_at', new Date().toISOString())
@@ -81,6 +83,8 @@ async function claimGuestBaziConsultations(adminSupabase: SupabaseClient, userId
                 status: consultation.status || 'pending',
                 completed_at: consultation.completed_at,
                 error_message: consultation.error_message,
+                prompt_version: consultation.prompt_version,
+                generation_metadata: consultation.generation_metadata,
                 created_at: consultation.created_at,
             });
 

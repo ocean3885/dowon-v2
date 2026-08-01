@@ -21,14 +21,6 @@ type MemberStats = {
     lastBaziAt: string | null;
 };
 
-type GuestDailyStats = {
-    requestDate: string;
-    totalCount: number;
-    pendingCount: number;
-    completedCount: number;
-    failedCount: number;
-};
-
 const roleLabels: Record<string, string> = {
     admin: '관리자',
     staff: '스태프',
@@ -66,7 +58,6 @@ export default async function AdminMembersPage({ searchParams }: { searchParams:
     const statsByUserId = memberIds.length > 0
         ? await getMemberStats(adminSupabase, memberIds)
         : new Map<string, MemberStats>();
-    const guestDailyStats = await getGuestDailyStats(adminSupabase);
 
     const totalCount = count || 0;
     const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage));
@@ -106,8 +97,6 @@ export default async function AdminMembersPage({ searchParams }: { searchParams:
                     </button>
                 </form>
             </div>
-
-            <GuestDailyStatsSection stats={guestDailyStats} />
 
             {error ? (
                 <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center text-red-700">
@@ -195,51 +184,6 @@ export default async function AdminMembersPage({ searchParams }: { searchParams:
                 </div>
             )}
         </section>
-    );
-}
-
-function GuestDailyStatsSection({ stats }: { stats: GuestDailyStats[] }) {
-    return (
-        <div className="mb-8 rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
-            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                    <p className="text-sm font-semibold text-stone-400">Guest Bazi</p>
-                    <h3 className="mt-1 text-xl font-bold text-stone-700">날짜별 비회원 무료 해설 신청</h3>
-                </div>
-                <p className="text-xs text-stone-400">최근 14일 기준</p>
-            </div>
-
-            {stats.length === 0 ? (
-                <div className="mt-5 rounded-lg border border-stone-100 bg-stone-50 px-5 py-8 text-center text-sm text-stone-400">
-                    아직 비회원 무료 해설 신청 내역이 없습니다.
-                </div>
-            ) : (
-                <div className="mt-5 overflow-x-auto">
-                    <table className="min-w-full divide-y divide-stone-100 text-left">
-                        <thead className="bg-stone-50 text-xs font-bold uppercase tracking-wide text-stone-400">
-                            <tr>
-                                <th className="px-4 py-3">날짜</th>
-                                <th className="px-4 py-3">전체</th>
-                                <th className="px-4 py-3">완료</th>
-                                <th className="px-4 py-3">분석중</th>
-                                <th className="px-4 py-3">실패</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-stone-100">
-                            {stats.map((item) => (
-                                <tr key={item.requestDate}>
-                                    <td className="px-4 py-3 text-sm font-semibold text-stone-700">{item.requestDate}</td>
-                                    <td className="px-4 py-3 text-sm font-bold text-stone-900">{item.totalCount.toLocaleString('ko-KR')}건</td>
-                                    <td className="px-4 py-3 text-sm text-emerald-700">{item.completedCount.toLocaleString('ko-KR')}건</td>
-                                    <td className="px-4 py-3 text-sm text-amber-700">{item.pendingCount.toLocaleString('ko-KR')}건</td>
-                                    <td className="px-4 py-3 text-sm text-red-600">{item.failedCount.toLocaleString('ko-KR')}건</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            )}
-        </div>
     );
 }
 
@@ -367,48 +311,6 @@ async function getMemberStats(adminSupabase: Awaited<ReturnType<typeof createAdm
     return stats;
 }
 
-async function getGuestDailyStats(adminSupabase: Awaited<ReturnType<typeof createAdminClient>>) {
-    const { data, error } = await adminSupabase
-        .from('guest_bazi_consultations')
-        .select('request_date_kst, status')
-        .gte('request_date_kst', getKstDateNDaysAgo(13))
-        .order('request_date_kst', { ascending: false });
-
-    if (error) {
-        console.error('Admin guest bazi daily stats query error:', error);
-        return [];
-    }
-
-    const statsByDate = new Map<string, GuestDailyStats>();
-
-    (data || []).forEach((row) => {
-        const requestDate = row.request_date_kst;
-        if (!requestDate) return;
-
-        const current = statsByDate.get(requestDate) || {
-            requestDate,
-            totalCount: 0,
-            pendingCount: 0,
-            completedCount: 0,
-            failedCount: 0,
-        };
-
-        current.totalCount += 1;
-
-        if (row.status === 'completed') {
-            current.completedCount += 1;
-        } else if (row.status === 'failed') {
-            current.failedCount += 1;
-        } else {
-            current.pendingCount += 1;
-        }
-
-        statsByDate.set(requestDate, current);
-    });
-
-    return Array.from(statsByDate.values()).sort((a, b) => b.requestDate.localeCompare(a.requestDate));
-}
-
 const defaultStats: MemberStats = {
     submitCount: 0,
     baziCount: 0,
@@ -452,10 +354,4 @@ function formatDate(value?: string | null) {
 
 function escapeIlike(value: string) {
     return value.replace(/[%_,]/g, (match) => `\\${match}`);
-}
-
-function getKstDateNDaysAgo(daysAgo: number) {
-    const date = new Date(Date.now() + 9 * 60 * 60 * 1000);
-    date.setUTCDate(date.getUTCDate() - daysAgo);
-    return date.toISOString().slice(0, 10);
 }

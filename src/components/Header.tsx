@@ -12,6 +12,13 @@ import { useRouter } from 'next/navigation';
 
 import type { AuthChangeEvent, Session, User } from '@supabase/supabase-js';
 
+type AuthStatus = {
+    authenticated: boolean;
+    userId: string | null;
+    role: string | null;
+    isAdmin: boolean;
+};
+
 const navItems = [
     { name: '철학원소개', href: '/about' },
     { name: '상담안내', href: '/services' },
@@ -32,32 +39,42 @@ export default function Header({ initialUser }: { initialUser: User | null }) {
     const [supabase] = useState(() => createClient());
 
     useEffect(() => {
+        let isMounted = true;
+
+        const syncUserRole = async (currentUser: User | null) => {
+            if (!currentUser) {
+                if (isMounted) setUserRole(null);
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/auth/status', { cache: 'no-store' });
+                const status = (await response.json()) as AuthStatus;
+                if (isMounted) setUserRole(status.role || 'user');
+            } catch {
+                if (isMounted) setUserRole('user');
+            }
+        };
+
         const getUser = async () => {
             const { data: { user: currentUser } } = await supabase.auth.getUser();
             setUser(currentUser);
-            if (currentUser) {
-                const { data: member } = await supabase.from('members').select('role').eq('id', currentUser.id).single();
-                setUserRole(member?.role || 'user');
-            } else {
-                setUserRole(null);
-            }
+            await syncUserRole(currentUser);
         };
         getUser();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
             setUser(session?.user ?? null);
-            if (session?.user) {
-                const { data: member } = await supabase.from('members').select('role').eq('id', session.user.id).single();
-                setUserRole(member?.role || 'user');
-            } else {
-                setUserRole(null);
-            }
+            await syncUserRole(session?.user ?? null);
             if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
                 router.refresh();
             }
         });
 
-        return () => subscription.unsubscribe();
+        return () => {
+            isMounted = false;
+            subscription.unsubscribe();
+        };
     }, [supabase, router]);
 
     // Sync state when initialUser prop changes during navigation

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CalendarDays, ChevronDown, ChevronUp, Edit2, Check, X, Loader2 } from 'lucide-react';
+import { CalendarDays, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import type { BaziResult } from './types';
 import { DeleteBaziConsultationButton } from './DeleteBaziConsultationButton';
 
@@ -16,13 +16,19 @@ type FreeBaziConsultationRow = {
     created_at: string;
 };
 
-export function BaziConsultationItem({ consultation, readOnly = false }: { consultation: FreeBaziConsultationRow; readOnly?: boolean }) {
+export function BaziConsultationItem({
+    consultation,
+    readOnly = false,
+    initiallyExpanded = false,
+    hideExpandToggle = false,
+}: {
+    consultation: FreeBaziConsultationRow;
+    readOnly?: boolean;
+    initiallyExpanded?: boolean;
+    hideExpandToggle?: boolean;
+}) {
     const router = useRouter();
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
-    const [newName, setNewName] = useState(consultation.subject_name || '');
-    const [currentName, setCurrentName] = useState(consultation.subject_name || '');
-    const [isSaving, setIsSaving] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
     const status = consultation.status || 'completed';
     const isPending = status === 'pending';
     const isFailed = status === 'failed';
@@ -38,33 +44,6 @@ export function BaziConsultationItem({ consultation, readOnly = false }: { consu
         return () => window.clearInterval(intervalId);
     }, [isPending, router]);
 
-    const handleSaveName = async () => {
-        const trimmedName = newName.trim();
-        setIsSaving(true);
-        try {
-            const response = await fetch('/api/bazi/free-consultation/rename', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ id: consultation.id, subjectName: trimmedName }),
-            });
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || '이름 변경에 실패했습니다.');
-            }
-
-            setCurrentName(data.subject_name || '');
-            setNewName(data.subject_name || '');
-            setIsEditing(false);
-        } catch (error) {
-            alert(error instanceof Error ? error.message : '이름 변경에 실패했습니다.');
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
     const formatDateTime = (value?: string | null) => {
         if (!value) return '-';
         return new Intl.DateTimeFormat('ko-KR', {
@@ -76,10 +55,9 @@ export function BaziConsultationItem({ consultation, readOnly = false }: { consu
         }).format(new Date(value));
     };
 
-    const formatBaziTitle = (item: FreeBaziConsultationRow, nameOverride?: string) => {
+    const formatBaziTitle = (item: FreeBaziConsultationRow) => {
         const pillars = formatBaziPillars(item.bazi_result);
-        const displayName = nameOverride !== undefined ? nameOverride : (item.subject_name || '');
-        return displayName ? `${displayName} · ${pillars}` : pillars;
+        return item.subject_name ? `${item.subject_name} · ${pillars}` : pillars;
     };
 
     const formatBaziPillars = (result: BaziResult) => {
@@ -140,61 +118,9 @@ export function BaziConsultationItem({ consultation, readOnly = false }: { consu
                             {formatDateTime(consultation.created_at)}
                         </span>
                     </div>
-                    {isEditing ? (
-                        <div className="mt-3 flex items-center gap-2 max-w-sm">
-                            <input
-                                type="text"
-                                value={newName}
-                                onChange={(e) => setNewName(e.target.value)}
-                                disabled={isSaving}
-                                placeholder="이름 입력 (예: 내 사주, 친구)"
-                                className="h-10 w-full rounded-md border border-[#d7c6af] bg-white px-3 text-sm text-[#493b2d] outline-none transition focus:border-[#ad7b42]"
-                                maxLength={20}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') handleSaveName();
-                                    if (e.key === 'Escape') {
-                                        setNewName(currentName);
-                                        setIsEditing(false);
-                                    }
-                                }}
-                            />
-                            <button
-                                type="button"
-                                onClick={handleSaveName}
-                                disabled={isSaving}
-                                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#bd8a4c] text-white transition hover:bg-[#aa793d] disabled:opacity-50"
-                            >
-                                <Check className="h-4 w-4" />
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setNewName(currentName);
-                                    setIsEditing(false);
-                                }}
-                                disabled={isSaving}
-                                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-[#d7c6af] bg-white text-[#66584a] transition hover:bg-[#f7efe4] disabled:opacity-50"
-                            >
-                                <X className="h-4 w-4" />
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="mt-3 flex items-center gap-2 flex-wrap">
-                            <h2 className="break-keep font-serif text-xl text-[#2a2119]">
-                                {formatBaziTitle(consultation, currentName)}
-                            </h2>
-                            {!readOnly && (
-                                <button
-                                    type="button"
-                                    onClick={() => setIsEditing(true)}
-                                    className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#d7c6af]/60 bg-white/60 text-[#66584a] hover:bg-[#f7efe4] hover:text-[#7a542a] transition-all ml-1 shadow-sm"
-                                    title="이름 수정"
-                                >
-                                    <Edit2 className="h-3 w-3" />
-                                </button>
-                            )}
-                        </div>
-                    )}
+                    <h2 className="mt-3 break-keep font-serif text-xl text-[#2a2119]">
+                        {formatBaziTitle(consultation)}
+                    </h2>
                     {renderBirthDetails(consultation) && (
                         <p className="mt-2 text-xs font-semibold text-[#8a7664] bg-[#fdfaf5] border border-[#f0e6da] rounded-md px-3 py-1.5 w-fit">
                             생년월일시: {renderBirthDetails(consultation)}
@@ -207,6 +133,8 @@ export function BaziConsultationItem({ consultation, readOnly = false }: { consu
                     </div>
                 )}
             </div>
+
+            <StoredSajuChart result={consultation.bazi_result} />
 
             {/* Interpretation Text Container with smooth transition */}
             <div className="relative mt-5">
@@ -227,13 +155,13 @@ export function BaziConsultationItem({ consultation, readOnly = false }: { consu
                 ) : (
                     <div
                         className={`whitespace-pre-wrap rounded-md border border-[#eee2d3] bg-[#fcfaf6] px-4 py-4 text-sm leading-8 text-[#4f463e] md:px-6 md:py-6 md:text-base md:leading-9 transition-all duration-300 ${
-                            isExpanded ? 'max-h-none pb-4' : 'max-h-36 overflow-hidden pb-12'
+                            isExpanded || hideExpandToggle ? 'max-h-none pb-4' : 'max-h-36 overflow-hidden pb-12'
                         }`}
                     >
                         {consultation.result_text}
 
                         {/* Gradient Fade Overlay when collapsed */}
-                        {!isExpanded && (
+                        {!isExpanded && !hideExpandToggle && (
                             <div className="absolute inset-x-0 bottom-0 h-16 rounded-b-md bg-gradient-to-t from-[#fcfaf6] via-[#fcfaf6]/80 to-transparent pointer-events-none" />
                         )}
                     </div>
@@ -241,7 +169,7 @@ export function BaziConsultationItem({ consultation, readOnly = false }: { consu
             </div>
 
             {/* Toggle Button */}
-            {hasResult && !isPending && !isFailed && (
+            {hasResult && !isPending && !isFailed && !hideExpandToggle && (
                 <div className="mt-4 flex justify-center">
                 <button
                     type="button"
@@ -263,5 +191,69 @@ export function BaziConsultationItem({ consultation, readOnly = false }: { consu
                 </div>
             )}
         </article>
+    );
+}
+
+const pillarMeta: Record<'time' | 'day' | 'month' | 'year', {
+    title: string;
+    ganTenGodKey: string | null;
+    jiTenGodKey: string;
+    detailKey: 'hour' | 'day' | 'month' | 'year';
+}> = {
+    time: { title: '시주', ganTenGodKey: 'time_gan', jiTenGodKey: 'time_ji', detailKey: 'hour' },
+    day: { title: '일주', ganTenGodKey: null, jiTenGodKey: 'day_ji', detailKey: 'day' },
+    month: { title: '월주', ganTenGodKey: 'month_gan', jiTenGodKey: 'month_ji', detailKey: 'month' },
+    year: { title: '년주', ganTenGodKey: 'year_gan', jiTenGodKey: 'year_ji', detailKey: 'year' },
+};
+
+const pillarOrder = ['time', 'day', 'month', 'year'] as const;
+
+function StoredSajuChart({ result }: { result: BaziResult }) {
+    const pillars = result.four_pillars;
+    const tenGods = result.ten_gods || {};
+    const details = result.analysis?.details || {};
+
+    return (
+        <section className="mt-5 overflow-hidden rounded-md border border-[#ecdccd] bg-[#fffaf4]">
+            <div className="border-b border-[#eadfd4] bg-white/55 px-4 py-3">
+                <h3 className="font-serif text-lg font-bold tracking-normal text-[#2a2018]">사주 정국</h3>
+                <p className="mt-1 break-keep text-xs leading-5 text-[#73675c]">태어난 순간의 네 기둥과 각 기둥의 십성, 지장간 구조입니다.</p>
+            </div>
+            <div className="grid grid-cols-4 border-b border-[#eadfd4] text-center">
+                {pillarOrder.map((key) => (
+                    <div key={key} className="border-r border-[#eadfd4] py-3 last:border-r-0">
+                        <p className="text-xs font-semibold text-[#65574b]">{pillarMeta[key].title}</p>
+                        <p className="mt-2 text-[11px] text-[#9d7750] sm:text-xs">
+                            {pillarMeta[key].ganTenGodKey ? tenGods[pillarMeta[key].ganTenGodKey] : '일간(나)'}
+                        </p>
+                    </div>
+                ))}
+            </div>
+            <div className="grid grid-cols-4 text-center">
+                {pillarOrder.map((key) => {
+                    const meta = pillarMeta[key];
+                    const pillar = pillars?.[key];
+                    const detail = details[meta.detailKey];
+                    const branchInfo = detail?.branch;
+
+                    return (
+                        <article key={key} className="min-w-0 border-r border-[#eadfd4] last:border-r-0">
+                            <div className="border-b border-[#eadfd4] py-3 sm:py-4">
+                                <p className="font-serif text-[2rem] leading-none text-[#15110d] sm:text-[2.45rem]">{pillar?.gan?.ch || '-'}</p>
+                            </div>
+                            <div className="border-b border-[#eadfd4] py-3 sm:py-4">
+                                <p className="font-serif text-[2rem] leading-none text-[#15110d] sm:text-[2.45rem]">{pillar?.ji?.ch || '-'}</p>
+                            </div>
+                            <p className="border-b border-[#eadfd4] px-1 py-2 text-[11px] leading-4 text-[#8a6245] sm:text-xs">
+                                {tenGods[meta.jiTenGodKey] || '-'}
+                            </p>
+                            <p className="break-keep px-1.5 py-2 text-center text-[11px] leading-4 text-[#74675b] sm:px-2 sm:text-xs sm:leading-5">
+                                {branchInfo?.jijanggan?.join(', ') || '없음'}
+                            </p>
+                        </article>
+                    );
+                })}
+            </div>
+        </section>
     );
 }

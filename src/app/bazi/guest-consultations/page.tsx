@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { ArrowRight, FileText, Sparkles } from 'lucide-react';
 import { createAdminClient } from '@/utils/supabase/server';
 import type { BaziResult } from '@/components/bazi/types';
-import { BaziConsultationItem } from '@/components/bazi/BaziConsultationItem';
+import { BaziConsultationListItem } from '@/components/bazi/BaziConsultationListItem';
 
 const GUEST_ID_COOKIE = 'dowon_bazi_guest_id';
 
@@ -13,7 +13,6 @@ type GuestBaziConsultationRow = {
     subject_name: string | null;
     request_date_kst: string;
     bazi_result: BaziResult;
-    result_text: string | null;
     status: string | null;
     created_at: string;
 };
@@ -28,7 +27,7 @@ export default async function GuestBaziConsultationsPage() {
         const adminSupabase = await createAdminClient();
         const { data, error } = await adminSupabase
             .from('guest_bazi_consultations')
-            .select('id, subject_name, request_date_kst, bazi_result, result_text, status, created_at')
+            .select('id, subject_name, request_date_kst, bazi_result, status, created_at')
             .eq('guest_id', guestId)
             .is('claimed_user_id', null)
             .gt('expires_at', new Date().toISOString())
@@ -97,7 +96,11 @@ export default async function GuestBaziConsultationsPage() {
                 ) : (
                     <div className="mt-8 grid gap-5">
                         {consultations.map((consultation) => (
-                            <BaziConsultationItem key={consultation.id} consultation={consultation} readOnly />
+                            <BaziConsultationListItem
+                                key={consultation.id}
+                                consultation={consultation}
+                                href={`/bazi/guest-consultations/${consultation.id}`}
+                            />
                         ))}
                     </div>
                 )}
