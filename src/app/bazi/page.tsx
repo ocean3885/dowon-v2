@@ -155,6 +155,7 @@ const privacyItems = [
 
 type AuthStatusResponse = {
     authenticated?: boolean;
+    isAdmin?: boolean;
 };
 
 function withAuthTimeout(check: Promise<BaziAuthStatus>, timeoutMs = 5000) {
@@ -181,6 +182,7 @@ export default function BaziPage() {
         gen: string;
     } | null>(null);
     const [authStatus, setAuthStatus] = useState<BaziAuthStatus>('checking');
+    const [isAdmin, setIsAdmin] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -215,6 +217,7 @@ export default function BaziPage() {
                     const data = await response.json() as AuthStatusResponse;
                     if (isMounted) {
                         setAuthStatus(data.authenticated ? 'member' : 'guest');
+                        setIsAdmin(Boolean(data.isAdmin));
                     }
                     return;
                 }
@@ -227,6 +230,7 @@ export default function BaziPage() {
             const nextStatus = await withAuthTimeout(checkUserWithBrowserClient());
             if (isMounted) {
                 setAuthStatus(nextStatus);
+                setIsAdmin(false);
             }
         }
 
@@ -235,6 +239,7 @@ export default function BaziPage() {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
             if (session?.user) {
                 setAuthStatus('member');
+                checkUser();
                 return;
             }
 
@@ -244,6 +249,7 @@ export default function BaziPage() {
             }
 
             setAuthStatus('guest');
+            setIsAdmin(false);
         });
 
         return () => {
@@ -361,7 +367,9 @@ export default function BaziPage() {
                                 <DecadeFlow result={result} />
                                 <ElementBalance result={result} />
                                 <TraitPanel result={result} />
-                                <BaziInterpretationCard result={result} authStatus={authStatus} subjectName={subjectName} birthParams={birthParams || undefined} />
+                                {isAdmin && (
+                                    <BaziInterpretationCard result={result} authStatus={authStatus} subjectName={subjectName} birthParams={birthParams || undefined} />
+                                )}
                             </div>
 
                             <ConsultationBanner />
@@ -637,10 +645,6 @@ function BaziForm({
             </button>
 
             <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
-                <Link href="/my/bazi-consultations" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#7a542a] underline underline-offset-4 transition hover:text-[#4c3520]">
-                    <ScrollText className="h-4 w-4" />
-                    내 무료 해설 보기
-                </Link>
                 <button type="reset" className="flex items-center gap-1.5 text-sm font-medium text-[#786755]">
                     <RefreshCw className="h-4 w-4" />
                     입력 초기화
