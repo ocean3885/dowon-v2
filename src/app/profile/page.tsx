@@ -22,6 +22,7 @@ type MemberRow = {
     phone: string | null;
     birth_date: string | null;
     created_at: string | null;
+    role: string | null;
 };
 
 type RecentSubmitRow = {
@@ -78,7 +79,7 @@ export default async function ProfilePage() {
     const [{ data: memberData }, { data: submitData, error: submitError }, { data: freeBaziData, error: freeBaziError }] = await Promise.all([
         adminSupabase
             .from('members')
-            .select('email, name, phone, birth_date, created_at')
+            .select('email, name, phone, birth_date, created_at, role')
             .eq('id', user.id)
             .maybeSingle(),
         adminSupabase
@@ -106,6 +107,7 @@ export default async function ProfilePage() {
     const applications = (submitData || []) as RecentSubmitRow[];
     const freeBaziConsultations = (freeBaziData || []) as RecentFreeBaziRow[];
     const displayName = member?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || '회원';
+    const isAdmin = member?.role === 'admin';
 
     return (
         <main className="relative min-h-screen overflow-hidden bg-[#f8f2e9] px-5 pb-20 pt-28 text-[#211b16] sm:px-6 lg:px-10">
@@ -240,7 +242,7 @@ export default async function ProfilePage() {
                             )}
                         </section>
 
-                        <section className="rounded-lg border border-[#ded4c8] bg-white/82 p-5 shadow-[0_18px_55px_rgba(70,54,36,0.08)] sm:p-6">
+                        {isAdmin && <section className="rounded-lg border border-[#ded4c8] bg-white/82 p-5 shadow-[0_18px_55px_rgba(70,54,36,0.08)] sm:p-6">
                             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                                 <div>
                                     <p className="text-sm font-semibold text-[#a87943]">AI 원국 해설</p>
@@ -301,7 +303,7 @@ export default async function ProfilePage() {
                                     ))}
                                 </div>
                             )}
-                        </section>
+                        </section>}
                     </div>
                 </div>
             </section>

@@ -16,8 +16,10 @@ export default function ForgotPasswordPage() {
         setError('');
         setIsLoading(true);
 
-        const callbackUrl = new URL('/auth/callback', window.location.origin);
-        callbackUrl.searchParams.set('next', '/reset-password');
+        // Use a dedicated callback path instead of relying on a nested `next`
+        // query parameter. Some email scanners/Supabase redirect allowlists can
+        // drop that parameter, which made the generic callback fall back to `/`.
+        const callbackUrl = new URL('/auth/callback/reset-password', window.location.origin);
 
         const supabase = createClient();
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(
