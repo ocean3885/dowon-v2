@@ -19,10 +19,26 @@ import {
     Sun,
     Trash2,
     X,
+    Activity,
+    Scale,
 } from 'lucide-react';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
-import { BaziInterpretationCard, SajuChart } from '@/components/bazi/SajuChart';
-import type { BaziAuthStatus, BaziResult, DaewoonItem, PillarKey } from '@/components/bazi/types';
+import {
+    BaziInterpretationCard,
+    SajuChart,
+    SpecialStarsCard,
+    XuShiDynamicsCard,
+    BinZhuDynamicsCard,
+    Card,
+    CardTitle,
+} from '@/components/bazi/SajuChart';
+import type {
+    BaziAuthStatus,
+    BaziResult,
+    CycleYearItem,
+    DaewoonItem,
+    PillarKey,
+} from '@/components/bazi/types';
 import { createClient } from '@/utils/supabase/client';
 
 type BaziFormValues = {
@@ -65,16 +81,16 @@ const elementColors: Record<string, string> = {
     목: 'bg-[#417e50]',
     화: 'bg-[#db3c39]',
     토: 'bg-[#c58e49]',
-    금: 'bg-[#8f9190]',
-    수: 'bg-[#5f9ec1]',
+    금: 'bg-[#707271]',
+    수: 'bg-[#437b99]',
 };
 
 const elementHexColors: Record<string, string> = {
     목: '#417e50',
     화: '#db3c39',
     토: '#c58e49',
-    금: '#8f9190',
-    수: '#5f9ec1',
+    금: '#707271',
+    수: '#437b99',
 };
 
 const elementLabels: Record<string, string> = {
@@ -83,50 +99,6 @@ const elementLabels: Record<string, string> = {
     토: '土',
     금: '金',
     수: '水',
-};
-
-const elementTraitText: Record<string, string> = {
-    목: '성장과 추진',
-    화: '표현과 활력',
-    토: '안정과 조율',
-    금: '정리와 판단',
-    수: '유연함과 사고',
-};
-
-const detailKeyByPillar: Record<PillarKey, 'hour' | 'day' | 'month' | 'year'> = {
-    time: 'hour',
-    day: 'day',
-    month: 'month',
-    year: 'year',
-};
-
-const pillarLabelByDetailKey: Record<string, string> = {
-    hour: '시주',
-    time: '시주',
-    day: '일주',
-    month: '월주',
-    year: '년주',
-};
-
-const hiddenStemsByBranch: Record<string, string[]> = {
-    子: ['壬', '癸'],
-    丑: ['癸', '辛', '己'],
-    寅: ['戊', '丙', '甲'],
-    卯: ['甲', '乙'],
-    辰: ['乙', '癸', '戊'],
-    巳: ['戊', '庚', '丙'],
-    午: ['丙', '己', '丁'],
-    未: ['丁', '乙', '己'],
-    申: ['戊', '壬', '庚'],
-    酉: ['庚', '辛'],
-    戌: ['辛', '丁', '戊'],
-    亥: ['戊', '甲', '壬'],
-};
-
-const hiddenStemWeightsByLength: Record<number, number[]> = {
-    1: [1],
-    2: [0.7, 0.3],
-    3: [0.6, 0.3, 0.1],
 };
 
 const interactionConfigs = [
@@ -222,7 +194,7 @@ export default function BaziPage() {
                     return;
                 }
             } catch {
-                // Fall back to the browser client below.
+                // Fall back to browser client
             } finally {
                 window.clearTimeout(timeoutId);
             }
@@ -359,14 +331,17 @@ export default function BaziPage() {
                     )}
 
                     {showResult && result && (
-                        <section id="bazi-result" className="scroll-mt-28 space-y-4">
-                            <ResultHeading result={result} />
+                        <section id="bazi-result" className="scroll-mt-28 space-y-5">
+                            <ResultHeading result={result} subjectName={subjectName} />
 
-                            <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                            <div className="grid min-w-0 gap-5 xl:grid-cols-2">
                                 <SajuChart result={result} />
                                 <DecadeFlow result={result} />
                                 <ElementBalance result={result} />
                                 <TraitPanel result={result} />
+                                <SpecialStarsCard result={result} />
+                                <XuShiDynamicsCard result={result} />
+                                <BinZhuDynamicsCard result={result} />
                                 {isAdmin && (
                                     <BaziInterpretationCard result={result} authStatus={authStatus} subjectName={subjectName} birthParams={birthParams || undefined} />
                                 )}
@@ -850,13 +825,6 @@ function BaziProfileStorageModal({
     );
 }
 
-function getSavedProfileLabel(values: BaziFormValues) {
-    const name = values.subjectName.trim();
-    if (name) return name;
-
-    return `${values.year}.${values.month.padStart(2, '0')}.${values.day.padStart(2, '0')} ${values.hour.padStart(2, '0')}:${values.min.padStart(2, '0')}`;
-}
-
 function formatSavedProfileDetails(values: BaziFormValues) {
     const calendarLabel = values.sl === 'lun'
         ? '음력'
@@ -869,9 +837,9 @@ function formatSavedProfileDetails(values: BaziFormValues) {
 
 function FeatureStrip({ expanded = false }: { expanded?: boolean }) {
     const features = [
-        { icon: Lightbulb, title: '정확한 만세력', body: '기반 해석' },
-        { icon: Compass, title: '전문 명리학', body: '시스템' },
-        { icon: ScrollText, title: '개인 맞춤', body: '분석 리포트' },
+        { icon: Lightbulb, title: '정밀 만세력', body: '고도화 명리 엔진' },
+        { icon: Compass, title: '자평·맹파 이론', body: '허실 및 빈주 역학' },
+        { icon: ScrollText, title: '개인 맞춤 리포트', body: '심층 AI 분석' },
     ] as const;
 
     return (
@@ -922,523 +890,250 @@ function formatCalendarDate(date?: { year?: number; month?: string | number; day
 
 function formatAgeRange(item?: DaewoonItem) {
     if (item?.start_age === undefined || item?.end_age === undefined) return '-';
-    return `${item.start_age}~${item.end_age}세`;
+    return `${Math.floor(item.start_age)}~${Math.floor(item.end_age)}세`;
 }
 
-function getElementBalance(result: BaziResult) {
-    const counts: Record<string, number> = { 목: 0, 화: 0, 토: 0, 금: 0, 수: 0 };
-    const pillars = result.four_pillars;
-    const details = result.analysis?.details || {};
+function ResultHeading({ result, subjectName }: { result: BaziResult; subjectName?: string }) {
+    const meta = result.meta;
+    const calendar = result.calendar;
 
-    if (pillars) {
-        pillarOrder.forEach((key) => {
-            const ganElement = elementByChar[pillars[key]?.gan?.ch || ''];
-            if (ganElement) counts[ganElement] += 1;
+    return (
+        <header className="rounded-xl border border-[#eadfd4] bg-white/80 p-5 shadow-[0_12px_32px_rgba(58,42,29,0.05)] backdrop-blur-sm">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                    <div className="flex items-center gap-2">
+                        <span className="rounded-md bg-[#eee1d3] px-2 py-0.5 text-xs font-bold text-[#8a5b2e]">
+                            도원 명식 리포트
+                        </span>
+                        {calendar?.solar_plan && (
+                            <span className="rounded-md bg-[#eaf4eb] px-2 py-0.5 text-xs font-semibold text-[#2f663c]">
+                                {calendar.solar_plan}
+                            </span>
+                        )}
+                    </div>
+                    <h2 className="mt-1.5 font-serif text-2xl font-bold tracking-normal text-[#291f17] sm:text-3xl">
+                        {subjectName ? `${subjectName} 님의 사주 원국` : '명식 종합 분석'}
+                    </h2>
+                </div>
 
-            const branchChar = pillars[key]?.ji?.ch || '';
-            const detailKey = detailKeyByPillar[key];
-            const hiddenStems = extractHiddenStems(details[detailKey]?.branch?.jijanggan)
-                || hiddenStemsByBranch[branchChar]
-                || [];
-            const weights = hiddenStemWeightsByLength[hiddenStems.length] || [];
+                <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[#65574c] sm:text-sm">
+                    <span className="rounded-lg border border-[#eadbd0] bg-[#fbf7f2] px-3 py-1.5">
+                        양력 <strong className="text-[#2c2118]">{formatCalendarDate(calendar?.solar)}</strong>
+                        {meta?.birth_time ? ` ${meta.birth_time}` : ''}
+                        {meta?.birth_weekday ? ` (${meta.birth_weekday})` : ''}
+                    </span>
+                    <span className="rounded-lg border border-[#eadbd0] bg-[#fbf7f2] px-3 py-1.5">
+                        음력 <strong className="text-[#2c2118]">{formatCalendarDate(calendar?.lunar)}</strong>
+                    </span>
+                    {meta?.age_korean && (
+                        <span className="rounded-lg border border-[#d6ba99] bg-[#fcf4ec] px-3 py-1.5 font-bold text-[#8b5a2b]">
+                            {meta.age_korean}세 (만 {meta.age_man || meta.age_korean - 1}세)
+                            {meta.ddi ? ` · ${meta.ddi}띠` : ''}
+                            {meta.gender ? ` · ${meta.gender}성` : ''}
+                        </span>
+                    )}
+                </div>
+            </div>
+        </header>
+    );
+}
 
-            hiddenStems.forEach((stem, index) => {
-                const element = elementByChar[stem];
-                if (element) counts[element] += weights[index] || 0;
-            });
-        });
-    }
+function ElementBalance({ result }: { result: BaziResult }) {
+    const advancedFive = result.advanced_analysis?.five_elements;
+    const energyBalance = result.analysis?.summary?.total_energy_balance;
 
-    const total = Object.values(counts).reduce((sum, count) => sum + count, 0) || 1;
-    return Object.entries(counts).map(([element, count]) => {
-        const percent = Math.round((count / total) * 100);
+    const fiveOrder = ['목', '화', '토', '금', '수'];
+
+    const rawPercentages = advancedFive?.percentages || {};
+    const rawScores = advancedFive?.scores || {};
+    const rawCounts = advancedFive?.counts || {};
+
+    const elements = fiveOrder.map((el) => {
+        const percent = rawPercentages[el] !== undefined
+            ? Math.round(rawPercentages[el])
+            : 0;
+        const score = rawScores[el] !== undefined ? rawScores[el] : undefined;
+        const count = rawCounts[el] !== undefined ? rawCounts[el] : undefined;
+
         return {
-            label: `${element}(${elementLabels[element]})`,
+            element: el,
+            label: `${el}(${elementLabels[el]})`,
             amount: `${percent}%`,
             width: `${Math.max(percent, 4)}%`,
-            color: elementColors[element],
-            hexColor: elementHexColors[element],
+            score,
+            count,
+            color: elementColors[el],
+            hexColor: elementHexColors[el],
             value: percent,
         };
     });
-}
 
-function extractHiddenStems(jijanggan?: string[]) {
-    if (!jijanggan?.length) return null;
+    // Determine top dominant element accurately from sorted percentage values
+    const sortedByPercent = [...elements].sort((a, b) => b.value - a.value);
+    const topElement = sortedByPercent[0];
+    const isAllEqual = sortedByPercent[0]?.value === sortedByPercent[4]?.value && sortedByPercent[0]?.value > 0;
 
-    const stems = jijanggan
-        .map((stem) => stem.match(/[甲乙丙丁戊己庚辛壬癸]/)?.[0])
-        .filter((stem): stem is string => Boolean(stem));
+    let centerTitle = '최대 기운';
+    let centerMainText = topElement?.element ? `${topElement.element}(${elementLabels[topElement.element]})` : '-';
+    let centerSubText = topElement && topElement.value > 0 ? `${topElement.value}%` : '';
 
-    return stems.length ? stems : null;
-}
+    if (isAllEqual) {
+        centerTitle = '오행 상태';
+        centerMainText = '오행 균형';
+        centerSubText = '균등 분포';
+    } else if (advancedFive?.dominant && advancedFive.dominant.length > 1) {
+        centerTitle = '우세 오행';
+        centerMainText = advancedFive.dominant.map((d) => `${d}(${elementLabels[d] || ''})`).join('·');
+        centerSubText = topElement ? `최대 ${topElement.value}%` : '';
+    } else if (advancedFive?.dominant && advancedFive.dominant.length === 1) {
+        const d = advancedFive.dominant[0];
+        centerTitle = '최대 기운';
+        centerMainText = `${d}(${elementLabels[d] || ''})`;
+        centerSubText = rawPercentages[d] !== undefined ? `${Math.round(rawPercentages[d])}%` : `${topElement?.value || 0}%`;
+    }
 
-function buildConicGradient(elements: ReturnType<typeof getElementBalance>) {
+    // Build conic gradient
     let start = 0;
     const segments = elements.map((element, index) => {
         const end = index === elements.length - 1 ? 100 : start + element.value;
         const segment = `${element.hexColor} ${start}% ${end}%`;
         start = end;
-
         return segment;
     });
+    const conicGradient = `conic-gradient(${segments.join(',')})`;
 
-    return `conic-gradient(${segments.join(',')})`;
-}
-
-function buildElementBalanceDescription(elements: ReturnType<typeof getElementBalance>) {
-    const sortedElements = [...elements].sort((a, b) => b.value - a.value);
-    const strongest = sortedElements[0];
-    const weakest = [...elements].sort((a, b) => a.value - b.value)[0];
-
-    if (!strongest || !weakest) {
-        return ['천간과 지장간을 함께 보면 오행의 분포를 확인할 수 있습니다.', '부족한 기운을 의식적으로 보완하면 판단과 행동의 균형을 잡는 데 도움이 됩니다.'];
-    }
-
-    const strongestName = strongest.label;
-    const weakestName = weakest.label;
-    const strongestElement = strongest.label.slice(0, 1);
-    const weakestElement = weakest.label.slice(0, 1);
-
-    return [
-        `천간과 지장간을 함께 보면 ${strongestName}의 기운이 가장 두드러집니다.`,
-        `${elementTraitText[strongestElement] || '타고난 성향'}의 성향이 잘 드러날 수 있으며, ${weakestName}의 ${elementTraitText[weakestElement] || '감각'}을 보완하면 판단과 행동의 균형을 잡는 데 도움이 됩니다.`,
-    ];
-}
-
-function getInteractionItems(result: BaziResult) {
-    const analysis = result.analysis as Record<string, unknown> | undefined;
-    if (!analysis) return [];
-
-    return interactionConfigs.flatMap((config) => {
-        const matches = findValuesByKey(analysis, config.key);
-        const labels = dedupeInteractionLabels(config.key, matches.flatMap((match) => {
-            const contextPrefix = config.key === 'jahab' ? getPillarContextLabel(match.path) : '';
-            const labels = normalizeInteractionByKey(config.key, match.value);
-            return labels.map((label) => contextPrefix ? `${contextPrefix} ${config.label} · ${label}` : label);
-        }));
-
-        return labels.map((title) => ({
-            key: `${config.key}-${title}`,
-            label: config.label,
-            hanja: config.hanja,
-            title,
-        }));
-    });
-}
-
-function dedupeInteractionLabels(key: string, labels: string[]) {
-    if (!['six_haps', 'three_haps', 'half_haps', 'chungs', 'cheons', 'breaks', 'punishments'].includes(key)) return Array.from(new Set(labels));
-
-    const seen = new Set<string>();
-    return labels.filter((label) => {
-        const dedupeKey = getBranchPairKey(label);
-        if (!dedupeKey) return true;
-        if (seen.has(dedupeKey)) return false;
-
-        seen.add(dedupeKey);
-        return true;
-    });
-}
-
-function getBranchPairKey(label: string) {
-    const branches = label.match(/[子丑寅卯辰巳午未申酉戌亥]/g);
-    if (!branches || branches.length < 2) return '';
-
-    return Array.from(new Set(branches)).sort().join('');
-}
-
-function normalizeInteractionByKey(key: string, value: unknown) {
-    if (key === 'jahab') return normalizeJahabValue(value);
-    if (key === 'six_haps') return normalizeSixHapsValue(value);
-    if (key === 'three_haps') return normalizeThreeHapsValue(value);
-    if (key === 'half_haps') return normalizeHalfHapsValue(value);
-    if (key === 'chungs') return normalizeBranchPairValue(value, '충(沖)');
-    if (key === 'cheons') return normalizeBranchPairValue(value, '천(穿)');
-    if (key === 'breaks') return normalizeBranchPairValue(value, '파(破)');
-    if (key === 'punishments') return normalizePunishmentValue(value);
-
-    return normalizeInteractionValue(value);
-}
-
-function findValuesByKey(value: unknown, targetKey: string, path: string[] = []): Array<{ value: unknown; path: string[] }> {
-    if (!value || typeof value !== 'object') return [];
-
-    if (Array.isArray(value)) {
-        return value.flatMap((item, index) => findValuesByKey(item, targetKey, [...path, String(index)]));
-    }
-
-    return Object.entries(value as Record<string, unknown>).flatMap(([key, childValue]) => {
-        const nextPath = [...path, key];
-        const matchedValues = key === targetKey ? [{ value: childValue, path: nextPath }] : [];
-        return [...matchedValues, ...findValuesByKey(childValue, targetKey, nextPath)];
-    });
-}
-
-function getPillarContextLabel(path: string[]) {
-    const pillarKey = [...path].reverse().find((key) => pillarLabelByDetailKey[key]);
-    return pillarKey ? pillarLabelByDetailKey[pillarKey] : '';
-}
-
-function normalizeJahabValue(value: unknown): string[] {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) {
-        return normalizeInteractionValue(value);
-    }
-
-    const objectValue = value as Record<string, unknown>;
-    if (objectValue.exists === false || objectValue.active === false) return [];
-
-    const stem = firstInteractionText(objectValue.stem) || firstInteractionText(objectValue.gan);
-    const branch = firstInteractionText(objectValue.branch) || firstInteractionText(objectValue.ji);
-    const pillar = `${stem || ''}${branch || ''}`;
-
-    if (pillar) return [pillar];
-
-    const extractedPillar = extractPillarText(value);
-    if (extractedPillar) return [extractedPillar];
-
-    return normalizeJahabFallbackValue(value);
-}
-
-function firstInteractionText(value: unknown) {
-    return normalizeInteractionValue(value)[0] || '';
-}
-
-function extractPillarText(value: unknown) {
-    const text = JSON.stringify(value);
-    const stem = text.match(/[甲乙丙丁戊己庚辛壬癸]/)?.[0] || '';
-    const branch = text.match(/[子丑寅卯辰巳午未申酉戌亥]/)?.[0] || '';
-
-    return stem && branch ? `${stem}${branch}` : '';
-}
-
-function normalizeJahabFallbackValue(value: unknown): string[] {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) {
-        return normalizeInteractionValue(value);
-    }
-
-    return Object.entries(value as Record<string, unknown>)
-        .filter(([key, childValue]) => key !== 'combined_element' && typeof childValue !== 'boolean')
-        .flatMap(([, childValue]) => normalizeInteractionValue(childValue));
-}
-
-function normalizeHalfHapsValue(value: unknown): string[] {
-    return normalizeBranchPairValue(value, '반합');
-}
-
-function normalizeSixHapsValue(value: unknown): string[] {
-    return normalizeBranchPairValue(value, '육합');
-}
-
-function normalizeThreeHapsValue(value: unknown): string[] {
-    return normalizeBranchGroupValue(value, '삼합');
-}
-
-function normalizePunishmentValue(value: unknown): string[] {
-    if (!value) return [];
-
-    if (Array.isArray(value)) {
-        return value.flatMap(normalizePunishmentValue);
-    }
-
-    if (typeof value !== 'object') {
-        return normalizeInteractionValue(value);
-    }
-
-    const objectValue = value as Record<string, unknown>;
-    if (objectValue.exists === false || objectValue.active === false) return [];
-
-    const my = extractBranchText(objectValue.my);
-    const withBranch = extractBranchText(objectValue.with);
-    if (my && withBranch) return [`${my}${withBranch} 형(刑)`];
-
-    const explicitBranches = [
-        ...extractBranchTexts(objectValue.branches),
-        ...extractBranchTexts(objectValue.chars),
-        ...extractBranchTexts(objectValue.pair),
-    ];
-
-    if (explicitBranches.length >= 2) {
-        const type = firstInteractionText(objectValue.type) || firstInteractionText(objectValue.name) || firstInteractionText(objectValue.label);
-        return [`${type ? `${type} · ` : ''}${explicitBranches.join('')} 형(刑)`];
-    }
-
-    return Object.entries(objectValue)
-        .filter(([, childValue]) => typeof childValue !== 'boolean')
-        .flatMap(([, childValue]) => normalizePunishmentValue(childValue));
-}
-
-function normalizeBranchGroupValue(value: unknown, suffix: string): string[] {
-    if (!value) return [];
-
-    if (Array.isArray(value)) {
-        const isBranchList = value.every((item) => typeof item !== 'object' || item === null);
-        const branches = uniqueBranches(extractBranchTexts(value));
-        if (isBranchList && branches.length >= 3) return [`${branches.join('')} ${suffix}`];
-
-        return value.flatMap((item) => normalizeBranchGroupValue(item, suffix));
-    }
-
-    if (typeof value !== 'object') {
-        const branches = uniqueBranches(extractBranchTexts(value));
-        return branches.length >= 3 ? [`${branches.join('')} ${suffix}`] : normalizeInteractionValue(value);
-    }
-
-    const objectValue = value as Record<string, unknown>;
-    if (objectValue.exists === false || objectValue.active === false) return [];
-
-    const explicitBranches = uniqueBranches([
-        ...extractBranchTexts(objectValue.branches),
-        ...extractBranchTexts(objectValue.chars),
-        ...extractBranchTexts(objectValue.group),
-        ...extractBranchTexts(objectValue.members),
-    ]);
-
-    if (explicitBranches.length >= 3) {
-        return [`${explicitBranches.join('')} ${suffix}`];
-    }
-
-    return Object.entries(objectValue)
-        .filter(([, childValue]) => typeof childValue !== 'boolean')
-        .flatMap(([, childValue]) => normalizeBranchGroupValue(childValue, suffix));
-}
-
-function normalizeBranchPairValue(value: unknown, suffix: string): string[] {
-    if (!value) return [];
-
-    if (Array.isArray(value)) {
-        return value.flatMap((item) => normalizeBranchPairValue(item, suffix));
-    }
-
-    if (typeof value !== 'object') {
-        return normalizeInteractionValue(value);
-    }
-
-    const objectValue = value as Record<string, unknown>;
-    if (objectValue.exists === false || objectValue.active === false) return [];
-
-    const my = extractBranchText(objectValue.my);
-    const withBranch = extractBranchText(objectValue.with);
-
-    if (my && withBranch) return [`${my}${withBranch} ${suffix}`];
-
-    return Object.entries(objectValue)
-        .filter(([, childValue]) => typeof childValue !== 'boolean')
-        .flatMap(([, childValue]) => normalizeBranchPairValue(childValue, suffix));
-}
-
-function extractBranchText(value: unknown) {
-    if (!value) return '';
-
-    if (typeof value === 'string' || typeof value === 'number') {
-        return String(value).match(/[子丑寅卯辰巳午未申酉戌亥]/)?.[0] || '';
-    }
-
-    const text = JSON.stringify(value);
-    return text.match(/[子丑寅卯辰巳午未申酉戌亥]/)?.[0] || '';
-}
-
-function extractBranchTexts(value: unknown): string[] {
-    if (!value) return [];
-
-    if (Array.isArray(value)) {
-        return value.flatMap(extractBranchTexts);
-    }
-
-    const text = typeof value === 'string' || typeof value === 'number'
-        ? String(value)
-        : JSON.stringify(value);
-
-    return text.match(/[子丑寅卯辰巳午未申酉戌亥]/g) || [];
-}
-
-function uniqueBranches(branches: string[]) {
-    return Array.from(new Set(branches));
-}
-
-function normalizeInteractionValue(value: unknown): string[] {
-    if (!value) return [];
-
-    if (typeof value === 'string' || typeof value === 'number') {
-        const text = String(value).trim();
-        return text ? [text] : [];
-    }
-
-    if (Array.isArray(value)) {
-        return value.flatMap(normalizeInteractionValue);
-    }
-
-    if (typeof value !== 'object') return [];
-
-    const objectValue = value as Record<string, unknown>;
-    if (objectValue.exists === false || objectValue.active === false) return [];
-
-    const preferredKeys = ['name', 'label', 'title', 'relation', 'type', 'pair', 'chars', 'branches', 'stems', 'combined_element'];
-    const parts = preferredKeys.flatMap((key) => normalizeInteractionValue(objectValue[key]));
-
-    if (parts.length) return [parts.join(' · ')];
-
-    return Object.entries(objectValue)
-        .filter(([, childValue]) => typeof childValue !== 'boolean')
-        .flatMap(([, childValue]) => normalizeInteractionValue(childValue));
-}
-
-function findCurrentDaewoonItem(items: DaewoonItem[]) {
-    return items.find((item) => {
-        if (item.start_year === undefined || item.end_year === undefined) return false;
-        return item.start_year <= currentYear && currentYear <= item.end_year;
-    });
-}
-
-function findDaewoonListIndex(items: DaewoonItem[], current?: DaewoonItem | null) {
-    if (!current) return -1;
-
-    return items.findIndex((item) => {
-        if (item.index !== undefined && current.index !== undefined) return item.index === current.index;
-        if (item.start_year !== undefined && current.start_year !== undefined) return item.start_year === current.start_year;
-
-        return item.gan === current.gan && item.ji === current.ji;
-    });
-}
-
-function getYearGanji(year: number) {
-    const offset = year - 1984;
-    const stemIndex = ((offset % heavenlyStems.length) + heavenlyStems.length) % heavenlyStems.length;
-    const branchIndex = ((offset % earthlyBranches.length) + earthlyBranches.length) % earthlyBranches.length;
-
-    return {
-        gan: heavenlyStems[stemIndex],
-        ji: earthlyBranches[branchIndex],
-    };
-}
-
-function buildYearCyclesFromDaewoon(daewoon?: DaewoonItem | null): Array<[number, string, string]> {
-    if (daewoon?.start_year === undefined || daewoon.end_year === undefined) return [];
-
-    const length = Math.max(0, daewoon.end_year - daewoon.start_year + 1);
-    return Array.from({ length }, (_, index) => {
-        const year = daewoon.start_year! + index;
-        const { gan, ji } = getYearGanji(year);
-
-        return [year, gan, ji];
-    });
-}
-
-function ResultHeading({ result }: { result: BaziResult }) {
-    return (
-        <header className="rounded-lg border border-[#eadfd4] bg-white/72 px-5 py-4 shadow-[0_12px_32px_rgba(58,42,29,0.05)] sm:flex sm:items-end sm:justify-between">
-            <div>
-                <p className="text-xs font-semibold text-[#a26e3c]">Dowon Analysis</p>
-                <h2 className="mt-1 font-serif text-2xl font-bold tracking-normal text-[#291f17]">도원 명식 리포트</h2>
-            </div>
-            <p className="mt-2 text-sm text-[#75695f] sm:mt-0">
-                양력 {formatCalendarDate(result.calendar?.solar)} · 음력 {formatCalendarDate(result.calendar?.lunar)}
-            </p>
-        </header>
-    );
-}
-
-function Card({
-    children,
-    className = '',
-}: {
-    children: React.ReactNode;
-    className?: string;
-}) {
-    return (
-        <section className={`min-w-0 rounded-lg border border-[#eee2d6] bg-white/72 p-5 shadow-[0_12px_32px_rgba(58,42,29,0.06)] ${className}`}>
-            {children}
-        </section>
-    );
-}
-
-function CardTitle({ title, body }: { title: string; body: string }) {
-    return (
-        <div>
-            <div className="flex items-center gap-1.5">
-                <h3 className="font-serif text-xl font-bold tracking-normal text-[#2a2018]">{title}</h3>
-                <span className="flex h-4 w-4 items-center justify-center rounded-full border border-[#c89a6b] text-[10px] font-bold text-[#ae7442]">?</span>
-            </div>
-            <p className="mt-2 break-keep text-sm leading-6 text-[#73675c]">{body}</p>
-        </div>
-    );
-}
-
-function ElementBalance({ result }: { result: BaziResult }) {
-    const elements = getElementBalance(result);
-    const strongest = [...elements].sort((a, b) => b.value - a.value)[0];
-    const conicGradient = buildConicGradient(elements);
-    const descriptions = buildElementBalanceDescription(elements);
+    const dominantText = advancedFive?.dominant?.length ? advancedFive.dominant.join(', ') : '';
+    const deficientText = advancedFive?.deficient?.length ? advancedFive.deficient.join(', ') : '';
 
     return (
         <Card>
-            <CardTitle title="오행 균형 분석" body="천간과 지장간을 함께 반영한 오행 분포입니다." />
+            <CardTitle
+                title="오행 균형 & 세력 분포"
+                body="사주 원국과 지장간을 정밀 계량화한 오행 에너지 점수와 구성비입니다."
+                icon={Scale}
+                badge={energyBalance || undefined}
+            />
 
-            <div className="mt-5 flex items-center justify-center">
-                <div className="relative flex h-44 w-44 items-center justify-center rounded-full" style={{ background: conicGradient }}>
-                    <div className="flex h-32 w-32 flex-col items-center justify-center rounded-full bg-[#fffaf4] text-center shadow-inner">
-                        <strong className="font-serif text-3xl tracking-normal">{strongest?.label.slice(0, 1) || '-'}</strong>
-                        <span className="mt-1 text-base font-semibold">{strongest?.amount || '-'}</span>
+            <div className="mt-5 flex flex-col items-center justify-center sm:flex-row sm:gap-6">
+                <div className="relative flex h-40 w-40 shrink-0 items-center justify-center rounded-full shadow-md" style={{ background: conicGradient }}>
+                    <div className="flex h-28 w-28 flex-col items-center justify-center rounded-full bg-[#fffaf4] text-center shadow-inner px-2">
+                        <span className="text-[10px] font-bold text-[#867566] tracking-wide">{centerTitle}</span>
+                        <strong className={`font-serif font-bold tracking-normal text-[#2d2117] ${centerMainText.length > 5 ? 'text-lg mt-0.5' : 'text-2xl mt-0.5'}`}>
+                            {centerMainText}
+                        </strong>
+                        {centerSubText && (
+                            <span className="mt-0.5 text-xs font-semibold text-[#a06f3e]">
+                                {centerSubText}
+                            </span>
+                        )}
                     </div>
+                </div>
+
+                <div className="mt-4 w-full flex-1 space-y-2.5 sm:mt-0">
+                    {elements.map((el) => (
+                        <div key={el.element} className="grid grid-cols-[46px_1fr_42px] items-center gap-3 text-xs lg:text-sm">
+                            <span className="font-semibold text-[#493c31]">{el.label}</span>
+                            <div className="h-2.5 overflow-hidden rounded-full bg-[#efe8df]">
+                                <div className={`h-full rounded-full transition-all duration-500 ${el.color}`} style={{ width: el.width }} />
+                            </div>
+                            <span className="text-right font-bold text-[#342a22]">
+                                {el.amount}
+                            </span>
+                        </div>
+                    ))}
                 </div>
             </div>
 
-            <div className="mt-5 space-y-3">
-                {elements.map((element) => (
-                    <div key={element.label} className="grid grid-cols-[46px_1fr_38px] items-center gap-3 text-sm">
-                        <span className="text-[#493c31]">{element.label}</span>
-                        <span className="h-2 overflow-hidden rounded-full bg-[#efe8df]">
-                            <span className={`block h-full rounded-full ${element.color}`} style={{ width: element.width }} />
-                        </span>
-                        <span className="text-right font-semibold text-[#342a22]">{element.amount}</span>
-                    </div>
-                ))}
-            </div>
-
-            <p className="mt-5 rounded-md border border-[#eee1d4] bg-[#fcf8f3] p-4 break-keep text-sm leading-7 text-[#594b3f]">
-                {descriptions.map((description) => (
-                    <span key={description} className="block">{description}</span>
-                ))}
-            </p>
+            {advancedFive?.summary ? (
+                <div className="mt-5 rounded-lg border border-[#eee1d4] bg-[#fcf8f3] p-4">
+                    <p className="break-keep text-xs leading-6 text-[#594b3f] lg:text-sm">
+                        {advancedFive.summary}
+                    </p>
+                    {(dominantText || deficientText) && (
+                        <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                            {dominantText && (
+                                <span className="rounded bg-[#eadfd2] px-2 py-0.5 font-bold text-[#74502b]">
+                                    우세: {dominantText}
+                                </span>
+                            )}
+                            {deficientText && (
+                                <span className="rounded bg-[#efe7e0] px-2 py-0.5 font-bold text-[#8b4d3b]">
+                                    결핍/보완: {deficientText}
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </div>
+            ) : null}
         </Card>
     );
 }
 
 function TraitPanel({ result }: { result: BaziResult }) {
-    const interactionItems = getInteractionItems(result);
-    const groupedItems = interactionConfigs
-        .map((config) => ({
-            ...config,
-            items: interactionItems.filter((item) => item.label === config.label),
-        }))
-        .filter((group) => group.items.length > 0);
+    const interactions = result.advanced_analysis?.interactions;
+    const summaryList = interactions?.summary_list || [];
+    const climate = interactions?.climate;
+    const harmonyScore = interactions?.harmony_score ?? 0;
+    const tensionScore = interactions?.tension_score ?? 0;
 
     return (
         <Card>
-            <CardTitle title="합·충·형·파·해" body="원국 안에 표시된 주요 합·충·형·파·해 작용입니다." />
+            <CardTitle
+                title="합·충·형·파·해 (합충 작용)"
+                body="기둥 간 결합(합)과 변화·마찰(충·형·파·해)의 상호작용 및 전체적인 조화 분위기입니다."
+                icon={Activity}
+                badge={climate || undefined}
+            />
 
-            {groupedItems.length > 0 ? (
-                <div className="mt-5 rounded-md border border-[#eee1d4] bg-[#fcf8f3] p-4">
-                    <dl className="space-y-3">
-                    {groupedItems.map((group) => (
-                        <div key={group.key} className="break-keep text-sm leading-7 text-[#4f4033]">
-                            <dt className="inline font-bold text-[#33281f]">
-                                {group.label}
-                                <span className="font-serif text-[15px] font-bold tracking-normal">({group.hanja})</span>
-                            </dt>
-                            <dd className="inline">
-                                {' : '}
-                                <span className="font-serif text-[15px] tracking-normal">{group.items.map((item) => item.title).join(', ')}</span>
-                            </dd>
-                        </div>
-                    ))}
-                    </dl>
+            {/* Harmony vs Tension Bar */}
+            {(harmonyScore > 0 || tensionScore > 0) && (
+                <div className="mt-5 rounded-lg border border-[#ede1d4] bg-[#faf4ec] p-4">
+                    <div className="flex items-center justify-between text-xs font-bold text-[#56483c]">
+                        <span className="text-[#3b7548]">조화도 ({harmonyScore.toFixed(1)})</span>
+                        <span className="text-[#9e432c]">긴장도 ({tensionScore.toFixed(1)})</span>
+                    </div>
+                    <div className="mt-2 flex h-2.5 overflow-hidden rounded-full bg-[#e8ded3]">
+                        <div
+                            className="bg-[#417e50] transition-all"
+                            style={{
+                                width: `${(harmonyScore / (harmonyScore + tensionScore || 1)) * 100}%`,
+                            }}
+                        />
+                        <div
+                            className="bg-[#c44329] transition-all"
+                            style={{
+                                width: `${(tensionScore / (harmonyScore + tensionScore || 1)) * 100}%`,
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {summaryList.length > 0 ? (
+                <div className="mt-4 space-y-2">
+                    {summaryList.map((item, idx) => {
+                        const isHarmonious = item.includes('합') && !item.includes('충') && !item.includes('형') && !item.includes('파') && !item.includes('천');
+
+                        return (
+                            <div
+                                key={idx}
+                                className="flex items-start gap-2.5 rounded-lg border border-[#eee2d6] bg-[#fcf9f5] p-3 text-xs leading-6 text-[#4a3d32] lg:text-sm"
+                            >
+                                <span className={`mt-0.5 inline-block shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                                    isHarmonious ? 'bg-[#417e50]/15 text-[#2d5c38]' : 'bg-[#9a4b34]/15 text-[#9a4b34]'
+                                }`}>
+                                    {isHarmonious ? '조화' : '변동'}
+                                </span>
+                                <span className="break-keep font-medium">{item}</span>
+                            </div>
+                        );
+                    })}
                 </div>
             ) : (
-                <div className="mt-5 rounded-md border border-[#eee1d4] bg-[#fcf8f3] p-4">
-                    <p className="break-keep text-sm font-semibold text-[#493c31]">표시된 기본 합충 작용이 없습니다.</p>
-                    <p className="mt-2 break-keep text-sm leading-6 text-[#66584c]">
-                        이 경우에는 오행 균형, 일간의 세력, 십성 배치를 중심으로 명식을 살피는 것이 자연스럽습니다.
+                <div className="mt-5 rounded-lg border border-[#eee1d4] bg-[#fcf8f3] p-4">
+                    <p className="break-keep text-sm font-semibold text-[#493c31]">뚜렷한 충돌 또는 합 작용이 없습니다.</p>
+                    <p className="mt-1.5 break-keep text-xs leading-6 text-[#66584c]">
+                        원국이 비교적 평온한 상태이며, 오행의 세력과 십성의 순환을 중심으로 흐름을 살피는 것이 좋습니다.
                     </p>
                 </div>
             )}
@@ -1449,25 +1144,39 @@ function TraitPanel({ result }: { result: BaziResult }) {
 function DecadeFlow({ result }: { result: BaziResult }) {
     const daewoon = result.daewoon;
     const list = daewoon?.list || [];
-    const currentDaewoon = daewoon?.current || findCurrentDaewoonItem(list);
-    const upcomingDaewoon = currentDaewoon ? undefined : list.find((item) => item.start_year !== undefined && item.start_year > currentYear);
+    const currentDaewoon = daewoon?.current || list.find((item) => item.start_year !== undefined && item.end_year !== undefined && item.start_year <= currentYear && currentYear <= item.end_year);
     const currentIndex = currentDaewoon?.index;
-    const initialDaewoonIndex = findDaewoonListIndex(list, currentDaewoon);
     const [selectedDaewoonIndex, setSelectedDaewoonIndex] = useState<number | null>(null);
+
+    const initialIdx = list.findIndex((item) => item.index === currentIndex);
     const activeDaewoonIndex = selectedDaewoonIndex !== null && selectedDaewoonIndex < list.length
         ? selectedDaewoonIndex
-        : Math.max(initialDaewoonIndex, 0);
+        : Math.max(initialIdx, 0);
+
     const selectedDaewoon = list[activeDaewoonIndex] || currentDaewoon;
-    const activeYearGroup = buildYearCyclesFromDaewoon(selectedDaewoon);
+
+    // Build 10-year 세운 from API future_100 cycles
+    const cycles100 = result.cycles?.future_100 || [];
+    const activeYears: CycleYearItem[] = (selectedDaewoon?.start_year !== undefined && selectedDaewoon.end_year !== undefined)
+        ? cycles100.filter((c) => c.year >= selectedDaewoon.start_year! && c.year <= selectedDaewoon.end_year!)
+        : [];
 
     return (
-        <Card>
-            <CardTitle title="대운 흐름" body="10년 단위의 큰 흐름을 확인할 수 있습니다." />
+        <Card className="xl:col-span-2">
+            <CardTitle
+                title="대운(大運) 및 세운(歲運) 흐름"
+                body="10년 단위의 거대한 인생 환경(대운)과 매년 변화하는 1년 주기 운(세운)입니다."
+                icon={Compass}
+                badge={`${daewoon?.direction || '순행'} · ${daewoon?.start_age ? `${Math.floor(daewoon.start_age)}세 시작` : ''}`}
+            />
 
-            <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5">
+            {/* Daewoon 10-period Grid */}
+            <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5 lg:grid-cols-10">
                 {list.map((item, index) => {
                     const isCurrent = item.index === currentIndex;
                     const isSelected = index === activeDaewoonIndex;
+                    const ganElem = item.gan_detail?.element;
+                    const jiElem = item.ji_detail?.element;
 
                     return (
                         <button
@@ -1475,73 +1184,114 @@ function DecadeFlow({ result }: { result: BaziResult }) {
                             key={`${item.index}-${item.start_year}`}
                             onClick={() => setSelectedDaewoonIndex(index)}
                             aria-pressed={isSelected}
-                            className={`min-w-0 rounded-md border px-2 py-3 text-center transition-colors ${isSelected
-                                ? 'border-[#a97945] bg-[#ae7a43] text-white shadow-[0_8px_18px_rgba(138,91,44,0.22)]'
+                            className={`flex flex-col justify-between rounded-xl border p-2.5 text-center transition ${isSelected
+                                ? 'border-[#a97945] bg-[#ae7a43] text-white shadow-md'
                                 : 'border-[#ede2d7] bg-[#fcf8f3] text-[#74675b] hover:border-[#d2b38f] hover:bg-[#fff8ee]'
                                 }`}
                         >
-                            <p className="font-serif text-lg font-bold leading-none tracking-normal sm:text-xl">
-                                {item.gan}{item.ji}
-                            </p>
-                            <p className={`mt-2 text-[11px] font-semibold ${isSelected ? 'text-white/88' : 'text-[#6f6256]'}`}>
-                                {formatAgeRange(item)}
-                            </p>
-                            <p className={`mt-1 text-[11px] ${isSelected ? 'text-white/78' : 'text-[#8a7b6f]'}`}>
-                                {item.start_year || '-'}~{item.end_year || '-'}
-                            </p>
-                            {isCurrent && (
-                                <p className={`mt-1 text-[10px] font-semibold ${isSelected ? 'text-white/85' : 'text-[#a26e3c]'}`}>현재</p>
-                            )}
+                            <div>
+                                <p className={`text-[10px] font-bold ${isSelected ? 'text-white/80' : 'text-[#a26e3c]'}`}>
+                                    {formatAgeRange(item)}
+                                </p>
+                                <div className="mt-1 flex items-center justify-center gap-1">
+                                    <span className="font-serif text-lg font-bold leading-none sm:text-xl">
+                                        {item.gan}{item.ji}
+                                    </span>
+                                </div>
+                                {(item.gan_ten_god || item.ji_ten_god) && (
+                                    <p className={`mt-1 text-[10px] font-medium ${isSelected ? 'text-white/90' : 'text-[#856b56]'}`}>
+                                        {item.gan_ten_god || item.ji_ten_god}
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="mt-2 border-t border-black/10 pt-1">
+                                <p className={`text-[10px] ${isSelected ? 'text-white/80' : 'text-[#9c8e82]'}`}>
+                                    {item.start_year || '-'}
+                                </p>
+                                {isCurrent && (
+                                    <span className={`mt-0.5 inline-block rounded px-1 text-[9px] font-bold ${
+                                        isSelected ? 'bg-white text-[#96632f]' : 'bg-[#ae7a43] text-white'
+                                    }`}>
+                                        현재
+                                    </span>
+                                )}
+                            </div>
                         </button>
                     );
                 })}
             </div>
 
-            <h4 className="mt-7 font-serif text-xl font-bold tracking-normal">
-                {selectedDaewoon ? `선택 대운 ${selectedDaewoon.gan || ''}${selectedDaewoon.ji || ''}` : '대운 시작 전'}
-            </h4>
-            <p className="mt-3 text-sm leading-6 text-[#66594d]">
-                {selectedDaewoon
-                    ? `${daewoon?.direction || '-'} · ${formatAgeRange(selectedDaewoon)} · ${selectedDaewoon.start_year || '-'}~${selectedDaewoon.end_year || '-'}년`
-                    : `${daewoon?.direction || '-'} · ${daewoon?.start_age ?? '-'}세부터 시작${upcomingDaewoon ? ` · 첫 대운 ${upcomingDaewoon.gan || ''}${upcomingDaewoon.ji || ''} ${upcomingDaewoon.start_year || '-'}년` : ''}`}
-            </p>
-
-            <div className="mt-6 rounded-md border border-[#eee1d4] bg-[#fcf8f3] p-4">
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            {/* Selected Daewoon + Annual Cycles (세운) */}
+            <div className="mt-6 rounded-xl border border-[#ecdccd] bg-[#fbf6ee] p-4 lg:p-5">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <p className="text-xs font-semibold text-[#a26e3c]">세운 흐름</p>
-                        <h4 className="mt-1 font-serif text-lg font-bold tracking-normal text-[#33281f]">
-                            {selectedDaewoon ? `${selectedDaewoon.gan || ''}${selectedDaewoon.ji || ''} 대운의 세운` : '선택 대운의 세운'}
+                        <span className="rounded bg-[#eddccb] px-2 py-0.5 text-xs font-bold text-[#7d4f23]">
+                            선택 대운
+                        </span>
+                        <h4 className="mt-1 font-serif text-xl font-bold text-[#33281f]">
+                            {selectedDaewoon ? `${selectedDaewoon.gan || ''}${selectedDaewoon.ji || ''} 대운 (${formatAgeRange(selectedDaewoon)})` : '대운 선택'}
                         </h4>
                     </div>
-                    <p className="text-xs font-semibold text-[#806c59]">
-                        {activeYearGroup?.[0]?.[0] || '-'}~{activeYearGroup?.[activeYearGroup.length - 1]?.[0] || '-'}년
-                    </p>
+                    {selectedDaewoon && (
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-[#6e5d4e]">
+                            {selectedDaewoon.unseong && (
+                                <span className="rounded border border-[#d6ba99] bg-white px-2 py-0.5 font-semibold text-[#8b5a2b]">
+                                    12운성: {selectedDaewoon.unseong}
+                                </span>
+                            )}
+                            <span className="font-medium">
+                                기간: {selectedDaewoon.start_year}~{selectedDaewoon.end_year}년
+                            </span>
+                        </div>
+                    )}
                 </div>
 
-                {activeYearGroup?.length ? (
-                    <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                        {activeYearGroup.map(([year, gan, ji]) => {
-                            const isCurrent = year === currentYear;
+                {/* 10-year 세운 cards */}
+                <div className="mt-4">
+                    <p className="mb-2 text-xs font-bold text-[#8c6b4b]">해당 대운의 10년 세운 (歲運)</p>
+                    {activeYears.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 lg:grid-cols-10">
+                            {activeYears.map((c) => {
+                                const isCurrent = c.year === currentYear;
 
-                            return (
-                                <div
-                                    key={year}
-                                    className={`min-w-0 rounded-md border px-2 py-2 text-center ${isCurrent
-                                        ? 'border-[#a97945] bg-[#ae7a43] text-white shadow-[0_8px_18px_rgba(138,91,44,0.18)]'
-                                        : 'border-[#eadfd4] bg-white/70 text-[#66584c]'
+                                return (
+                                    <div
+                                        key={c.year}
+                                        className={`flex flex-col justify-between rounded-lg border p-2 text-center ${
+                                            isCurrent
+                                                ? 'border-[#a97945] bg-[#ae7a43] text-white shadow-sm'
+                                                : 'border-[#eadfd4] bg-white/80 text-[#54463a]'
                                         }`}
-                                >
-                                    <p className="text-[11px] font-semibold">{year}</p>
-                                    <p className="mt-1 font-serif text-base font-bold leading-none tracking-normal">{gan}{ji}</p>
-                                    {isCurrent && <p className="mt-1 text-[10px] font-semibold text-white/85">현재</p>}
-                                </div>
-                            );
-                        })}
-                    </div>
-                ) : (
-                    <p className="mt-3 break-keep text-sm leading-6 text-[#66584c]">활성 대운에 해당하는 세운 정보를 불러오지 못했습니다.</p>
-                )}
+                                    >
+                                        <div>
+                                            <p className={`text-[10px] font-semibold ${isCurrent ? 'text-white/85' : 'text-[#8e7f73]'}`}>
+                                                {c.year} ({c.age}세)
+                                            </p>
+                                            <p className="mt-1 font-serif text-base font-bold leading-none">
+                                                {c.gan.ch}{c.ji.ch}
+                                            </p>
+                                            <p className={`mt-0.5 text-[10px] ${isCurrent ? 'text-white/90' : 'text-[#7e6d5e]'}`}>
+                                                ({c.gan.kr}{c.ji.kr})
+                                            </p>
+                                        </div>
+
+                                        <div className="mt-1.5 border-t border-black/5 pt-1 text-[9px]">
+                                            <p className={`font-semibold ${isCurrent ? 'text-white/90' : 'text-[#9c6a38]'}`}>
+                                                {c.ji.ten_god || c.gan.ten_god || '-'}
+                                            </p>
+                                            {c.unseong && (
+                                                <p className={isCurrent ? 'text-white/75' : 'text-[#a29284]'}>{c.unseong}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <p className="text-xs text-[#8c7d71]">세운 데이터를 불러오지 못했습니다.</p>
+                    )}
+                </div>
             </div>
         </Card>
     );
@@ -1556,7 +1306,7 @@ function ConsultationBanner({
     const isIntro = variant === 'intro';
 
     return (
-        <section className={`relative isolate overflow-hidden rounded-lg border border-[#33251a] bg-[#15110d] text-white shadow-[0_18px_40px_rgba(24,17,11,0.18)] ${isSidebar
+        <section className={`relative isolate overflow-hidden rounded-xl border border-[#33251a] bg-[#15110d] text-white shadow-[0_18px_40px_rgba(24,17,11,0.18)] ${isSidebar
             ? 'min-h-[265px] p-5'
             : isIntro
                 ? 'min-h-[265px] p-5 lg:flex lg:min-h-0 lg:p-6'

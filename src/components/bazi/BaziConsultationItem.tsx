@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CalendarDays, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
-import type { BaziResult } from './types';
+import type { BaziResult, JijangganDetail } from './types';
 import { DeleteBaziConsultationButton } from './DeleteBaziConsultationButton';
 
 type FreeBaziConsultationRow = {
@@ -212,6 +212,14 @@ const pillarMeta: Record<'time' | 'day' | 'month' | 'year', {
 
 const pillarOrder = ['time', 'day', 'month', 'year'] as const;
 
+const elementColorMap: Record<string, string> = {
+    목: 'bg-[#417e50] text-white',
+    화: 'bg-[#db3c39] text-white',
+    토: 'bg-[#c58e49] text-white',
+    금: 'bg-[#707271] text-white',
+    수: 'bg-[#437b99] text-white',
+};
+
 function StoredSajuChart({ result }: { result: BaziResult }) {
     const pillars = result.four_pillars;
     const tenGods = result.ten_gods || {};
@@ -221,13 +229,13 @@ function StoredSajuChart({ result }: { result: BaziResult }) {
         <section className="mt-5 overflow-hidden rounded-md border border-[#ecdccd] bg-[#fffaf4]">
             <div className="border-b border-[#eadfd4] bg-white/55 px-4 py-3">
                 <h3 className="font-serif text-lg font-bold tracking-normal text-[#2a2018]">사주 정국</h3>
-                <p className="mt-1 break-keep text-xs leading-5 text-[#73675c]">태어난 순간의 네 기둥과 각 기둥의 십성, 지장간 구조입니다.</p>
+                <p className="mt-1 break-keep text-xs leading-5 text-[#73675c]">태어난 순간의 네 기둥과 각 기둥의 십성, 12운성 및 지장간 구조입니다.</p>
             </div>
-            <div className="grid grid-cols-4 border-b border-[#eadfd4] text-center">
+            <div className="grid grid-cols-4 border-b border-[#eadfd4] text-center bg-[#faf4ec]">
                 {pillarOrder.map((key) => (
                     <div key={key} className="border-r border-[#eadfd4] py-3 last:border-r-0">
                         <p className="text-xs font-semibold text-[#65574b]">{pillarMeta[key].title}</p>
-                        <p className="mt-2 text-[11px] text-[#9d7750] sm:text-xs">
+                        <p className="mt-1.5 text-[11px] font-semibold text-[#9d7750] sm:text-xs">
                             {pillarMeta[key].ganTenGodKey ? tenGods[pillarMeta[key].ganTenGodKey] : '일간(나)'}
                         </p>
                     </div>
@@ -236,24 +244,62 @@ function StoredSajuChart({ result }: { result: BaziResult }) {
             <div className="grid grid-cols-4 text-center">
                 {pillarOrder.map((key) => {
                     const meta = pillarMeta[key];
-                    const pillar = pillars?.[key];
+                    const pillar = pillars?.[key] || (key === 'time' ? pillars?.hour : undefined);
                     const detail = details[meta.detailKey];
-                    const branchInfo = detail?.branch;
+                    const gan = pillar?.gan;
+                    const ji = pillar?.ji;
+                    const unseong = pillar?.unseong || detail?.stem?.unseong;
+                    const jijangganList: JijangganDetail[] = pillar?.jijanggan || (detail?.branch?.jijanggan?.map((ch) => ({ ch })) || []);
 
                     return (
                         <article key={key} className="min-w-0 border-r border-[#eadfd4] last:border-r-0">
-                            <div className="border-b border-[#eadfd4] py-3 sm:py-4">
-                                <p className="font-serif text-[2rem] leading-none text-[#15110d] sm:text-[2.45rem]">{pillar?.gan?.ch || '-'}</p>
+                            {/* Stem */}
+                            <div className="border-b border-[#eadfd4] bg-white/70 py-3 sm:py-4">
+                                {gan?.element && (
+                                    <span className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${elementColorMap[gan.element] || 'bg-neutral-600 text-white'}`}>
+                                        {gan.element}
+                                    </span>
+                                )}
+                                <p className="mt-1 font-serif text-[1.85rem] font-bold leading-none text-[#15110d] sm:text-[2.25rem]">{gan?.ch || '-'}</p>
+                                {gan?.kr && <p className="mt-0.5 text-[10px] text-[#847366]">({gan.kr})</p>}
                             </div>
-                            <div className="border-b border-[#eadfd4] py-3 sm:py-4">
-                                <p className="font-serif text-[2rem] leading-none text-[#15110d] sm:text-[2.45rem]">{pillar?.ji?.ch || '-'}</p>
+
+                            {/* Branch */}
+                            <div className="border-b border-[#eadfd4] bg-white/70 py-3 sm:py-4">
+                                {ji?.element && (
+                                    <span className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${elementColorMap[ji.element] || 'bg-neutral-600 text-white'}`}>
+                                        {ji.element}
+                                    </span>
+                                )}
+                                <p className="mt-1 font-serif text-[1.85rem] font-bold leading-none text-[#15110d] sm:text-[2.25rem]">{ji?.ch || '-'}</p>
+                                {ji?.kr && <p className="mt-0.5 text-[10px] text-[#847366]">({ji.kr})</p>}
                             </div>
-                            <p className="border-b border-[#eadfd4] px-1 py-2 text-[11px] leading-4 text-[#8a6245] sm:text-xs">
-                                {tenGods[meta.jiTenGodKey] || '-'}
-                            </p>
-                            <p className="break-keep px-1.5 py-2 text-center text-[11px] leading-4 text-[#74675b] sm:px-2 sm:text-xs sm:leading-5">
-                                {branchInfo?.jijanggan?.join(', ') || '없음'}
-                            </p>
+
+                            {/* Ten god & Unseong */}
+                            <div className="border-b border-[#eadfd4] bg-[#fbf7f1] px-1 py-2 text-[11px] leading-4 text-[#8a6245] sm:text-xs">
+                                <p className="font-bold">{tenGods[meta.jiTenGodKey] || '-'}</p>
+                                {unseong && (
+                                    <span className="mt-1 inline-block rounded border border-[#d6beaa] bg-white px-1.5 py-0.5 text-[10px] font-semibold text-[#735339]">
+                                        {unseong}
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Jijanggan */}
+                            <div className="bg-white/50 p-1.5 text-[11px] text-[#74675b] sm:p-2">
+                                {jijangganList.length > 0 ? (
+                                    <div className="space-y-1">
+                                        {jijangganList.map((item, idx) => (
+                                            <div key={idx} className="flex items-center justify-between rounded border border-[#efe6dc] bg-[#fffdfa] px-1.5 py-0.5 text-[11px] sm:px-2 sm:text-xs">
+                                                <span className="font-serif text-xs font-bold text-[#2d2117] sm:text-sm">{item.ch}</span>
+                                                {item.ten_god && <span className="text-[10px] font-medium text-[#9a6738] sm:text-[11px]">{item.ten_god}</span>}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-center text-[10px] text-[#9d8f82]">없음</p>
+                                )}
+                            </div>
                         </article>
                     );
                 })}
