@@ -228,7 +228,7 @@ function buildBaziPromptContext(result: BaziResult): Record<string, string> {
     const yearPillar = formatPillar(pillars.year);
     const monthPillar = formatPillar(pillars.month);
     const dayPillar = formatPillar(pillars.day);
-    const timePillar = formatPillar(pillars.time);
+    const timePillar = formatPillar(pillars.hour || pillars.time);
     const currentYear = getKstYear();
     const daewoonList = result.daewoon?.list || [];
     const currentDaewoon = result.daewoon?.current || findCurrentDaewoon(daewoonList, currentYear);

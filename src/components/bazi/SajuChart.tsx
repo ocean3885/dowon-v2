@@ -68,7 +68,7 @@ export function SajuChart({ result }: { result: BaziResult }) {
                 </div>
                 <div className="grid grid-cols-4 text-center">
                     {pillarOrder.map((key) => {
-                        const pillar = pillars?.[key];
+                        const pillar = pillars?.[key] || (key === 'time' ? pillars?.hour : undefined);
                         const detail = details[detailKeyByPillar[key]];
                         const branchInfo = detail?.branch;
 

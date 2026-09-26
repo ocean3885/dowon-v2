@@ -11,10 +11,10 @@ export type BaziResult = {
         solar?: { year?: number; month?: string | number; day?: string | number };
         lunar?: { year?: number; month?: string | number; day?: string | number };
     };
-    four_pillars?: Record<PillarKey, {
+    four_pillars?: Partial<Record<PillarKey | 'hour', {
         gan?: { kr?: string; ch?: string };
         ji?: { kr?: string; ch?: string };
-    }>;
+    }>>;
     ten_gods?: Record<string, string | undefined>;
     daewoon?: {
         direction?: string;
@@ -43,6 +43,34 @@ export type BaziResult = {
             total_energy_balance?: string;
         };
         details?: Partial<Record<PillarDetailKey, PillarDetail>>;
+    };
+    advanced_analysis?: {
+        interactions?: {
+            summary_list?: string[];
+            matrix?: any[];
+            tension_score?: number;
+            harmony_score?: number;
+            climate?: string;
+        };
+        xu_shi_dynamics?: {
+            pillars?: Record<string, any>;
+            real_count?: number;
+            transformed_empty_count?: number;
+            hollow_penetrate_count?: number;
+            overall_status?: string;
+        };
+        bin_zhu_dynamics?: {
+            guest_structure?: any;
+            host_structure?: any;
+            control_flow?: {
+                direction?: string;
+                summary_meaning?: string;
+                career_advice?: string;
+            };
+            guest_host_links?: any[];
+            ai_prompt_bullets?: string[];
+        };
+        ai_consultation_prompts?: string[];
     };
 };
 

@@ -399,7 +399,7 @@ function formatBaziPillars(result: BaziResult) {
     const year = formatStemBranch(pillars?.year);
     const month = formatStemBranch(pillars?.month);
     const day = formatStemBranch(pillars?.day);
-    const time = formatStemBranch(pillars?.time);
+    const time = formatStemBranch(pillars?.hour || pillars?.time);
 
     return [year, month, day, time].filter(Boolean).join(' · ') || '사주 원국 해설';
 }

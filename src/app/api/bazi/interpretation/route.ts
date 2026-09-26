@@ -105,7 +105,7 @@ function buildPrompt(result: BaziResult) {
     const pillars: Partial<NonNullable<BaziResult['four_pillars']>> = result.four_pillars || {};
     const dayPillar = formatPillar(pillars.day);
     const monthPillar = formatPillar(pillars.month);
-    const timePillar = formatPillar(pillars.time);
+    const timePillar = formatPillar(pillars.hour || pillars.time);
 
     return [
         `${dayPillar} 일주가 ${monthPillar} 월에 ${timePillar}시에 태어난 경우, 기본적인 특성을 명리학 관점으로 500자 내외로 정리해줘.`,
