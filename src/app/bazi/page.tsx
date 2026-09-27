@@ -839,7 +839,7 @@ function FeatureStrip({ expanded = false }: { expanded?: boolean }) {
     const features = [
         { icon: Lightbulb, title: '정밀 만세력', body: '고도화 명리 엔진' },
         { icon: Compass, title: '자평·맹파 이론', body: '허실 및 빈주 역학' },
-        { icon: ScrollText, title: '개인 맞춤 리포트', body: '심층 AI 분석' },
+        { icon: ScrollText, title: '정통 사주 리포트', body: '오차 없는 정밀 데이터' },
     ] as const;
 
     return (

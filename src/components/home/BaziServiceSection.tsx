@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, CalendarDays, Compass, FileText, Sparkles } from 'lucide-react';
+import { ArrowRight, CalendarDays, Compass, Sparkles, UserCheck } from 'lucide-react';
 
 const previewPillars = [
   { label: '년주', top: '甲', bottom: '子' },
@@ -23,9 +23,9 @@ const featureItems = [
     desc: '원국과 현재 대운, 세운이 만나는 지점을 차분히 살펴봅니다.',
   },
   {
-    icon: FileText,
-    title: '무료 AI 원국 해설',
-    desc: '회원은 조회한 명식을 바탕으로 무료 원국 해설을 신청할 수 있습니다.',
+    icon: UserCheck,
+    title: '심층 분석',
+    desc: '정밀 만세력 데이터를 기반으로 원장님이 직접 1:1 맞춤 사주를 분석합니다.',
   },
 ];
 
@@ -58,8 +58,8 @@ export default function BaziServiceSection() {
           </h2>
 
           <p className="mt-7 max-w-xl font-sans text-base leading-8 text-white/68 break-keep sm:text-lg">
-            도원 만세력은 사주 정국, 오행 균형, 대운과 세운의 흐름을 정리해 보여줍니다.
-            조회한 명식은 무료 AI 원국 해설로 이어져 상담 전 자신의 흐름을 먼저 살필 수 있습니다.
+            도원 만세력은 사주 정국, 오행 균형, 대운과 세운의 흐름을 과학적이고 정밀하게 산출합니다.
+            도출된 정밀 만세력 데이터를 토대로 김종찬 원장님이 직접 깊이 있는 1:1 맞춤 분석과 명쾌한 해법을 전해드립니다.
           </p>
 
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -71,10 +71,11 @@ export default function BaziServiceSection() {
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/my/bazi-consultations"
-              className="inline-flex h-12 items-center justify-center rounded-md border border-white/18 px-6 font-sans text-sm font-semibold text-white/82 transition-colors hover:border-[#C8A46B]/50 hover:bg-white/5"
+              href="/submit"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-md border border-white/18 px-6 font-sans text-sm font-semibold text-white/82 transition-colors hover:border-[#C8A46B]/50 hover:bg-white/5"
             >
-              내 무료 해설 보기
+              원장 1:1 상담 신청
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </div>
@@ -91,7 +92,7 @@ export default function BaziServiceSection() {
                 </h3>
               </div>
               <span className="inline-flex h-8 w-fit items-center rounded-full bg-[#f1e4d1] px-3 font-sans text-xs font-semibold text-[#7a542a]">
-                무료상담신청 가능
+                원장 직접 심층 감명
               </span>
             </div>
 
@@ -133,7 +134,7 @@ export default function BaziServiceSection() {
             <div className="mt-5 flex items-start gap-3 rounded-2xl border border-[#e7dac8] bg-[#f8efe3] px-4 py-4">
               <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#A6834D]" strokeWidth={1.5} />
               <p className="font-sans text-sm leading-6 text-[#594c40] break-keep">
-                AI 분석은 참고용으로 제공되며 오류가 있을 수 있습니다. 정확하고 깊이 있는 상담이 필요하시다면 도원의 유료 상담 서비스를 이용해 주세요.
+                과학적이고 정밀한 만세력 데이터와 정통 명리학 이론을 바탕으로, 김종찬 원장님이 한 분 한 분의 사주를 직접 심층 분석하여 명쾌한 해답과 삶의 방향을 제시해 드립니다.
               </p>
             </div>
           </div>
