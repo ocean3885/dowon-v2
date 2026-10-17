@@ -11,6 +11,7 @@ export default function AdminNav() {
         { name: '상담 내역', href: '/admin' },
         { name: '회원 관리', href: '/admin/members' },
         { name: '만세력상담', href: '/admin/bazi-consultations' },
+        { name: '만세력로그', href: '/admin/bazi-inquiries' },
         { name: '프롬프트', href: '/admin/bazi-prompts' },
         { name: '게시판 관리', href: '/admin/board' },
     ];

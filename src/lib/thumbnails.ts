@@ -50,3 +50,14 @@ export async function createThumbnailFromFile(sourcePath: string, thumbnailPath:
     const image = await Jimp.read(sourcePath);
     await writeThumbnail(image, thumbnailPath, options);
 }
+
+export async function createThumbnailBuffer(sourceBuffer: Buffer, options: ThumbnailOptions = {}): Promise<Buffer> {
+    const width = options.width ?? DEFAULT_THUMBNAIL_WIDTH;
+    const height = options.height ?? DEFAULT_THUMBNAIL_HEIGHT;
+    const quality = options.quality ?? DEFAULT_THUMBNAIL_QUALITY;
+
+    const image = await Jimp.read(sourceBuffer);
+    image.cover({ w: width, h: height });
+    const buffer = await image.getBuffer(JimpMime.jpeg, { quality });
+    return Buffer.from(buffer);
+}

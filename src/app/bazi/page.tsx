@@ -246,6 +246,9 @@ export default function BaziPage() {
         try {
             const { subjectName: nextSubjectName, ...baziParams } = values;
             const params = new URLSearchParams(baziParams);
+            if (nextSubjectName) {
+                params.set('name', nextSubjectName.trim());
+            }
             const response = await fetch(`/api/bazi?${params.toString()}`);
             const data = await response.json();
 

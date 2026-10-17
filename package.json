@@ -10,7 +10,8 @@
     "backfill:thumbnails": "node scripts/backfill-thumbnails.cjs"
   },
   "overrides": {
-    "postcss": "^8.5.10"
+    "postcss": "^8.5.10",
+    "postcss-selector-parser": "^7.1.6"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

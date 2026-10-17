@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { formatContentToHtml } from '@/lib/contentFormatter';
 
 type Category = {
     id: number;
@@ -69,7 +70,9 @@ const resizeImage = (file: File, maxWidth: number = 800): Promise<File> => {
 
 export default function BoardPostForm({ categories, mode, post }: BoardPostFormProps) {
     const router = useRouter();
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [loading, setLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write');
     const [file, setFile] = useState<File | null>(null);
     const [formData, setFormData] = useState({
         categoryId: post?.categoryId ? String(post.categoryId) : categories[0] ? String(categories[0].id) : '',
@@ -79,6 +82,34 @@ export default function BoardPostForm({ categories, mode, post }: BoardPostFormP
         imageUrl: post?.imageUrl || '',
         thumbnailUrl: post?.thumbnailUrl || '',
     });
+
+    const insertAtCursor = (prefix: string, suffix: string = '', placeholder: string = '') => {
+        const textarea = textareaRef.current;
+        if (!textarea) {
+            setFormData(prev => ({ ...prev, content: prev.content + prefix + placeholder + suffix }));
+            return;
+        }
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = formData.content.substring(start, end) || placeholder;
+
+        const replacement = prefix + selectedText + suffix;
+        const newContent = formData.content.substring(0, start) + replacement + formData.content.substring(end);
+
+        setFormData(prev => ({ ...prev, content: newContent }));
+
+        setTimeout(() => {
+            textarea.focus();
+            const newCursorPos = start + prefix.length + selectedText.length;
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
+        }, 0);
+    };
+
+    const insertImageAtCursor = (imageUrl: string) => {
+        insertAtCursor(`\n\n![이미지](${imageUrl})\n\n`);
+        setActiveTab('write');
+    };
 
     const [extraImageFiles, setExtraImageFiles] = useState<{ id: string; file: File | null; url: string | null; uploading: boolean }[]>([]);
 
@@ -178,8 +209,15 @@ export default function BoardPostForm({ categories, mode, post }: BoardPostFormP
             let thumbnailUrl = formData.thumbnailUrl;
 
             if (file) {
+                let fileToUpload = file;
+                try {
+                    fileToUpload = await resizeImage(file, 1200);
+                } catch (resizeErr) {
+                    console.warn('대표이미지 리사이징 실패, 원본 사용:', resizeErr);
+                }
+
                 const uploadData = new FormData();
-                uploadData.append('file', file);
+                uploadData.append('file', fileToUpload);
 
                 const uploadResponse = await fetch('/api/upload', {
                     method: 'POST',
@@ -198,13 +236,15 @@ export default function BoardPostForm({ categories, mode, post }: BoardPostFormP
             const endpoint = mode === 'edit' && post ? `/api/posts/${post.id}` : '/api/posts';
             const method = mode === 'edit' ? 'PUT' : 'POST';
 
+            const formattedContent = formatContentToHtml(formData.content);
+
             const response = await fetch(endpoint, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     categoryId: formData.categoryId,
                     title: formData.title,
-                    content: formData.content,
+                    content: formattedContent,
                     author: formData.author,
                     imageUrl,
                     thumbnailUrl,
@@ -285,7 +325,7 @@ export default function BoardPostForm({ categories, mode, post }: BoardPostFormP
                 <div className="flex justify-between items-center mb-4 border-b border-stone-200 pb-3">
                     <div>
                         <label className="block text-base font-bold text-stone-800">본문 삽입용 추가 이미지 다중 업로더</label>
-                        <p className="text-xs text-stone-500 mt-1">파일 추가 후 일괄 업로드하고 주소를 복사하여 내용에 HTML로 첨부하세요.</p>
+                        <p className="text-xs text-stone-500 mt-1">파일 추가 후 일괄 업로드하고 [본문 삽입] 버튼을 누르면 커서 위치에 바로 들어갑니다.</p>
                     </div>
                     <button type="button" onClick={handleAddExtraImageRow} className="px-3 py-1.5 bg-stone-200 text-stone-700 rounded-md text-sm hover:bg-stone-300 font-bold transition-colors">
                         + 파일 첨부 추가
@@ -310,8 +350,16 @@ export default function BoardPostForm({ categories, mode, post }: BoardPostFormP
                                         value={row.url} 
                                         className="flex-1 text-xs px-3 py-2 border border-stone-200 rounded-md bg-stone-50 text-stone-600 focus:outline-none cursor-pointer hover:border-amber-400 focus:border-amber-500 transition-colors" 
                                         onClick={() => copyToClipboard(row.url as string)} 
-                                        title="클릭하여 복사" 
+                                        title="클릭하여 주소 복사" 
                                     />
+                                    <button 
+                                        type="button" 
+                                        onClick={() => insertImageAtCursor(row.url as string)}
+                                        className="text-xs whitespace-nowrap bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-2 rounded-md transition-colors shadow-xs flex items-center gap-1"
+                                        title="현재 작성 중인 본문에 바로 삽입"
+                                    >
+                                        <span>+ 본문 삽입</span>
+                                    </button>
                                     <button 
                                         type="button" 
                                         onClick={() => copyToClipboard(row.url as string)}
@@ -326,7 +374,7 @@ export default function BoardPostForm({ categories, mode, post }: BoardPostFormP
                     ))}
                     {extraImageFiles.length === 0 && (
                         <div className="text-sm text-stone-400 text-center py-6 bg-white border border-stone-200 border-dashed rounded-lg">
-                            " + 파일 첨부 추가 " 를 눌러 원하는 만큼의 이미지를 등록할 수 있습니다.
+                            &quot; + 파일 첨부 추가 &quot; 를 눌러 원하는 만큼의 이미지를 등록할 수 있습니다.
                         </div>
                     )}
                 </div>
@@ -353,16 +401,165 @@ export default function BoardPostForm({ categories, mode, post }: BoardPostFormP
                 )}
             </div>
 
+            {/* 본문 에디터 (마크다운 간편 입력 + 서식 툴바 + 실시간 미리보기) */}
             <div className="mb-8">
-                <label className="block text-sm font-bold text-stone-700 mb-2">내용</label>
-                <textarea
-                    name="content"
-                    value={formData.content}
-                    onChange={handleChange}
-                    rows={15}
-                    className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:outline-none font-serif"
-                    required
-                ></textarea>
+                <div className="flex justify-between items-end mb-2">
+                    <label className="block text-sm font-bold text-stone-700">본문 내용</label>
+                    <span className="text-xs text-stone-500">
+                        마크다운 문법(# 대제목, ## 소제목, **굵게**) 및 HTML 모두 지원
+                    </span>
+                </div>
+
+                {/* 에디터 툴바 & 탭 */}
+                <div className="flex flex-wrap items-center justify-between gap-2 p-2 bg-stone-100 border border-b-0 border-stone-300 rounded-t-lg">
+                    <div className="flex flex-wrap items-center gap-1 text-xs">
+                        <button
+                            type="button"
+                            onClick={() => insertAtCursor('\n# ', '\n', '대제목')}
+                            className="px-2.5 py-1 bg-white hover:bg-stone-200 text-stone-700 font-bold rounded border border-stone-200 transition-colors"
+                            title="대제목 (#)"
+                        >
+                            H1 대제목
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => insertAtCursor('\n## ', '\n', '소제목')}
+                            className="px-2.5 py-1 bg-white hover:bg-stone-200 text-stone-700 font-bold rounded border border-stone-200 transition-colors"
+                            title="소제목 (##)"
+                        >
+                            H2 소제목
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => insertAtCursor('\n### ', '\n', '소소제목')}
+                            className="px-2.5 py-1 bg-white hover:bg-stone-200 text-stone-700 font-bold rounded border border-stone-200 transition-colors"
+                            title="소소제목 (###)"
+                        >
+                            H3 소소제목
+                        </button>
+                        <span className="w-px h-4 bg-stone-300 mx-1" />
+                        <button
+                            type="button"
+                            onClick={() => insertAtCursor('**', '**', '굵은 텍스트')}
+                            className="px-2.5 py-1 bg-white hover:bg-stone-200 text-stone-900 font-bold rounded border border-stone-200 transition-colors"
+                            title="굵게 (**텍스트**)"
+                        >
+                            B 굵게
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => insertAtCursor('\n> ', '\n', '인용 문구')}
+                            className="px-2.5 py-1 bg-white hover:bg-stone-200 text-stone-700 font-medium rounded border border-stone-200 transition-colors"
+                            title="인용구 (>)"
+                        >
+                            ” 인용
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => insertAtCursor('\n- ', '\n', '목록 내용')}
+                            className="px-2.5 py-1 bg-white hover:bg-stone-200 text-stone-700 font-medium rounded border border-stone-200 transition-colors"
+                            title="목록 (-)"
+                        >
+                            • 목록
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => insertAtCursor('\n---\n', '')}
+                            className="px-2.5 py-1 bg-white hover:bg-stone-200 text-stone-700 font-medium rounded border border-stone-200 transition-colors"
+                            title="구분선 (---)"
+                        >
+                            — 구분선
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => insertAtCursor('[링크이름](', ')', 'https://')}
+                            className="px-2.5 py-1 bg-white hover:bg-stone-200 text-stone-700 font-medium rounded border border-stone-200 transition-colors"
+                            title="링크 [이름](URL)"
+                        >
+                            🔗 링크
+                        </button>
+                    </div>
+
+                    {/* 작성 모드 vs 실시간 미리보기 탭 전환 */}
+                    <div className="flex items-center gap-1 bg-stone-200/80 p-0.5 rounded-md text-xs">
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('write')}
+                            className={`px-3 py-1 rounded font-bold transition-all ${
+                                activeTab === 'write'
+                                    ? 'bg-white text-stone-900 shadow-xs'
+                                    : 'text-stone-600 hover:text-stone-900'
+                            }`}
+                        >
+                            ✏️ 작성 모드
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab('preview')}
+                            className={`px-3 py-1 rounded font-bold transition-all ${
+                                activeTab === 'preview'
+                                    ? 'bg-amber-600 text-white shadow-xs'
+                                    : 'text-stone-600 hover:text-stone-900'
+                            }`}
+                        >
+                            👁️ 실시간 미리보기
+                        </button>
+                    </div>
+                </div>
+
+                {/* 에디터 본문 영역 */}
+                {activeTab === 'write' ? (
+                    <textarea
+                        ref={textareaRef}
+                        name="content"
+                        value={formData.content}
+                        onChange={handleChange}
+                        rows={16}
+                        placeholder={`간편하게 작성하세요. 마크다운 스타일과 줄글이 모두 지원됩니다:
+
+# 대제목
+내용을 자연스럽게 작성하시면 됩니다. 엔터 2번으로 문단이 나뉩니다.
+
+## 소제목
+**굵은 글씨**나 > 인용문도 자유롭게 사용할 수 있습니다.
+
+이미지 주소를 한 줄에 붙여넣거나, 위의 다중 업로더에서 [+ 본문 삽입] 버튼을 누르면 이미지가 바로 들어갑니다.`}
+                        className="w-full px-4 py-3 border border-stone-300 rounded-b-lg focus:ring-2 focus:ring-amber-500 focus:outline-none font-serif text-stone-800 leading-relaxed text-base"
+                        required
+                    />
+                ) : (
+                    <div className="border border-stone-300 rounded-b-lg p-6 bg-stone-50/40 min-h-[420px]">
+                        <div className="text-xs font-semibold text-stone-400 mb-4 pb-2 border-b border-stone-200 flex justify-between items-center">
+                            <span>실제 사용자 상세 화면 미리보기</span>
+                            <span className="text-[11px] text-amber-700 font-normal">※ 폰트, 여백, 스타일이 실제 화면과 동일하게 적용됩니다.</span>
+                        </div>
+                        <div
+                            className="prose prose-lg prose-stone max-w-none font-serif text-stone-700 leading-relaxed
+                                prose-headings:font-bold prose-headings:text-stone-900 prose-headings:font-sans
+                                prose-p:leading-8 prose-p:mb-6
+                                prose-a:text-amber-600 prose-a:no-underline hover:prose-a:text-amber-700 hover:prose-a:underline
+                                prose-img:rounded-xl prose-img:shadow-lg prose-img:my-8
+                                prose-blockquote:border-l-4 prose-blockquote:border-amber-500 prose-blockquote:bg-stone-50 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-lg prose-blockquote:italic prose-blockquote:text-stone-600
+                                prose-li:marker:text-amber-500
+                                prose-strong:text-stone-900 prose-strong:font-bold"
+                            dangerouslySetInnerHTML={{
+                                __html: formatContentToHtml(formData.content) || '<p class="text-stone-400 italic py-12 text-center">내용을 작성하시면 여기에 실시간 미리보기가 표시됩니다.</p>'
+                            }}
+                        />
+                    </div>
+                )}
+
+                {/* 하단 작성 팁 가이드 */}
+                <div className="mt-2 text-xs text-stone-500 flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <span className="font-bold text-stone-700">💡 간편 문법 안내:</span>
+                    <span><code># 제목</code> (대제목)</span>
+                    <span><code>## 제목</code> (소제목)</span>
+                    <span><code>### 제목</code> (소소제목)</span>
+                    <span><code>**텍스트**</code> (굵게)</span>
+                    <span><code>&gt; 내용</code> (인용구)</span>
+                    <span><code>- 항목</code> (목록)</span>
+                    <span>빈 줄 1개로 문단 구분, 일반 엔터로 줄바꿈 유지</span>
+                </div>
             </div>
 
             <div className="flex justify-end gap-3">
