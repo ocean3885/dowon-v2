@@ -26,7 +26,14 @@ export async function POST(request: NextRequest) {
 
     if (!process.env.DEEPSEEK_API_KEY) {
         return NextResponse.json(
-            { message: '해설 생성 API 키가 설정되어 있지 않습니다.' },
+            { message: 'DeepSeek API 키가 설정되어 있지 않습니다.' },
+            { status: 500 },
+        );
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+        return NextResponse.json(
+            { message: 'Gemini API 키가 설정되어 있지 않습니다.' },
             { status: 500 },
         );
     }

@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { BaziResult } from '@/components/bazi/types';
 import { createAdminClient } from '@/utils/supabase/server';
 import { DEEPSEEK_API_URL, DEEPSEEK_MODEL } from '@/lib/deepseek';
+import { DEFAULT_GEMINI_MODEL, requestGeminiCompletion } from '@/lib/gemini';
 import {
     buildDefaultBaziPrompt,
     buildStepResultsText,
@@ -136,17 +137,45 @@ async function runBaziGenerationPipeline(adminSupabase: SupabaseClient, result: 
     const finalPrompt = renderBaziPromptTemplate(config.finalize.userPromptTemplate, result, {
         stepResults: stepResultsText,
     });
-    const interpretation = await requestDeepSeekCompletion({
-        model: config.model || DEEPSEEK_MODEL,
-        systemPrompt: config.finalize.systemPrompt,
-        userPrompt: finalPrompt,
-        maxTokens: config.finalize.maxTokens,
-        temperature: config.finalize.temperature,
-        errorLabel: 'DeepSeek final bazi consultation failed',
-    });
+    const finalizeProvider = config.finalize.provider || 'gemini';
+    const finalizeModel = config.finalize.model || (finalizeProvider === 'gemini' ? DEFAULT_GEMINI_MODEL : (config.model || DEEPSEEK_MODEL));
+
+    let interpretation: string;
+    if (finalizeProvider === 'gemini') {
+        try {
+            interpretation = await requestGeminiCompletion({
+                model: finalizeModel,
+                systemPrompt: config.finalize.systemPrompt,
+                userPrompt: finalPrompt,
+                maxTokens: config.finalize.maxTokens,
+                temperature: config.finalize.temperature,
+                errorLabel: 'Gemini final bazi consultation failed',
+            });
+        } catch (geminiError) {
+            console.error('Gemini finalization failed, falling back to DeepSeek:', geminiError);
+            interpretation = await requestDeepSeekCompletion({
+                model: config.model || DEEPSEEK_MODEL,
+                systemPrompt: config.finalize.systemPrompt,
+                userPrompt: finalPrompt,
+                maxTokens: config.finalize.maxTokens,
+                temperature: config.finalize.temperature,
+                errorLabel: 'DeepSeek fallback final bazi consultation failed',
+            });
+        }
+    } else {
+        interpretation = await requestDeepSeekCompletion({
+            model: finalizeModel,
+            systemPrompt: config.finalize.systemPrompt,
+            userPrompt: finalPrompt,
+            maxTokens: config.finalize.maxTokens,
+            temperature: config.finalize.temperature,
+            errorLabel: 'DeepSeek final bazi consultation failed',
+        });
+    }
+
     const metadata: BaziGenerationMetadata = {
         promptVersion: config.version,
-        model: config.model || DEEPSEEK_MODEL,
+        model: `${config.model || DEEPSEEK_MODEL} + ${finalizeProvider}:${finalizeModel}`,
         generatedAt: new Date().toISOString(),
         steps: stepResults,
     };

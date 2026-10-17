@@ -10,8 +10,12 @@ import { sendSMS } from './aligo';
 import { claimGuestBaziConsultationsForUser } from './guest-bazi-claim';
 import {
     BAZI_PROMPT_SETTING_KEY,
+    BAZI_PROMPT_VERSIONS_KEY,
     defaultBaziPromptPipelineConfig,
     normalizeBaziPromptPipelineConfig,
+    getBaziPromptSavedVersions,
+    type BaziPromptPipelineConfig,
+    type BaziPromptVersionItem,
 } from './bazi-prompt-config';
 
 type RecentPostRow = {
@@ -619,6 +623,202 @@ export async function updateBaziPromptPipelineConfig(
     return {
         success: true,
         message: intent === 'reset' ? '기본 프롬프트 설정으로 복원했습니다.' : '프롬프트 설정을 저장했습니다.',
+    };
+}
+
+export async function saveBaziPromptVersionAction(params: {
+    id?: string;
+    version: string;
+    name: string;
+    description?: string;
+    config: BaziPromptPipelineConfig;
+    activateNow?: boolean;
+}): Promise<{ success: boolean; message: string; versions?: BaziPromptVersionItem[] }> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, message: '로그인이 필요합니다.' };
+    }
+
+    const adminSupabase = await createAdminClient();
+    const { data: member, error: memberError } = await adminSupabase
+        .from('members')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    if (memberError || member?.role !== 'admin') {
+        return { success: false, message: '관리자 권한이 필요합니다.' };
+    }
+
+    const versionTag = params.version?.trim();
+    const versionName = params.name?.trim() || versionTag;
+
+    if (!versionTag) {
+        return { success: false, message: '버전명을 입력해 주세요.' };
+    }
+
+    const normalizedConfig = normalizeBaziPromptPipelineConfig({
+        ...params.config,
+        version: versionTag,
+    });
+
+    const existingVersions = await getBaziPromptSavedVersions(adminSupabase);
+    const now = new Date().toISOString();
+
+    const newVersionItem: BaziPromptVersionItem = {
+        id: versionTag,
+        version: versionTag,
+        name: versionName,
+        description: params.description?.trim() || '',
+        createdAt: now,
+        updatedAt: now,
+        config: normalizedConfig,
+    };
+
+    const targetLookupId = params.id?.trim();
+    const existingIndex = existingVersions.findIndex((v) => {
+        if (targetLookupId && (v.id === targetLookupId || v.version.toLowerCase() === targetLookupId.toLowerCase())) {
+            return true;
+        }
+        return v.id === versionTag || v.version.toLowerCase() === versionTag.toLowerCase();
+    });
+
+    let updatedVersions: BaziPromptVersionItem[];
+    if (existingIndex >= 0) {
+        updatedVersions = [...existingVersions];
+        updatedVersions[existingIndex] = {
+            ...newVersionItem,
+            id: versionTag,
+            createdAt: existingVersions[existingIndex].createdAt || now,
+        };
+    } else {
+        updatedVersions = [newVersionItem, ...existingVersions];
+    }
+
+    const { error: saveError } = await adminSupabase
+        .from('service_settings')
+        .upsert({
+            key: BAZI_PROMPT_VERSIONS_KEY,
+            value: updatedVersions,
+            updated_at: now,
+        });
+
+    if (saveError) {
+        console.error('Save bazi prompt versions error:', saveError);
+        return { success: false, message: '버전 목록 저장 중 오류가 발생했습니다.' };
+    }
+
+    if (params.activateNow) {
+        await adminSupabase
+            .from('service_settings')
+            .upsert({
+                key: BAZI_PROMPT_SETTING_KEY,
+                value: normalizedConfig,
+                updated_at: now,
+            });
+    }
+
+    revalidatePath('/admin/bazi-prompts');
+    revalidatePath('/admin/bazi-consultations');
+
+    return {
+        success: true,
+        message: params.activateNow
+            ? `[${versionTag}] 버전이 저장되고 운영 환경에 즉시 적용되었습니다.`
+            : `[${versionTag}] 버전으로 안전하게 저장되었습니다.`,
+        versions: updatedVersions,
+    };
+}
+
+export async function deleteBaziPromptVersionAction(
+    versionId: string
+): Promise<{ success: boolean; message: string; versions?: BaziPromptVersionItem[] }> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, message: '로그인이 필요합니다.' };
+    }
+
+    const adminSupabase = await createAdminClient();
+    const { data: member, error: memberError } = await adminSupabase
+        .from('members')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    if (memberError || member?.role !== 'admin') {
+        return { success: false, message: '관리자 권한이 필요합니다.' };
+    }
+
+    const existingVersions = await getBaziPromptSavedVersions(adminSupabase);
+    const updatedVersions = existingVersions.filter(
+        (v) => v.id !== versionId && v.version !== versionId
+    );
+
+    const { error } = await adminSupabase
+        .from('service_settings')
+        .upsert({
+            key: BAZI_PROMPT_VERSIONS_KEY,
+            value: updatedVersions,
+            updated_at: new Date().toISOString(),
+        });
+
+    if (error) {
+        console.error('Delete bazi prompt version error:', error);
+        return { success: false, message: '버전 삭제 중 오류가 발생했습니다.' };
+    }
+
+    revalidatePath('/admin/bazi-prompts');
+    return {
+        success: true,
+        message: '해당 버전이 삭제되었습니다.',
+        versions: updatedVersions,
+    };
+}
+
+export async function activateBaziPromptVersionAction(
+    config: BaziPromptPipelineConfig
+): Promise<{ success: boolean; message: string }> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        return { success: false, message: '로그인이 필요합니다.' };
+    }
+
+    const adminSupabase = await createAdminClient();
+    const { data: member, error: memberError } = await adminSupabase
+        .from('members')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+    if (memberError || member?.role !== 'admin') {
+        return { success: false, message: '관리자 권한이 필요합니다.' };
+    }
+
+    const normalizedConfig = normalizeBaziPromptPipelineConfig(config);
+    const { error } = await adminSupabase
+        .from('service_settings')
+        .upsert({
+            key: BAZI_PROMPT_SETTING_KEY,
+            value: normalizedConfig,
+            updated_at: new Date().toISOString(),
+        });
+
+    if (error) {
+        console.error('Activate bazi prompt version error:', error);
+        return { success: false, message: '버전 활성화 중 오류가 발생했습니다.' };
+    }
+
+    revalidatePath('/admin/bazi-prompts');
+    revalidatePath('/admin/bazi-consultations');
+    return {
+        success: true,
+        message: `[${normalizedConfig.version}] 버전이 현재 운영 서비스에 적용되었습니다.`,
     };
 }
 
