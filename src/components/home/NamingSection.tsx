@@ -86,7 +86,7 @@ export default function NamingSection() {
                 첫 번째 단추입니다.
               </h3>
               <p className="text-sm sm:text-base leading-relaxed text-white/60 font-sans font-light italic break-keep">
-                "평생 불리울 당신의 가치를<br className="sm:hidden" /> 정성으로 빚어냅니다."
+                &ldquo;평생 불리울 당신의 가치를<br className="sm:hidden" /> 정성으로 빚어냅니다.&rdquo;
               </p>
             </div>
           </div>

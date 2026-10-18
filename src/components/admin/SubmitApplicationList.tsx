@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { AdminSubmitApplication } from '@/lib/actions';
 import DeleteConsultationButton from '@/components/admin/DeleteConsultationButton';
@@ -59,18 +59,25 @@ export default function SubmitApplicationList({ consultations }: { consultations
         });
     }, [consultations, serviceFilter, statusFilter]);
 
-    const totalPages = Math.max(1, Math.ceil(filteredConsultations.length / PAGE_SIZE));
-    const paginatedConsultations = filteredConsultations.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-
-    useEffect(() => {
+    const handleStatusFilterChange = (status: string) => {
+        setStatusFilter(status);
         setCurrentPage(1);
-    }, [serviceFilter, statusFilter]);
+    };
 
-    useEffect(() => {
-        if (currentPage > totalPages) {
-            setCurrentPage(totalPages);
-        }
-    }, [currentPage, totalPages]);
+    const handleServiceFilterChange = (service: string) => {
+        setServiceFilter(service);
+        setCurrentPage(1);
+    };
+
+    const handleResetFilters = () => {
+        setStatusFilter('all');
+        setServiceFilter('all');
+        setCurrentPage(1);
+    };
+
+    const totalPages = Math.max(1, Math.ceil(filteredConsultations.length / PAGE_SIZE));
+    const safeCurrentPage = Math.min(currentPage, totalPages);
+    const paginatedConsultations = filteredConsultations.slice((safeCurrentPage - 1) * PAGE_SIZE, safeCurrentPage * PAGE_SIZE);
 
     const statusCount = (status: string) => {
         if (status === 'all') return consultations.length;
@@ -95,27 +102,27 @@ export default function SubmitApplicationList({ consultations }: { consultations
             <section className="mb-6 rounded-lg border border-stone-200 bg-white p-4 shadow-sm sm:p-5">
                 <div className="flex flex-col gap-4">
                     <FilterGroup label="진행상태">
-                        <FilterButton label="전체" count={statusCount('all')} active={statusFilter === 'all'} onClick={() => setStatusFilter('all')} />
+                        <FilterButton label="전체" count={statusCount('all')} active={statusFilter === 'all'} onClick={() => handleStatusFilterChange('all')} />
                         {Object.entries(statusLabels).map(([value, label]) => (
                             <FilterButton
                                 key={value}
                                 label={label}
                                 count={statusCount(value)}
                                 active={statusFilter === value}
-                                onClick={() => setStatusFilter(value)}
+                                onClick={() => handleStatusFilterChange(value)}
                             />
                         ))}
                     </FilterGroup>
 
                     <FilterGroup label="상담종류">
-                        <FilterButton label="전체" count={serviceCount('all')} active={serviceFilter === 'all'} onClick={() => setServiceFilter('all')} />
+                        <FilterButton label="전체" count={serviceCount('all')} active={serviceFilter === 'all'} onClick={() => handleServiceFilterChange('all')} />
                         {serviceOptions.map((value) => (
                             <FilterButton
                                 key={value}
                                 label={serviceTypeLabels[value] || value}
                                 count={serviceCount(value)}
                                 active={serviceFilter === value}
-                                onClick={() => setServiceFilter(value)}
+                                onClick={() => handleServiceFilterChange(value)}
                             />
                         ))}
                     </FilterGroup>
@@ -128,10 +135,10 @@ export default function SubmitApplicationList({ consultations }: { consultations
                             <span className="ml-1">표시</span>
                         ) : (
                             <span className="ml-1">
-                                중 <span className="font-semibold text-stone-800">{(currentPage - 1) * PAGE_SIZE + 1}</span>
+                                중 <span className="font-semibold text-stone-800">{(safeCurrentPage - 1) * PAGE_SIZE + 1}</span>
                                 -
                                 <span className="font-semibold text-stone-800">
-                                    {Math.min(currentPage * PAGE_SIZE, filteredConsultations.length)}
+                                    {Math.min(safeCurrentPage * PAGE_SIZE, filteredConsultations.length)}
                                 </span>
                                 건 표시
                             </span>
@@ -140,10 +147,7 @@ export default function SubmitApplicationList({ consultations }: { consultations
                     {(statusFilter !== 'all' || serviceFilter !== 'all') && (
                         <button
                             type="button"
-                            onClick={() => {
-                                setStatusFilter('all');
-                                setServiceFilter('all');
-                            }}
+                            onClick={handleResetFilters}
                             className="h-9 rounded-md border border-stone-200 bg-white px-3 text-sm font-semibold text-stone-600 transition-colors hover:bg-stone-50"
                         >
                             필터 초기화
@@ -164,7 +168,7 @@ export default function SubmitApplicationList({ consultations }: { consultations
 
             {totalPages > 1 && (
                 <Pagination
-                    currentPage={currentPage}
+                    currentPage={safeCurrentPage}
                     totalPages={totalPages}
                     onPageChange={setCurrentPage}
                 />

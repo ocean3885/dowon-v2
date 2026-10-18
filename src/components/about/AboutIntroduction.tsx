@@ -38,7 +38,7 @@ export default function AboutIntroduction() {
                 <motion.div variants={fadeInUp} className="space-y-8">
                     <div className="border-l-4 border-stone-800 pl-6">
                         <h2 className="text-3xl font-serif font-bold text-stone-900 mb-2">원장 김종찬</h2>
-                        <p className="text-stone-500 font-serif italic">"인생은 끝없는 여정과도 같습니다"</p>
+                        <p className="text-stone-500 font-serif italic">&ldquo;인생은 끝없는 여정과도 같습니다&rdquo;</p>
                     </div>
                     <div className="text-stone-700 space-y-6 leading-loose text-lg">
                         <p>

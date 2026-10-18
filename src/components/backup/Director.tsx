@@ -46,7 +46,7 @@ export default function Director() {
                         </h2>
                         <div className="space-y-8 text-lg leading-relaxed font-serif text-stone-700">
                             <p className="font-medium text-stone-900 text-xl">
-                                "이름은 평생을 함께하는 가장 소중한 친구입니다."
+                                &ldquo;이름은 평생을 함께하는 가장 소중한 친구입니다.&rdquo;
                             </p>
                             <div className="space-y-4">
                                 <p>

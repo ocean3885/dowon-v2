@@ -24,7 +24,7 @@ export default function AboutPromise() {
                 >
                     <div className="inline-block border border-stone-300 bg-white px-8 py-4 rounded-full shadow-sm mb-8">
                         <span className="text-xl md:text-2xl font-serif font-bold text-stone-800">
-                            "이름이 만드는 첫인상, 우리가 책임집니다"
+                            &ldquo;이름이 만드는 첫인상, 우리가 책임집니다&rdquo;
                         </span>
                     </div>
                     <h3 className="text-3xl font-bold text-stone-900 mb-6">

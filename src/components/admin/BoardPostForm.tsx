@@ -68,12 +68,42 @@ const resizeImage = (file: File, maxWidth: number = 800): Promise<File> => {
     });
 };
 
+function extractImageUrls(content: string): string[] {
+    if (!content) return [];
+    const urls = new Set<string>();
+
+    const imgRegex = /<img[^>]+src=["']([^"']+)["']/g;
+    let match;
+    while ((match = imgRegex.exec(content)) !== null) {
+        if (match[1]) urls.add(match[1]);
+    }
+
+    const mdRegex = /!\[.*?\]\((https?:\/\/[^\s)]+|\/uploads\/[^\s)]+)\)/g;
+    while ((match = mdRegex.exec(content)) !== null) {
+        if (match[1]) urls.add(match[1]);
+    }
+
+    return Array.from(urls);
+}
+
+function escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export default function BoardPostForm({ categories, mode, post }: BoardPostFormProps) {
     const router = useRouter();
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write');
     const [file, setFile] = useState<File | null>(null);
+    const [deleteMainImage, setDeleteMainImage] = useState(false);
+    const [existingAttachedImages, setExistingAttachedImages] = useState<{ url: string; isDeleted: boolean }[]>(() => {
+        if (!post?.content) return [];
+        const urls = extractImageUrls(post.content);
+        return urls
+            .filter((url) => url !== post.imageUrl && url !== post.thumbnailUrl)
+            .map((url) => ({ url, isDeleted: false }));
+    });
     const [formData, setFormData] = useState({
         categoryId: post?.categoryId ? String(post.categoryId) : categories[0] ? String(categories[0].id) : '',
         title: post?.title || '',
@@ -197,7 +227,46 @@ export default function BoardPostForm({ categories, mode, post }: BoardPostFormP
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
             setFile(e.target.files[0]);
+            setDeleteMainImage(false);
         }
+    };
+
+    const handleCancelNewFile = () => {
+        setFile(null);
+    };
+
+    const handleDeleteMainImage = () => {
+        setDeleteMainImage(true);
+        setFile(null);
+    };
+
+    const handleRestoreMainImage = () => {
+        setDeleteMainImage(false);
+    };
+
+    const handleDeleteExistingAttachedImage = (targetUrl: string) => {
+        if (!confirm('이 이미지를 삭제 목록에 추가하시겠습니까?\n본문 텍스트에 포함된 이미지 태그도 함께 제거됩니다.')) {
+            return;
+        }
+
+        const escaped = escapeRegex(targetUrl);
+        const mdPattern = new RegExp(`!\\[.*?\\]\\(${escaped}\\)`, 'g');
+        const htmlPattern = new RegExp(`<p>\\s*<img[^>]+src=["']${escaped}["'][^>]*>\\s*<\\/p>|<img[^>]+src=["']${escaped}["'][^>]*>`, 'g');
+
+        setFormData((prev) => ({
+            ...prev,
+            content: prev.content.replace(mdPattern, '').replace(htmlPattern, '').trim(),
+        }));
+
+        setExistingAttachedImages((prev) =>
+            prev.map((item) => (item.url === targetUrl ? { ...item, isDeleted: true } : item))
+        );
+    };
+
+    const handleRestoreExistingAttachedImage = (targetUrl: string) => {
+        setExistingAttachedImages((prev) =>
+            prev.map((item) => (item.url === targetUrl ? { ...item, isDeleted: false } : item))
+        );
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -233,6 +302,10 @@ export default function BoardPostForm({ categories, mode, post }: BoardPostFormP
                 thumbnailUrl = uploadResult.thumbnailUrl;
             }
 
+            const deletedImageUrls = existingAttachedImages
+                .filter((item) => item.isDeleted)
+                .map((item) => item.url);
+
             const endpoint = mode === 'edit' && post ? `/api/posts/${post.id}` : '/api/posts';
             const method = mode === 'edit' ? 'PUT' : 'POST';
 
@@ -246,8 +319,10 @@ export default function BoardPostForm({ categories, mode, post }: BoardPostFormP
                     title: formData.title,
                     content: formattedContent,
                     author: formData.author,
-                    imageUrl,
-                    thumbnailUrl,
+                    imageUrl: deleteMainImage ? null : imageUrl,
+                    thumbnailUrl: deleteMainImage ? null : thumbnailUrl,
+                    deleteMainImage,
+                    deletedImageUrls,
                 }),
             });
 
@@ -307,18 +382,202 @@ export default function BoardPostForm({ categories, mode, post }: BoardPostFormP
                 />
             </div>
 
-            <div className="mb-6">
-                <label className="block text-sm font-bold text-stone-700 mb-2">대표 이미지</label>
-                <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="w-full px-4 py-2 border border-stone-300 rounded-lg focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200"
-                />
-                {formData.imageUrl && !file && (
-                    <p className="mt-2 text-xs text-stone-500">현재 이미지가 유지됩니다.</p>
+            {/* 대표 이미지 섹션 */}
+            <div className="mb-6 p-5 rounded-xl border border-stone-200 bg-stone-50">
+                <label className="block text-sm font-bold text-stone-800 mb-3">대표 이미지 (썸네일)</label>
+
+                {/* 1. 기존 대표 이미지가 등록되어 있는 경우 */}
+                {post?.imageUrl && (
+                    <div className="mb-4 bg-white p-3.5 rounded-lg border border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                        <div className="flex items-center gap-3.5 min-w-0">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={post.thumbnailUrl || post.imageUrl}
+                                alt="기존 대표 이미지"
+                                className={`w-16 h-16 rounded-md object-cover border shrink-0 transition-all ${
+                                    deleteMainImage ? 'opacity-30 grayscale border-red-300' : 'border-stone-200'
+                                }`}
+                            />
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-stone-700">기존 등록된 대표 이미지</span>
+                                    {deleteMainImage ? (
+                                        <span className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-700 rounded-full">
+                                            삭제 예정 (저장 시 서버 영구 삭제)
+                                        </span>
+                                    ) : file ? (
+                                        <span className="px-2 py-0.5 text-xs font-bold bg-amber-100 text-amber-800 rounded-full">
+                                            새 파일로 대체 예정
+                                        </span>
+                                    ) : (
+                                        <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-700 rounded-full">
+                                            현재 유지 중
+                                        </span>
+                                    )}
+                                </div>
+                                <p className={`text-xs truncate max-w-sm sm:max-w-md mt-1 font-mono ${
+                                    deleteMainImage ? 'line-through text-stone-400' : 'text-stone-500'
+                                }`}>
+                                    {post.imageUrl}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                            {deleteMainImage ? (
+                                <button
+                                    type="button"
+                                    onClick={handleRestoreMainImage}
+                                    className="px-3 py-1.5 text-xs font-bold text-stone-700 bg-white hover:bg-stone-100 border border-stone-300 rounded-md transition-colors"
+                                >
+                                    삭제 취소 (기존 이미지 유지)
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={handleDeleteMainImage}
+                                    className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors"
+                                >
+                                    대표 이미지 삭제
+                                </button>
+                            )}
+                        </div>
+                    </div>
                 )}
+
+                {/* 2. 새 대표 이미지 파일 업로드 */}
+                <div className="space-y-2">
+                    <span className="text-xs font-medium text-stone-600 block">
+                        {post?.imageUrl ? '새 대표 이미지로 변경하려면 파일을 선택하세요' : '대표 이미지 파일을 선택하세요'}
+                    </span>
+                    <div className="flex items-center gap-3">
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            className="flex-1 px-4 py-2 text-sm bg-white border border-stone-300 rounded-lg focus:outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer"
+                        />
+                        {file && (
+                            <button
+                                type="button"
+                                onClick={handleCancelNewFile}
+                                className="px-3 py-2 text-xs font-bold text-stone-600 hover:text-stone-800 bg-stone-200 hover:bg-stone-300 rounded-lg transition-colors shrink-0"
+                            >
+                                파일 선택 취소
+                            </button>
+                        )}
+                    </div>
+                    {file && (
+                        <p className="text-xs text-amber-700 font-medium">
+                            선택된 새 파일: <span className="font-bold">{file.name}</span> (저장 시 대표 이미지가 이 파일로 교체됩니다)
+                        </p>
+                    )}
+                </div>
             </div>
+
+            {/* 기존 본문 첨부 이미지 관리 (수정 모드) */}
+            {mode === 'edit' && existingAttachedImages.length > 0 && (
+                <div className="mb-6 p-5 bg-amber-50/40 border border-amber-200/70 rounded-xl">
+                    <div className="flex justify-between items-center mb-3 pb-2.5 border-b border-amber-200/60">
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-base font-bold text-stone-800">기존 본문 첨부 이미지</h3>
+                                <span className="px-2 py-0.5 text-xs font-bold bg-amber-200/70 text-amber-900 rounded-full">
+                                    {existingAttachedImages.length}개
+                                </span>
+                            </div>
+                            <p className="text-xs text-stone-500 mt-0.5">
+                                본문 내용에 포함되어 있던 이미지들입니다. 개별 삭제하거나 본문 커서 위치에 다시 삽입할 수 있습니다.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2.5">
+                        {existingAttachedImages.map((img) => {
+                            const isPresentInContent = formData.content.includes(img.url);
+
+                            return (
+                                <div
+                                    key={img.url}
+                                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border transition-all ${
+                                        img.isDeleted
+                                            ? 'bg-red-50/70 border-red-200 text-stone-500'
+                                            : 'bg-white border-stone-200 shadow-2xs'
+                                    }`}
+                                >
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={img.url}
+                                            alt="첨부 이미지"
+                                            className={`w-14 h-14 rounded-md object-cover border shrink-0 ${
+                                                img.isDeleted ? 'opacity-30 grayscale border-red-200' : 'border-stone-200'
+                                            }`}
+                                        />
+                                        <div className="min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                {img.isDeleted ? (
+                                                    <span className="px-2 py-0.5 text-xs font-bold bg-red-100 text-red-700 rounded-md">
+                                                        삭제 예정 (저장 시 서버 영구 삭제)
+                                                    </span>
+                                                ) : isPresentInContent ? (
+                                                    <span className="px-2 py-0.5 text-xs font-bold bg-green-100 text-green-700 rounded-md">
+                                                        본문 사용 중
+                                                    </span>
+                                                ) : (
+                                                    <span className="px-2 py-0.5 text-xs font-bold bg-stone-100 text-stone-600 rounded-md">
+                                                        본문 미포함
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <p
+                                                className={`text-xs truncate max-w-sm sm:max-w-md mt-1 font-mono cursor-pointer hover:underline ${
+                                                    img.isDeleted ? 'line-through text-stone-400' : 'text-stone-600'
+                                                }`}
+                                                onClick={() => copyToClipboard(img.url)}
+                                                title="클릭하여 주소 복사"
+                                            >
+                                                {img.url}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        {img.isDeleted ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRestoreExistingAttachedImage(img.url)}
+                                                className="px-3 py-1.5 text-xs font-bold text-stone-700 bg-white hover:bg-stone-100 border border-stone-300 rounded-md transition-colors"
+                                            >
+                                                삭제 취소
+                                            </button>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => insertImageAtCursor(img.url)}
+                                                    className="px-3 py-1.5 text-xs font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-md transition-colors"
+                                                    title="본문 커서 위치에 이 이미지를 삽입합니다"
+                                                >
+                                                    + 본문 재삽입
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDeleteExistingAttachedImage(img.url)}
+                                                    className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md transition-colors"
+                                                    title="본문에서 제거하고 저장 시 서버 파일도 완전히 삭제합니다"
+                                                >
+                                                    이미지 삭제
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* 본문 중간 삽입용 이미지 추가 기능 */}
             <div className="mb-6 p-5 bg-stone-50 border border-stone-200 rounded-xl">

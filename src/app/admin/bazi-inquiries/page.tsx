@@ -13,6 +13,33 @@ type SearchParams = Promise<{
     gender?: string;
 }>;
 
+interface InquiryRow {
+    id: string;
+    user_id: string | null;
+    subject_name: string | null;
+    gender: string;
+    birth_year: number;
+    birth_month: number;
+    birth_day: number;
+    birth_hour: number;
+    birth_min: number;
+    calendar_type: string;
+    bazi_result: unknown;
+    client_ip: string | null;
+    created_at: string;
+}
+
+interface MemberRow {
+    id: string;
+    name: string | null;
+    email: string | null;
+}
+
+function getTodayStartUtc(): string {
+    const todayKst = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    return new Date(`${todayKst}T00:00:00+09:00`).toISOString();
+}
+
 export default async function AdminBaziInquiriesPage({ searchParams }: { searchParams: SearchParams }) {
     const params = await searchParams;
     const currentPage = Math.max(1, parseInt(params.page || '1', 10));
@@ -134,8 +161,7 @@ GRANT ALL ON public.bazi_inquiry_logs TO authenticated, service_role;`}
     const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1;
 
     // Fetch quick stats (Today count) in KST
-    const todayKst = new Date(Date.now() + 9 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const startOfTodayUtc = new Date(`${todayKst}T00:00:00+09:00`).toISOString();
+    const startOfTodayUtc = getTodayStartUtc();
     const { count: todayCount } = await adminSupabase
         .from('bazi_inquiry_logs')
         .select('*', { count: 'exact', head: true })
@@ -148,19 +174,20 @@ GRANT ALL ON public.bazi_inquiry_logs TO authenticated, service_role;`}
         .not('user_id', 'is', null);
 
     // Batch load member profiles for inquiries that have user_id
-    const userIds = Array.from(new Set((rows || []).map((row: any) => row.user_id).filter(Boolean)));
-    const memberMap = new Map<string, { id: string; name: string | null; email: string | null }>();
+    const inquiryRows = (rows as unknown as InquiryRow[]) || [];
+    const userIds = Array.from(new Set(inquiryRows.map((row) => row.user_id).filter((id): id is string => Boolean(id))));
+    const memberMap = new Map<string, MemberRow>();
     if (userIds.length > 0) {
         const { data: memberRows, error: memberError } = await adminSupabase
             .from('members')
             .select('id, name, email')
             .in('id', userIds);
         if (!memberError && memberRows) {
-            memberRows.forEach((m: any) => memberMap.set(m.id, m));
+            (memberRows as MemberRow[]).forEach((m) => memberMap.set(m.id, m));
         }
     }
 
-    const inquiries: BaziInquiryItem[] = (rows || []).map((row: any) => {
+    const inquiries: BaziInquiryItem[] = inquiryRows.map((row) => {
         const member = row.user_id ? memberMap.get(row.user_id) : undefined;
         return {
             id: row.id,

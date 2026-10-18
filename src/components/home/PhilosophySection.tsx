@@ -33,7 +33,7 @@ export default function PhilosophySection() {
                 현실적인 삶의 방향.
               </h3>
               <p className="text-sm sm:text-base leading-relaxed text-white/70 font-sans font-light italic">
-                "당신의 삶에 담긴 고유한<br className="sm:hidden" /> 흐름을 읽어드립니다."
+                &ldquo;당신의 삶에 담긴 고유한<br className="sm:hidden" /> 흐름을 읽어드립니다.&rdquo;
               </p>
             </div>
           </div>

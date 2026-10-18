@@ -27,6 +27,7 @@ type BoardPostRow = {
     content: string;
     published_at: string;
     view_count: number;
+    image_url: string | null;
     thumbnail_url: string | null;
     category_id: number | null;
     categories?: {
@@ -61,8 +62,15 @@ const fallbackImages = [
     '/bg_source/cloud_moon1.webp',
 ];
 
-function getPostImage(post: { thumbnailUrl?: string | null; id: number }, index: number) {
-    return post.thumbnailUrl || fallbackImages[(post.id + index) % fallbackImages.length];
+function getPostImage(
+    post: { imageUrl?: string | null; thumbnailUrl?: string | null; id: number },
+    index: number,
+    preferOriginal: boolean = false
+) {
+    if (preferOriginal && post.imageUrl) {
+        return post.imageUrl;
+    }
+    return post.thumbnailUrl || post.imageUrl || fallbackImages[(post.id + index) % fallbackImages.length];
 }
 
 function normalizeSearchQuery(search?: string | null) {
@@ -116,6 +124,7 @@ async function getBoardData(categoryId: string | null, page: number, searchQuery
             content, 
             published_at, 
             view_count, 
+            image_url,
             thumbnail_url, 
             category_id,
             categories!inner(name, is_active)
@@ -140,6 +149,7 @@ async function getBoardData(categoryId: string | null, page: number, searchQuery
         ...post,
         publishedAt: post.published_at,
         viewCount: post.view_count,
+        imageUrl: post.image_url,
         thumbnailUrl: post.thumbnail_url,
         categoryId: post.category_id,
         categoryName: post.categories?.name
@@ -298,41 +308,52 @@ export default async function BoardPage(
                             {featuredPost && (
                                 <Link
                                     href={`/board/post/${featuredPost.id}`}
-                                    className="group grid overflow-hidden rounded-lg border border-[#dfcfb6] bg-white/64 p-2 shadow-[0_16px_40px_rgba(70,54,36,0.08)] transition-colors hover:border-[#c8a46d] sm:p-3 lg:grid-cols-[1fr_1.15fr]"
+                                    className="group block overflow-hidden rounded-lg border border-[#dfcfb6] bg-white/70 p-4 shadow-[0_16px_40px_rgba(70,54,36,0.08)] transition-all hover:border-[#c8a46d] sm:p-5"
                                 >
-                                    <div className="relative min-h-[170px] overflow-hidden rounded-md bg-[#efe3d0] sm:min-h-[230px] lg:min-h-[260px]">
-                                        <Image
-                                            src={getPostImage(featuredPost, 0)}
-                                            alt=""
-                                            fill
-                                            sizes="(min-width: 1280px) 390px, (min-width: 1024px) 800px, 100vw"
-                                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                        />
+                                    {/* 윗 Row: 이미지 + 카테고리/제목/메타정보 */}
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+                                        <div className="relative w-full sm:w-[240px] md:w-[280px] shrink-0 aspect-[4/3] overflow-hidden rounded-md bg-[#efe3d0]">
+                                            <Image
+                                                src={getPostImage(featuredPost, 0, true)}
+                                                alt=""
+                                                fill
+                                                priority
+                                                sizes="(min-width: 768px) 280px, 100vw"
+                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                            />
+                                        </div>
+
+                                        <div className="min-w-0 flex-1">
+                                            <span className="inline-block text-xs font-semibold text-[#a87943] bg-[#f6ead7] px-2.5 py-0.5 rounded">
+                                                {featuredPost.categoryName || '도원의 이야기'}
+                                            </span>
+                                            <h2 className="mt-2.5 font-serif text-xl sm:text-2xl md:text-3xl font-light leading-snug tracking-normal text-[#201915] group-hover:text-[#9a6a2f] transition-colors">
+                                                {featuredPost.title}
+                                            </h2>
+                                            <div className="mt-3.5 flex items-center gap-3 text-xs text-[#7b6f64]">
+                                                <span className="inline-flex items-center gap-1.5">
+                                                    <CalendarDays className="h-3.5 w-3.5 text-[#a87943]" />
+                                                    {format(new Date(featuredPost.publishedAt), 'yyyy.MM.dd', { locale: ko })}
+                                                </span>
+                                                <span className="h-3 w-px bg-[#d8c8ae]" />
+                                                <span className="inline-flex items-center gap-1.5">
+                                                    <Eye className="h-3.5 w-3.5 text-[#a87943]" />
+                                                    조회수 {featuredPost.viewCount.toLocaleString('ko-KR')}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <article className="flex flex-col justify-center px-3 py-5 sm:py-7 md:px-8">
-                                        <p className="text-xs font-semibold text-[#a87943] sm:text-sm">{featuredPost.categoryName || '도원의 이야기'}</p>
-                                        <h2 className="mt-3 font-serif text-xl font-light leading-snug tracking-normal text-[#201915] sm:mt-4 md:text-3xl">
-                                            {featuredPost.title}
-                                        </h2>
-                                        <div className="mt-4 h-px w-14 bg-[#b7894a] sm:mt-5" />
-                                        <p className="mt-4 line-clamp-2 text-sm leading-7 text-[#6f6256] sm:mt-5 sm:line-clamp-3 md:text-base">
+
+                                    {/* 아랫 Row: 가로로 시원하게 펼쳐지는 본문 요약 + 자세히 보기 */}
+                                    <div className="mt-4 pt-4 border-t border-[#e5dacb] flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+                                        <p className="line-clamp-2 text-sm leading-relaxed text-[#6f6256] flex-1">
                                             {getExcerpt(featuredPost.content)}
                                         </p>
-                                        <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[#e5dacb] pt-4 text-xs text-[#7b6f64] sm:mt-7 sm:gap-x-5 sm:gap-y-3 sm:pt-5 sm:text-sm">
-                                            <span className="inline-flex items-center gap-2">
-                                                <CalendarDays className="h-4 w-4 text-[#a87943]" />
-                                                {format(new Date(featuredPost.publishedAt), 'yyyy.MM.dd', { locale: ko })}
-                                            </span>
-                                            <span className="inline-flex items-center gap-2">
-                                                <Eye className="h-4 w-4 text-[#a87943]" />
-                                                조회수 {featuredPost.viewCount.toLocaleString('ko-KR')}
-                                            </span>
-                                            <span className="ml-auto inline-flex items-center gap-2 font-semibold text-[#9a6a2f]">
-                                                자세히 보기
-                                                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                            </span>
-                                        </div>
-                                    </article>
+                                        <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#9a6a2f] shrink-0">
+                                            자세히 보기
+                                            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                        </span>
+                                    </div>
                                 </Link>
                             )}
 
