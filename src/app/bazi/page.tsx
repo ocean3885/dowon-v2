@@ -39,6 +39,7 @@ import type {
     DaewoonItem,
     PillarKey,
 } from '@/components/bazi/types';
+import { InteractionDetails, scoreText } from '@/components/bazi/DynamicsDetails';
 import { createClient } from '@/utils/supabase/client';
 
 type BaziFormValues = {
@@ -1076,8 +1077,10 @@ function TraitPanel({ result }: { result: BaziResult }) {
     const interactions = result.advanced_analysis?.interactions;
     const summaryList = interactions?.summary_list || [];
     const climate = interactions?.climate;
-    const harmonyScore = interactions?.harmony_score ?? 0;
-    const tensionScore = interactions?.tension_score ?? 0;
+    const harmonyScore = interactions?.harmony_score;
+    const tensionScore = interactions?.tension_score;
+    const hasBothScores = typeof harmonyScore === 'number' && Number.isFinite(harmonyScore)
+        && typeof tensionScore === 'number' && Number.isFinite(tensionScore);
 
     return (
         <Card>
@@ -1089,13 +1092,13 @@ function TraitPanel({ result }: { result: BaziResult }) {
             />
 
             {/* Harmony vs Tension Bar */}
-            {(harmonyScore > 0 || tensionScore > 0) && (
+            {(typeof harmonyScore === 'number' || typeof tensionScore === 'number') && (
                 <div className="mt-5 rounded-lg border border-[#ede1d4] bg-[#faf4ec] p-4">
                     <div className="flex items-center justify-between text-xs font-bold text-[#56483c]">
-                        <span className="text-[#3b7548]">조화도 ({harmonyScore.toFixed(1)})</span>
-                        <span className="text-[#9e432c]">긴장도 ({tensionScore.toFixed(1)})</span>
+                        <span className="text-[#3b7548]">조화도 ({scoreText(harmonyScore)})</span>
+                        <span className="text-[#9e432c]">긴장도 ({scoreText(tensionScore)})</span>
                     </div>
-                    <div className="mt-2 flex h-2.5 overflow-hidden rounded-full bg-[#e8ded3]">
+                    {hasBothScores && (harmonyScore + tensionScore > 0) && <div className="mt-2 flex h-2.5 overflow-hidden rounded-full bg-[#e8ded3]">
                         <div
                             className="bg-[#417e50] transition-all"
                             style={{
@@ -1108,7 +1111,7 @@ function TraitPanel({ result }: { result: BaziResult }) {
                                 width: `${(tensionScore / (harmonyScore + tensionScore || 1)) * 100}%`,
                             }}
                         />
-                    </div>
+                    </div>}
                 </div>
             )}
 
@@ -1134,12 +1137,13 @@ function TraitPanel({ result }: { result: BaziResult }) {
                 </div>
             ) : (
                 <div className="mt-5 rounded-lg border border-[#eee1d4] bg-[#fcf8f3] p-4">
-                    <p className="break-keep text-sm font-semibold text-[#493c31]">뚜렷한 충돌 또는 합 작용이 없습니다.</p>
+                    <p className="break-keep text-sm font-semibold text-[#493c31]">표시할 관계 요약이 없습니다.</p>
                     <p className="mt-1.5 break-keep text-xs leading-6 text-[#66584c]">
-                        원국이 비교적 평온한 상태이며, 오행의 세력과 십성의 순환을 중심으로 흐름을 살피는 것이 좋습니다.
+                        요약의 부재만으로 원국의 안정성이나 관계 유무를 판단하지 않습니다.
                     </p>
                 </div>
             )}
+            <InteractionDetails matrix={interactions?.matrix} />
         </Card>
     );
 }

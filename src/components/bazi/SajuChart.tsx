@@ -7,7 +7,6 @@ import {
     Sparkles,
     Shield,
     Star,
-    Compass,
     Briefcase,
     Zap,
     HelpCircle,
@@ -18,6 +17,7 @@ import type {
     PillarKey,
     JijangganDetail,
 } from './types';
+import { XuShiContent, BinZhuContent } from './DynamicsDetails';
 import { getStoredUserId } from '@/utils/supabase/client';
 
 const pillarMeta: Record<PillarKey, { title: string; ganTenGodKey?: string; jiTenGodKey: string }> = {
@@ -323,127 +323,21 @@ export function SpecialStarsCard({ result }: { result: BaziResult }) {
 }
 
 export function XuShiDynamicsCard({ result }: { result: BaziResult }) {
-    const xuShi = result.advanced_analysis?.xu_shi_dynamics;
-    if (!xuShi) return null;
-
-    const pillars = xuShi.pillars || {};
-    const pillarKeys: Array<'year' | 'month' | 'day' | 'hour'> = ['year', 'month', 'day', 'hour'];
-    const pillarLabels: Record<string, string> = {
-        year: '년간',
-        month: '월간',
-        day: '일간',
-        hour: '시간',
-    };
-
-    return (
-        <Card>
-            <CardTitle
-                title="허실(虛實) 동태 & 통근 구조"
-                body="천간 기운이 현실적 기반(뿌리)을 갖췄는지(실), 혹은 기획·표출(허투)로 쓰이는지 분석합니다."
-                icon={Zap}
-            />
-
-            {xuShi.overall_status && (
-                <div className="mt-5 rounded-lg border border-[#e5d4c2] bg-[#faf3ea] p-4">
-                    <p className="text-xs font-bold text-[#a06f3e]">사주 전체 허실 총평</p>
-                    <p className="mt-1.5 break-keep text-sm leading-6 text-[#45372a]">{xuShi.overall_status}</p>
-                </div>
-            )}
-
-            <div className="mt-4 space-y-3">
-                {pillarKeys.map((k) => {
-                    const item = pillars[k];
-                    if (!item) return null;
-                    const isReal = item.current_status?.includes('실');
-
-                    return (
-                        <div key={k} className="rounded-lg border border-[#ede2d7] bg-[#fcf9f5] p-3.5">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-serif font-bold text-[#35281e]">
-                                        {pillarLabels[k]} ({item.char})
-                                    </span>
-                                    <span className="text-xs font-medium text-[#7d6c5d]">{item.ten_star}</span>
-                                </div>
-                                <span className={`rounded px-2 py-0.5 text-xs font-bold ${
-                                    isReal ? 'bg-[#417e50]/15 text-[#2d5c38]' : 'bg-[#c58e49]/15 text-[#885a21]'
-                                }`}>
-                                    {item.current_status || item.original_status || '-'}
-                                </span>
-                            </div>
-
-                            {item.reason && (
-                                <p className="mt-1.5 text-xs text-[#786757]">
-                                    <span className="font-semibold text-[#5a483a]">뿌리 근거:</span> {item.reason}
-                                </p>
-                            )}
-                            {item.meaning && (
-                                <p className="mt-1 break-keep text-xs leading-5 text-[#4a3d31]">
-                                    <span className="font-semibold text-[#a26e3c]">발현 특징:</span> {item.meaning}
-                                </p>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-        </Card>
-    );
+    const data = result.advanced_analysis?.xu_shi_dynamics;
+    if (!data) return null;
+    return <Card>
+        <CardTitle title="허실(虛實)과 통근 구조" body="천간의 통근 기반과 관계 반영 전후의 상태, 판단 근거를 살펴봅니다." icon={Zap} />
+        <XuShiContent data={data} />
+    </Card>;
 }
 
 export function BinZhuDynamicsCard({ result }: { result: BaziResult }) {
-    const binZhu = result.advanced_analysis?.bin_zhu_dynamics;
-    if (!binZhu) return null;
-
-    const controlFlow = binZhu.control_flow;
-    const guestScope = binZhu.guest_structure?.scope || '년주/월주 (사회·시장·타인)';
-    const hostScope = binZhu.host_structure?.scope || '일주/시주 (나·배우자·수단)';
-
-    return (
-        <Card>
-            <CardTitle
-                title="빈주(賓主) 구조 & 진로 흐름"
-                body="사회·시장(빈)과 내면·수단(주)의 상호작용 및 최적의 커리어/행동 전략을 제시합니다."
-                icon={Briefcase}
-            />
-
-            {controlFlow?.direction && (
-                <div className="mt-5 rounded-lg border border-[#e5d4c2] bg-[#faf3ea] p-4">
-                    <span className="inline-block rounded bg-[#eed8c1] px-2 py-0.5 text-xs font-bold text-[#865120]">
-                        주된 역학 방향
-                    </span>
-                    <h4 className="mt-2 font-serif text-lg font-bold text-[#2a2018]">{controlFlow.direction}</h4>
-                    {controlFlow.summary_meaning && (
-                        <p className="mt-2 break-keep text-sm leading-6 text-[#514030]">
-                            {controlFlow.summary_meaning}
-                        </p>
-                    )}
-                </div>
-            )}
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-lg border border-[#ede2d7] bg-[#fcf9f5] p-3.5">
-                    <p className="text-xs font-bold text-[#846b54]">빈(賓) - 외부 환경</p>
-                    <p className="mt-1 text-xs text-[#5a483a]">{guestScope}</p>
-                </div>
-                <div className="rounded-lg border border-[#ede2d7] bg-[#fcf9f5] p-3.5">
-                    <p className="text-xs font-bold text-[#a06f3e]">주(主) - 내면과 수단</p>
-                    <p className="mt-1 text-xs text-[#5a483a]">{hostScope}</p>
-                </div>
-            </div>
-
-            {controlFlow?.career_advice && (
-                <div className="mt-4 rounded-lg border border-[#d6beaa] bg-[#fffaf5] p-4">
-                    <p className="flex items-center gap-1.5 text-xs font-bold text-[#9d6836]">
-                        <Compass className="h-4 w-4" />
-                        진로 및 사회활동 조언
-                    </p>
-                    <p className="mt-1.5 break-keep text-sm leading-6 text-[#45372a]">
-                        {controlFlow.career_advice}
-                    </p>
-                </div>
-            )}
-        </Card>
-    );
+    const data = result.advanced_analysis?.bin_zhu_dynamics;
+    if (!data) return null;
+    return <Card>
+        <CardTitle title="빈주(賓主) 관계 구조" body="사회적 환경(빈)과 개인 영역(주)의 관계 유형과 공동 참여 구조를 살펴봅니다." icon={Briefcase} />
+        <BinZhuContent data={data} />
+    </Card>;
 }
 
 export function BaziInterpretationCard({

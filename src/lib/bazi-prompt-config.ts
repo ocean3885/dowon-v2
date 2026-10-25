@@ -308,11 +308,11 @@ export const BAZI_PROMPT_VARIABLES: BaziPromptVariableDefinition[] = [
     { key: 'climate', label: '사주 기후/긴장도', category: '신살·기후', description: '사주 전체의 조화도와 긴장도 평가', example: '긴장과 조화가 공존하는 복합형 (긴장도: 4.6, 조화도: 2.8)' },
 
     // 적성·진로
-    { key: 'careerAdvice', label: '진로/재물 권장 조언', category: '적성·진로', description: '사회적 시장에서 역량을 발휘하기 좋은 진로 권장', example: '전문성이나 독자적인 수단을 무기로 독립 사업, 전문직, 성과형 프로젝트에서 큰 성취를 이룰 수 있습니다.' },
-    { key: 'binZhuMeaning', label: '빈주 사회적 작용', category: '적성·진로', description: '나(일/시)와 사회/시장(년/월)의 주도권 관계 해석', example: '자신의 역량과 수단(일/시주)으로 사회와 시장(년/월주)의 기회와 자원을 적극적으로 내 것으로 만드는 구조입니다.' },
-    { key: 'binZhuDirection', label: '빈주 흐름 방향', category: '적성·진로', description: '주 ➔ 빈 또는 빈 ➔ 주 통제 방향', example: '주 ➔ 빈 (주통빈/자원취용형)' },
-    { key: 'xuShiDynamics', label: '허실 변화(유동성)', category: '적성·진로', description: '천간 글자의 실자/변허/허투에 따른 적응력 분석', example: '천간 4자 중 실자변허(變虛) 2개, 허(虛) 2개로 고정된 환경보다 유동적 환경에서의 전환 적응력이 강점으로 작용합니다.' },
-    { key: 'aiConsultationPrompts', label: 'AI 상담 핵심 힌트', category: '적성·진로', description: '엔진이 추출한 핵심 명리 불릿포인트 요약 목록', example: '• 【오행 분포】 토(3개) 기운 발달\n• 【주요 신살】 홍염살(년지), 괴강살(월주)\n• 【진로/재물 권장】 전문직 권장' },
+    { key: 'careerAdvice', label: '빈주 해석 참고', category: '적성·진로', description: '빈·주의 상징과 관계 집계의 해석 범위. 직업 추천이나 성과 예측이 아님', example: '빈은 사회적 환경, 주는 개인 영역의 상징입니다. 관계 집계만으로 직업 적합성·재물 취득·성과를 판단하지 않습니다.' },
+    { key: 'binZhuMeaning', label: '빈주 관계 비교', category: '적성·진로', description: '빈과 주 사이의 합 및 충·해 관계 점수 비교', example: '현재 쌍별 규칙에서 빈-주 간 합 관계 점수가 충·해/천 관계 점수보다 높습니다.' },
+    { key: 'binZhuDirection', label: '빈주 관계 유형', category: '적성·진로', description: '합 관계 우세, 충·해 관계 우세, 관계 점수 동률 또는 평가 가능한 통로 없음. 제어 방향이 아님', example: '합 관계 우세' },
+    { key: 'xuShiDynamics', label: '원국 허실 구조', category: '적성·진로', description: '관계 반영 전후의 원국 통근 상태와 공통 뿌리·잔존 기반 요약. 시기별 운 변화가 아님', example: '년간과 월간은 월지 뿌리를 공유합니다. 관계 반영 후 년간은 일지의 잔존 기반으로 실을 유지하고 월간은 변허로 분류됩니다.' },
+    { key: 'aiConsultationPrompts', label: 'AI 상담 핵심 근거', category: '적성·진로', description: '계산 범위와 해석 참고를 포함한 원국 분석 요약', example: '• 【원국 허실】 원국의 관계 반영 전후 비교입니다.\n• 【빈주 계산 범위】 다자 관계는 쌍별 점수에서 제외합니다.' },
 
     // 운의 흐름
     { key: 'currentYear', label: '기준 연도', category: '운의 흐름', description: '현재 한국 기준 연도', example: '2026' },

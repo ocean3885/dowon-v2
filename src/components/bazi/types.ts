@@ -55,6 +55,10 @@ export type SpecialStar = {
 };
 
 export type InteractionMatrixItem = {
+    relation_id?: string | null;
+    relation_scope?: 'pairwise' | 'group';
+    participants?: string[];
+    formations?: string[][];
     category?: string;
     type?: string;
     name?: string;
@@ -67,7 +71,27 @@ export type InteractionMatrixItem = {
     description?: string;
 };
 
+export type XuShiRootEvidence = {
+    pillar?: string;
+    position?: string;
+    branch_char?: string;
+    score?: number;
+    effective_score?: number;
+    is_affected?: boolean;
+    interactions?: InteractionMatrixItem[];
+};
+
 export type XuShiPillarInfo = {
+    effective_score?: number;
+    transition_code?: 'maintained' | 'real_to_empty';
+    transition_reasons?: string[];
+    root_evidence?: XuShiRootEvidence[];
+    root_structure?: {
+        primary_root_pillars?: string[];
+        remaining_root_pillars?: string[];
+        excluded_root_pillars?: string[];
+        remaining_support?: 'none' | 'below_threshold' | 'meets_threshold';
+    };
     position?: string;
     char?: string;
     ten_star?: string;
@@ -142,30 +166,15 @@ export type BaziResult = {
         special_stars?: SpecialStar[];
         special_stars_by_pillar?: Record<string, string[]>;
         interactions?: {
+            rule_version?: string;
             summary_list?: string[];
             matrix?: InteractionMatrixItem[];
             tension_score?: number;
             harmony_score?: number;
             climate?: string;
         };
-        xu_shi_dynamics?: {
-            pillars?: Record<string, XuShiPillarInfo>;
-            real_count?: number;
-            transformed_empty_count?: number;
-            hollow_penetrate_count?: number;
-            overall_status?: string;
-        };
-        bin_zhu_dynamics?: {
-            guest_structure?: BinZhuStructure;
-            host_structure?: BinZhuStructure;
-            control_flow?: {
-                direction?: string;
-                summary_meaning?: string;
-                career_advice?: string;
-            };
-            guest_host_links?: any[];
-            ai_prompt_bullets?: string[];
-        };
+        xu_shi_dynamics?: XuShiDynamics;
+        bin_zhu_dynamics?: BinZhuDynamics;
         ai_consultation_prompts?: string[];
     };
 };
@@ -219,4 +228,60 @@ export type DaewoonItem = {
     gan_ten_god?: string;
     ji_ten_god?: string;
     unseong?: string;
+};
+
+// New fields remain optional so saved responses from earlier API versions still render.
+export type XuShiDynamics = {
+    analysis_scope?: string;
+    rule_version?: string;
+    pillars?: Record<string, XuShiPillarInfo>;
+    real_count?: number;
+    transformed_empty_count?: number;
+    hollow_penetrate_count?: number;
+    weak_count?: number;
+    overall_status?: string;
+    shared_roots?: Array<{
+        root_pillar?: string;
+        branch_char?: string;
+        is_affected?: boolean;
+        interactions?: InteractionMatrixItem[];
+        dependents?: Array<{
+            stem_pillar?: string;
+            score?: number;
+            effective_score?: number;
+            current_status?: string;
+        }>;
+    }>;
+    impact_groups?: Array<{
+        interaction?: InteractionMatrixItem;
+        affected_root_pillars?: string[];
+        affected_stem_pillars?: string[];
+    }>;
+};
+
+export type BinZhuDynamics = {
+    rule_version?: string;
+    interaction_scope?: string;
+    guest_structure?: BinZhuStructure;
+    host_structure?: BinZhuStructure;
+    control_flow?: { direction?: string; summary_meaning?: string; career_advice?: string };
+    pairwise_scores?: { combination?: number; conflict?: number };
+    guest_host_links?: Array<{
+        relation_id?: string | null;
+        type?: string;
+        detail?: string;
+        target_guest?: string;
+        source_host?: string;
+    }>;
+    group_connections?: Array<{
+        relation_id?: string | null;
+        type?: string;
+        participants?: string[];
+        guest_participants?: string[];
+        host_participants?: string[];
+        included_in_score?: boolean;
+        description?: string;
+    }>;
+    excluded_interactions?: Array<InteractionMatrixItem & { reason_code?: string }>;
+    ai_prompt_bullets?: string[];
 };
