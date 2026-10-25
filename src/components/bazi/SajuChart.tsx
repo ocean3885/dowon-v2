@@ -129,7 +129,7 @@ export function SajuChart({ result }: { result: BaziResult }) {
                                         {stars.map((star) => (
                                             <span
                                                 key={star}
-                                                className="rounded bg-[#eed9c4] px-1.5 py-0.5 text-[10px] font-semibold text-[#7e4f21] lg:text-xs"
+                                                className="rounded bg-[#eed9c4] px-1.5 py-0.5 text-xs font-semibold text-[#7e4f21]"
                                             >
                                                 {star}
                                             </span>
@@ -164,12 +164,12 @@ export function SajuChart({ result }: { result: BaziResult }) {
                                 <div className="border-b border-[#eadfd4] bg-white/70 p-3 lg:p-5">
                                     <div className="mx-auto flex w-fit items-center gap-1.5">
                                         {gan?.element && (
-                                            <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${elementColorClassMap[gan.element] || 'bg-neutral-600 text-white'}`}>
+                                            <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${elementColorClassMap[gan.element] || 'bg-neutral-600 text-white'}`}>
                                                 {gan.element}
                                             </span>
                                         )}
                                         {gan?.yin_yang && (
-                                            <span className="text-[11px] font-medium text-[#88786a]">{gan.yin_yang}</span>
+                                            <span className="text-xs font-medium text-[#88786a]">{gan.yin_yang}</span>
                                         )}
                                     </div>
                                     <div className="mt-2">
@@ -186,12 +186,12 @@ export function SajuChart({ result }: { result: BaziResult }) {
                                 <div className="border-b border-[#eadfd4] bg-white/70 p-3 lg:p-5">
                                     <div className="mx-auto flex w-fit items-center gap-1.5">
                                         {ji?.element && (
-                                            <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${elementColorClassMap[ji.element] || 'bg-neutral-600 text-white'}`}>
+                                            <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${elementColorClassMap[ji.element] || 'bg-neutral-600 text-white'}`}>
                                                 {ji.element}
                                             </span>
                                         )}
                                         {ji?.yin_yang && (
-                                            <span className="text-[11px] font-medium text-[#88786a]">{ji.yin_yang}</span>
+                                            <span className="text-xs font-medium text-[#88786a]">{ji.yin_yang}</span>
                                         )}
                                     </div>
                                     <div className="mt-2">
@@ -210,7 +210,7 @@ export function SajuChart({ result }: { result: BaziResult }) {
                                         {tenGods[pillarMeta[key].jiTenGodKey] || '-'}
                                     </p>
                                     {unseong && (
-                                        <span className="mt-1.5 inline-block rounded border border-[#d6beaa] bg-[#fffcf8] px-2 py-0.5 text-[11px] font-semibold text-[#735339]">
+                                        <span className="mt-1.5 inline-block rounded border border-[#d6beaa] bg-[#fffcf8] px-2 py-0.5 text-xs font-semibold text-[#735339]">
                                             {unseong}
                                         </span>
                                     )}
@@ -218,7 +218,7 @@ export function SajuChart({ result }: { result: BaziResult }) {
 
                                 {/* Jijanggan Details */}
                                 <div className="flex-1 bg-white/50 p-1.5 sm:p-2.5 lg:p-3">
-                                    <p className="mb-1.5 text-[10px] font-semibold text-[#968677] sm:text-[11px]">
+                                    <p className="mb-1.5 text-xs font-semibold text-[#968677]">
                                         지장간<span className="hidden sm:inline"> (地藏干)</span>
                                     </p>
                                     {jijangganList.length > 0 ? (
@@ -226,30 +226,30 @@ export function SajuChart({ result }: { result: BaziResult }) {
                                             {jijangganList.map((item, idx) => (
                                                 <div
                                                     key={idx}
-                                                    className="flex items-center justify-between rounded border border-[#efe6dc] bg-[#fffdfa] px-1.5 py-0.5 text-[11px] sm:px-2 sm:py-1 sm:text-xs"
+                                                    className="flex items-center justify-between rounded border border-[#efe6dc] bg-[#fffdfa] px-1.5 py-0.5 text-xs sm:px-2 sm:py-1"
                                                 >
                                                     <div className="flex items-center gap-1">
                                                         <span className="font-serif text-xs font-bold text-[#2d2117] sm:text-sm">{item.ch}</span>
-                                                        {item.kr && <span className="hidden text-[10px] text-[#867566] sm:inline">({item.kr})</span>}
+                                                        {item.kr && <span className="hidden text-xs text-[#867566] sm:inline">({item.kr})</span>}
                                                         {item.type && (
-                                                            <span className="hidden rounded bg-[#f0e7dd] px-1 text-[9px] text-[#715c4a] md:inline">
+                                                            <span className="hidden rounded bg-[#f0e7dd] px-1 text-[11px] text-[#715c4a] md:inline">
                                                                 {item.type}
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <div className="flex items-center gap-1 text-[10px] sm:text-[11px]">
+                                                    <div className="flex items-center gap-1 text-[11px] sm:text-xs">
                                                         {item.ten_god && (
                                                             <span className="font-medium text-[#9a6738]">{item.ten_god}</span>
                                                         )}
                                                         {item.ratio && (
-                                                            <span className="hidden text-[10px] text-[#a19588] lg:inline">({item.ratio})</span>
+                                                            <span className="hidden text-[11px] text-[#a19588] lg:inline">({item.ratio})</span>
                                                         )}
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
                                     ) : (
-                                        <p className="text-[11px] text-[#9d8f82]">없음</p>
+                                        <p className="text-xs text-[#9d8f82]">없음</p>
                                     )}
                                 </div>
                             </article>
@@ -310,7 +310,7 @@ export function SpecialStarsCard({ result }: { result: BaziResult }) {
                                     <p className="mt-2 text-xs font-semibold text-[#a26e3c]">{star.type}</p>
                                 )}
 
-                                <p className="mt-2 break-keep text-xs leading-6 text-[#5e5043] lg:text-sm">
+                                <p className="mt-2 break-keep text-sm leading-6 text-[#5e5043]">
                                     {star.description || '고유한 기운과 특징을 나타냅니다.'}
                                 </p>
                             </div>

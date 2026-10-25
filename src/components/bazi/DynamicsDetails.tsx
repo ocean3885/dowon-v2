@@ -3,7 +3,7 @@ import type { BinZhuDynamics, InteractionMatrixItem, XuShiDynamics } from './typ
 
 const panel = 'rounded-lg border border-[#ede2d7] bg-[#fcf9f5] p-3.5';
 const text = 'break-words text-sm leading-6 text-[#514030]';
-const muted = 'break-words text-xs leading-5 text-[#786757]';
+const muted = 'break-words text-[13px] leading-6 text-[#685748]';
 const pillarNames: Record<string, string> = { year: '년', month: '월', day: '일', hour: '시', time: '시' };
 const orderedPillars = ['year', 'month', 'day', 'hour'];
 
@@ -67,7 +67,7 @@ export function XuShiContent({ data }: { data: XuShiDynamics }) {
             const structure = item.root_structure;
             return <div key={key} className={panel}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h4 className="font-serif font-bold text-[#35281e]">{positionName(key, '간')} {item.char && `(${item.char})`} <span className="text-xs font-normal">{item.ten_star}</span></h4>
+                    <h4 className="font-serif font-bold text-[#35281e]">{positionName(key, '간')} {item.char && `(${item.char})`} <span className="text-sm font-normal">{item.ten_star}</span></h4>
                     <Status value={item.current_status || item.original_status} />
                 </div>
                 <p className={`mt-2 ${muted}`}>상태: {item.original_status || '미제공'} → {item.current_status || '미제공'}</p>
@@ -127,7 +127,7 @@ export function BinZhuContent({ data }: { data: BinZhuDynamics }) {
             <div className={panel}><p className={text}>빈 · 사회적 환경</p><p className={muted}>{data.guest_structure?.scope || '범위 미제공'}</p></div>
             <div className={panel}><p className={text}>주 · 개인 영역</p><p className={muted}>{data.host_structure?.scope || '범위 미제공'}</p></div>
         </div>
-        {flow?.career_advice && <div className={panel}><p className="text-xs font-bold text-[#9d6836]">관계 해석 참고</p><p className={`mt-2 ${text}`}>{flow.career_advice}</p></div>}
+        {flow?.career_advice && <div className={panel}><p className="text-sm font-bold text-[#9d6836]">관계 해석 참고</p><p className={`mt-2 ${text}`}>{flow.career_advice}</p></div>}
         {data.guest_host_links !== undefined && <DetailSection title="점수에 반영한 빈–주 통로">
             {data.guest_host_links.length ? data.guest_host_links.map((link, index) => <p key={link.relation_id || index} className={text}>{link.detail || link.type || '관계 설명 미제공'}</p>) : <p className={muted}>점수에 반영한 빈–주 통로가 없습니다.</p>}
         </DetailSection>}

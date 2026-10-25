@@ -1021,7 +1021,7 @@ function ElementBalance({ result }: { result: BaziResult }) {
             <div className="mt-5 flex flex-col items-center justify-center sm:flex-row sm:gap-6">
                 <div className="relative flex h-40 w-40 shrink-0 items-center justify-center rounded-full shadow-md" style={{ background: conicGradient }}>
                     <div className="flex h-28 w-28 flex-col items-center justify-center rounded-full bg-[#fffaf4] text-center shadow-inner px-2">
-                        <span className="text-[10px] font-bold text-[#867566] tracking-wide">{centerTitle}</span>
+                        <span className="text-xs font-bold text-[#867566] tracking-wide">{centerTitle}</span>
                         <strong className={`font-serif font-bold tracking-normal text-[#2d2117] ${centerMainText.length > 5 ? 'text-lg mt-0.5' : 'text-2xl mt-0.5'}`}>
                             {centerMainText}
                         </strong>
@@ -1050,7 +1050,7 @@ function ElementBalance({ result }: { result: BaziResult }) {
 
             {advancedFive?.summary ? (
                 <div className="mt-5 rounded-lg border border-[#eee1d4] bg-[#fcf8f3] p-4">
-                    <p className="break-keep text-xs leading-6 text-[#594b3f] lg:text-sm">
+                    <p className="break-keep text-sm leading-6 text-[#594b3f]">
                         {advancedFive.summary}
                     </p>
                     {(dominantText || deficientText) && (
@@ -1123,9 +1123,9 @@ function TraitPanel({ result }: { result: BaziResult }) {
                         return (
                             <div
                                 key={idx}
-                                className="flex items-start gap-2.5 rounded-lg border border-[#eee2d6] bg-[#fcf9f5] p-3 text-xs leading-6 text-[#4a3d32] lg:text-sm"
+                                className="flex items-start gap-2.5 rounded-lg border border-[#eee2d6] bg-[#fcf9f5] p-3 text-sm leading-6 text-[#4a3d32]"
                             >
-                                <span className={`mt-0.5 inline-block shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold ${
+                                <span className={`mt-0.5 inline-block shrink-0 rounded px-1.5 py-0.5 text-[11px] font-bold ${
                                     isHarmonious ? 'bg-[#417e50]/15 text-[#2d5c38]' : 'bg-[#9a4b34]/15 text-[#9a4b34]'
                                 }`}>
                                     {isHarmonious ? '조화' : '변동'}
@@ -1197,7 +1197,7 @@ function DecadeFlow({ result }: { result: BaziResult }) {
                                 }`}
                         >
                             <div>
-                                <p className={`text-[10px] font-bold ${isSelected ? 'text-white/80' : 'text-[#a26e3c]'}`}>
+                                <p className={`text-[11px] font-bold ${isSelected ? 'text-white/80' : 'text-[#a26e3c]'}`}>
                                     {formatAgeRange(item)}
                                 </p>
                                 <div className="mt-1 flex items-center justify-center gap-1">
@@ -1206,18 +1206,18 @@ function DecadeFlow({ result }: { result: BaziResult }) {
                                     </span>
                                 </div>
                                 {(item.gan_ten_god || item.ji_ten_god) && (
-                                    <p className={`mt-1 text-[10px] font-medium ${isSelected ? 'text-white/90' : 'text-[#856b56]'}`}>
+                                    <p className={`mt-1 text-[11px] font-medium ${isSelected ? 'text-white/90' : 'text-[#856b56]'}`}>
                                         {item.gan_ten_god || item.ji_ten_god}
                                     </p>
                                 )}
                             </div>
 
                             <div className="mt-2 border-t border-black/10 pt-1">
-                                <p className={`text-[10px] ${isSelected ? 'text-white/80' : 'text-[#9c8e82]'}`}>
+                                <p className={`text-[11px] ${isSelected ? 'text-white/80' : 'text-[#9c8e82]'}`}>
                                     {item.start_year || '-'}
                                 </p>
                                 {isCurrent && (
-                                    <span className={`mt-0.5 inline-block rounded px-1 text-[9px] font-bold ${
+                                    <span className={`mt-0.5 inline-block rounded px-1 text-[10px] font-bold ${
                                         isSelected ? 'bg-white text-[#96632f]' : 'bg-[#ae7a43] text-white'
                                     }`}>
                                         현재
@@ -1272,18 +1272,18 @@ function DecadeFlow({ result }: { result: BaziResult }) {
                                         }`}
                                     >
                                         <div>
-                                            <p className={`text-[10px] font-semibold ${isCurrent ? 'text-white/85' : 'text-[#8e7f73]'}`}>
+                                            <p className={`text-[11px] font-semibold ${isCurrent ? 'text-white/85' : 'text-[#8e7f73]'}`}>
                                                 {c.year} ({c.age}세)
                                             </p>
                                             <p className="mt-1 font-serif text-base font-bold leading-none">
                                                 {c.gan.ch}{c.ji.ch}
                                             </p>
-                                            <p className={`mt-0.5 text-[10px] ${isCurrent ? 'text-white/90' : 'text-[#7e6d5e]'}`}>
+                                            <p className={`mt-0.5 text-[11px] ${isCurrent ? 'text-white/90' : 'text-[#7e6d5e]'}`}>
                                                 ({c.gan.kr}{c.ji.kr})
                                             </p>
                                         </div>
 
-                                        <div className="mt-1.5 border-t border-black/5 pt-1 text-[9px]">
+                                        <div className="mt-1.5 border-t border-black/5 pt-1 text-[11px]">
                                             <p className={`font-semibold ${isCurrent ? 'text-white/90' : 'text-[#9c6a38]'}`}>
                                                 {c.ji.ten_god || c.gan.ten_god || '-'}
                                             </p>
