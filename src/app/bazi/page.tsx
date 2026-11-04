@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     ArrowRight,
     Bookmark,
@@ -19,7 +19,6 @@ import {
     Sun,
     Trash2,
     X,
-    Activity,
     Scale,
 } from 'lucide-react';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
@@ -34,12 +33,13 @@ import {
 } from '@/components/bazi/SajuChart';
 import type {
     BaziAuthStatus,
+    BaziCharacterGraph,
     BaziResult,
     CycleYearItem,
     DaewoonItem,
-    PillarKey,
 } from '@/components/bazi/types';
-import { InteractionDetails, scoreText } from '@/components/bazi/DynamicsDetails';
+import { NatalCharacterDetails, CycleRelations } from '@/components/bazi/CharacterRelations';
+import { currentDaewoon, cycleQuery, graphIsCurrent, readBaziResponse, selectionYears, type BirthParams } from '@/lib/bazi-contract';
 import { createClient } from '@/utils/supabase/client';
 
 type BaziFormValues = {
@@ -60,24 +60,12 @@ type SavedBaziProfile = BaziFormValues & {
     updatedAt?: string;
 };
 
-const pillarOrder: PillarKey[] = ['time', 'day', 'month', 'year'];
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: currentYear - 1899 }, (_, index) => String(currentYear - index));
 const months = Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, '0'));
 const days = Array.from({ length: 31 }, (_, index) => String(index + 1).padStart(2, '0'));
 const hours = Array.from({ length: 24 }, (_, index) => String(index).padStart(2, '0'));
 const minutes = Array.from({ length: 60 }, (_, index) => String(index).padStart(2, '0'));
-const heavenlyStems = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'] as const;
-const earthlyBranches = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'] as const;
-
-const elementByChar: Record<string, string> = {
-    甲: '목', 乙: '목', 寅: '목', 卯: '목',
-    丙: '화', 丁: '화', 巳: '화', 午: '화',
-    戊: '토', 己: '토', 辰: '토', 戌: '토', 丑: '토', 未: '토',
-    庚: '금', 辛: '금', 申: '금', 酉: '금',
-    壬: '수', 癸: '수', 子: '수', 亥: '수',
-};
-
 const elementColors: Record<string, string> = {
     목: 'bg-[#417e50]',
     화: 'bg-[#db3c39]',
@@ -101,18 +89,6 @@ const elementLabels: Record<string, string> = {
     금: '金',
     수: '水',
 };
-
-const interactionConfigs = [
-    { key: 'jahab', label: '자합', hanja: '自合' },
-    { key: 'six_haps', label: '육합', hanja: '六合' },
-    { key: 'three_haps', label: '삼합', hanja: '三合' },
-    { key: 'half_haps', label: '반합', hanja: '半合' },
-    { key: 'square_haps', label: '방합', hanja: '方合' },
-    { key: 'cheons', label: '천', hanja: '穿' },
-    { key: 'chungs', label: '충', hanja: '沖' },
-    { key: 'breaks', label: '파', hanja: '破' },
-    { key: 'punishments', label: '형', hanja: '刑' },
-] as const;
 
 const supportItems = [
     { icon: Flower2, title: '지금의 당신', body: '내 삶을 분석하여 현재의 상황을 읽어드립니다.' },
@@ -144,6 +120,9 @@ export default function BaziPage() {
     const [supabase] = useState(() => createClient());
     const [showResult, setShowResult] = useState(false);
     const [result, setResult] = useState<BaziResult | null>(null);
+    const [characterGraph, setCharacterGraph] = useState<BaziCharacterGraph | null>(null);
+    const [characterError, setCharacterError] = useState('');
+    const analysisRequest = useRef(0);
     const [subjectName, setSubjectName] = useState('');
     const [birthParams, setBirthParams] = useState<{
         year: string;
@@ -241,6 +220,7 @@ export default function BaziPage() {
     }, [showResult]);
 
     const handleAnalyze = async (values: BaziFormValues) => {
+        const requestId = ++analysisRequest.current;
         setIsLoading(true);
         setError('');
 
@@ -251,30 +231,44 @@ export default function BaziPage() {
                 params.set('name', nextSubjectName.trim());
             }
             const response = await fetch(`/api/bazi?${params.toString()}`);
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data?.message || '만세력 정보를 불러오지 못했습니다.');
-            }
+            const data = await readBaziResponse<BaziResult>(response, '만세력 정보를 불러오지 못했습니다.');
+            if (requestId !== analysisRequest.current) return;
 
             setResult(data);
+            setCharacterGraph(null);
+            setCharacterError('');
             setSubjectName(nextSubjectName.trim());
             setBirthParams(baziParams);
             setShowResult(true);
+            try {
+                const detailResponse = await fetch(`/api/bazi/character-details?${new URLSearchParams(baziParams)}`);
+                const details = await readBaziResponse<BaziCharacterGraph>(detailResponse, '글자별 상세를 불러오지 못했습니다.');
+                if (!graphIsCurrent(details)) throw new Error('지원하지 않는 글자별 응답 버전입니다.');
+                if (requestId === analysisRequest.current) setCharacterGraph(details);
+            } catch (detailError) {
+                if (requestId === analysisRequest.current) setCharacterError(detailError instanceof Error ? detailError.message : '글자별 상세를 불러오지 못했습니다.');
+            }
         } catch (requestError) {
+            if (requestId !== analysisRequest.current) return;
             setShowResult(false);
             setResult(null);
+            setCharacterGraph(null);
+            setCharacterError('');
             setSubjectName('');
             setBirthParams(null);
             setError(requestError instanceof Error ? requestError.message : '만세력 정보를 불러오지 못했습니다.');
         } finally {
-            setIsLoading(false);
+            if (requestId === analysisRequest.current) setIsLoading(false);
         }
     };
 
     const handleReset = () => {
+        analysisRequest.current += 1;
+        setIsLoading(false);
         setShowResult(false);
         setResult(null);
+        setCharacterGraph(null);
+        setCharacterError('');
         setSubjectName('');
         setBirthParams(null);
         setError('');
@@ -340,9 +334,9 @@ export default function BaziPage() {
 
                             <div className="grid min-w-0 gap-5 xl:grid-cols-2">
                                 <SajuChart result={result} />
-                                <DecadeFlow result={result} />
+                                <NatalCharacterDetails key={`natal-${JSON.stringify(birthParams)}`} graph={characterGraph} error={characterError} />
+                                <DecadeFlow key={`cycle-${JSON.stringify(birthParams)}`} result={result} birthParams={birthParams} />
                                 <ElementBalance result={result} />
-                                <TraitPanel result={result} />
                                 <SpecialStarsCard result={result} />
                                 <XuShiDynamicsCard result={result} />
                                 <BinZhuDynamicsCard result={result} />
@@ -938,6 +932,15 @@ function ResultHeading({ result, subjectName }: { result: BaziResult; subjectNam
                     )}
                 </div>
             </div>
+            <aside aria-label="분석 안내" className="mt-5 flex flex-col gap-3 rounded-lg border border-[#e5d1b8] bg-[#fff8ec] px-4 py-3 text-sm leading-6 text-[#634b32] sm:flex-row sm:items-center sm:justify-between">
+                <p className="break-keep">
+                    <strong className="mr-2 text-[#805124]">분석 안내</strong>
+                    현재 명식 분석 기능은 개발·검증 중입니다. 아래 결과는 참고용으로 확인해 주세요. 정확한 분석은 직접 상담을 의뢰해 주세요.
+                </p>
+                <Link href="/submit" className="inline-flex shrink-0 items-center gap-1 font-semibold text-[#805124] underline underline-offset-4 hover:text-[#5f3718]">
+                    상담 의뢰하기 <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+            </aside>
         </header>
     );
 }
@@ -1073,100 +1076,49 @@ function ElementBalance({ result }: { result: BaziResult }) {
     );
 }
 
-function TraitPanel({ result }: { result: BaziResult }) {
-    const interactions = result.advanced_analysis?.interactions;
-    const summaryList = interactions?.summary_list || [];
-    const climate = interactions?.climate;
-    const harmonyScore = interactions?.harmony_score;
-    const tensionScore = interactions?.tension_score;
-    const hasBothScores = typeof harmonyScore === 'number' && Number.isFinite(harmonyScore)
-        && typeof tensionScore === 'number' && Number.isFinite(tensionScore);
-
-    return (
-        <Card>
-            <CardTitle
-                title="합·충·형·파·해 (합충 작용)"
-                body="기둥 간 결합(합)과 변화·마찰(충·형·파·해)의 상호작용 및 전체적인 조화 분위기입니다."
-                icon={Activity}
-                badge={climate || undefined}
-            />
-
-            {/* Harmony vs Tension Bar */}
-            {(typeof harmonyScore === 'number' || typeof tensionScore === 'number') && (
-                <div className="mt-5 rounded-lg border border-[#ede1d4] bg-[#faf4ec] p-4">
-                    <div className="flex items-center justify-between text-xs font-bold text-[#56483c]">
-                        <span className="text-[#3b7548]">조화도 ({scoreText(harmonyScore)})</span>
-                        <span className="text-[#9e432c]">긴장도 ({scoreText(tensionScore)})</span>
-                    </div>
-                    {hasBothScores && (harmonyScore + tensionScore > 0) && <div className="mt-2 flex h-2.5 overflow-hidden rounded-full bg-[#e8ded3]">
-                        <div
-                            className="bg-[#417e50] transition-all"
-                            style={{
-                                width: `${(harmonyScore / (harmonyScore + tensionScore || 1)) * 100}%`,
-                            }}
-                        />
-                        <div
-                            className="bg-[#c44329] transition-all"
-                            style={{
-                                width: `${(tensionScore / (harmonyScore + tensionScore || 1)) * 100}%`,
-                            }}
-                        />
-                    </div>}
-                </div>
-            )}
-
-            {summaryList.length > 0 ? (
-                <div className="mt-4 space-y-2">
-                    {summaryList.map((item, idx) => {
-                        const isHarmonious = item.includes('합') && !item.includes('충') && !item.includes('형') && !item.includes('파') && !item.includes('천');
-
-                        return (
-                            <div
-                                key={idx}
-                                className="flex items-start gap-2.5 rounded-lg border border-[#eee2d6] bg-[#fcf9f5] p-3 text-sm leading-6 text-[#4a3d32]"
-                            >
-                                <span className={`mt-0.5 inline-block shrink-0 rounded px-1.5 py-0.5 text-[11px] font-bold ${
-                                    isHarmonious ? 'bg-[#417e50]/15 text-[#2d5c38]' : 'bg-[#9a4b34]/15 text-[#9a4b34]'
-                                }`}>
-                                    {isHarmonious ? '조화' : '변동'}
-                                </span>
-                                <span className="break-keep font-medium">{item}</span>
-                            </div>
-                        );
-                    })}
-                </div>
-            ) : (
-                <div className="mt-5 rounded-lg border border-[#eee1d4] bg-[#fcf8f3] p-4">
-                    <p className="break-keep text-sm font-semibold text-[#493c31]">표시할 관계 요약이 없습니다.</p>
-                    <p className="mt-1.5 break-keep text-xs leading-6 text-[#66584c]">
-                        요약의 부재만으로 원국의 안정성이나 관계 유무를 판단하지 않습니다.
-                    </p>
-                </div>
-            )}
-            <InteractionDetails matrix={interactions?.matrix} />
-        </Card>
-    );
-}
-
-function DecadeFlow({ result }: { result: BaziResult }) {
+function DecadeFlow({ result, birthParams }: { result: BaziResult; birthParams: BirthParams | null }) {
     const daewoon = result.daewoon;
     const list = daewoon?.list || [];
-    const currentDaewoon = daewoon?.current || list.find((item) => item.start_year !== undefined && item.end_year !== undefined && item.start_year <= currentYear && currentYear <= item.end_year);
-    const currentIndex = currentDaewoon?.index;
+    const selectedCurrent = currentDaewoon(result);
+    const currentIndex = selectedCurrent?.index;
     const [selectedDaewoonIndex, setSelectedDaewoonIndex] = useState<number | null>(null);
+    const [selectedSewoonYear, setSelectedSewoonYear] = useState<number | null>(null);
+    const [cycleGraph, setCycleGraph] = useState<BaziCharacterGraph | null>(null);
+    const [cycleError, setCycleError] = useState('');
+    const [cycleLoading, setCycleLoading] = useState(false);
+    const requestSerial = useRef(0);
 
     const initialIdx = list.findIndex((item) => item.index === currentIndex);
     const activeDaewoonIndex = selectedDaewoonIndex !== null && selectedDaewoonIndex < list.length
         ? selectedDaewoonIndex
-        : Math.max(initialIdx, 0);
+        : initialIdx;
 
-    const selectedDaewoon = list[activeDaewoonIndex] || currentDaewoon;
+    const selectedDaewoon = activeDaewoonIndex >= 0 && !(selectedSewoonYear !== null && list[0]?.selection_start_year !== undefined && selectedSewoonYear < list[0].selection_start_year)
+        ? list[activeDaewoonIndex] : null;
 
-    // Build 10-year 세운 from API future_100 cycles
     const cycles100 = result.cycles?.future_100 || [];
-    const activeYears: CycleYearItem[] = (selectedDaewoon?.start_year !== undefined && selectedDaewoon.end_year !== undefined)
-        ? cycles100.filter((c) => c.year >= selectedDaewoon.start_year! && c.year <= selectedDaewoon.end_year!)
-        : [];
+    const activeYears: CycleYearItem[] = selectedDaewoon
+        ? cycles100.filter(c => selectionYears(selectedDaewoon, [c.year]).length > 0) : [];
+    const beforeFirstYears = list[0]?.selection_start_year === undefined ? []
+        : cycles100.filter(c => c.year < list[0].selection_start_year!);
+
+    async function loadCycle(selection: { daewoonIndex: number } | { sewoonYear: number }) {
+        if (!birthParams) return;
+        const serial = ++requestSerial.current;
+        setCycleGraph(null);
+        setCycleError('');
+        setCycleLoading(true);
+        try {
+            const response = await fetch(`/api/bazi/cycle-analysis?${cycleQuery(birthParams, selection)}`);
+            const graph = await readBaziResponse<BaziCharacterGraph>(response, '선택한 운을 불러오지 못했습니다.');
+            if (!graphIsCurrent(graph) || !graph.selection) throw new Error('지원하지 않는 운 조회 응답 버전입니다.');
+            if (serial === requestSerial.current) setCycleGraph(graph);
+        } catch (requestError) {
+            if (serial === requestSerial.current) setCycleError(requestError instanceof Error ? requestError.message : '선택한 운을 불러오지 못했습니다.');
+        } finally {
+            if (serial === requestSerial.current) setCycleLoading(false);
+        }
+    }
 
     return (
         <Card className="xl:col-span-2">
@@ -1181,16 +1133,14 @@ function DecadeFlow({ result }: { result: BaziResult }) {
             <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-5 lg:grid-cols-10">
                 {list.map((item, index) => {
                     const isCurrent = item.index === currentIndex;
-                    const isSelected = index === activeDaewoonIndex;
-                    const ganElem = item.gan_detail?.element;
-                    const jiElem = item.ji_detail?.element;
+                    const isSelected = index === activeDaewoonIndex && !!selectedDaewoon;
 
                     return (
                         <button
                             type="button"
                             key={`${item.index}-${item.start_year}`}
-                            onClick={() => setSelectedDaewoonIndex(index)}
-                            aria-pressed={isSelected}
+                            onClick={() => { setSelectedDaewoonIndex(index); setSelectedSewoonYear(null); loadCycle({ daewoonIndex: item.index ?? index }); }}
+                            aria-pressed={isSelected && selectedSewoonYear === null}
                             className={`flex flex-col justify-between rounded-xl border p-2.5 text-center transition ${isSelected
                                 ? 'border-[#a97945] bg-[#ae7a43] text-white shadow-md'
                                 : 'border-[#ede2d7] bg-[#fcf8f3] text-[#74675b] hover:border-[#d2b38f] hover:bg-[#fff8ee]'
@@ -1234,10 +1184,10 @@ function DecadeFlow({ result }: { result: BaziResult }) {
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <span className="rounded bg-[#eddccb] px-2 py-0.5 text-xs font-bold text-[#7d4f23]">
-                            선택 대운
+                            {selectedDaewoon ? '선택 대운' : '운 선택'}
                         </span>
                         <h4 className="mt-1 font-serif text-xl font-bold text-[#33281f]">
-                            {selectedDaewoon ? `${selectedDaewoon.gan || ''}${selectedDaewoon.ji || ''} 대운 (${formatAgeRange(selectedDaewoon)})` : '대운 선택'}
+                            {selectedDaewoon ? `${selectedDaewoon.gan || ''}${selectedDaewoon.ji || ''} 대운 (${formatAgeRange(selectedDaewoon)})` : selectedSewoonYear !== null && beforeFirstYears.some(c => c.year === selectedSewoonYear) ? '첫 대운 이전 세운' : '대운을 선택해 주세요'}
                         </h4>
                     </div>
                     {selectedDaewoon && (
@@ -1255,50 +1205,61 @@ function DecadeFlow({ result }: { result: BaziResult }) {
                 </div>
 
                 {/* 10-year 세운 cards */}
-                <div className="mt-4">
+                {selectedDaewoon && <div className="mt-4">
                     <p className="mb-2 text-xs font-bold text-[#8c6b4b]">해당 대운의 10년 세운 (歲運)</p>
                     {activeYears.length > 0 ? (
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 lg:grid-cols-10">
                             {activeYears.map((c) => {
                                 const isCurrent = c.year === currentYear;
+                                const isHighlighted = selectedSewoonYear === c.year || isCurrent && selectedSewoonYear === null;
 
                                 return (
-                                    <div
+                                    <button type="button" onClick={() => { setSelectedSewoonYear(c.year); loadCycle({ sewoonYear: c.year }); }}
+                                        aria-pressed={selectedSewoonYear === c.year}
                                         key={c.year}
                                         className={`flex flex-col justify-between rounded-lg border p-2 text-center ${
-                                            isCurrent
+                                            isHighlighted
                                                 ? 'border-[#a97945] bg-[#ae7a43] text-white shadow-sm'
                                                 : 'border-[#eadfd4] bg-white/80 text-[#54463a]'
                                         }`}
                                     >
                                         <div>
-                                            <p className={`text-[11px] font-semibold ${isCurrent ? 'text-white/85' : 'text-[#8e7f73]'}`}>
+                                            <p className={`text-[11px] font-semibold ${isHighlighted ? 'text-white/85' : 'text-[#8e7f73]'}`}>
                                                 {c.year} ({c.age}세)
                                             </p>
                                             <p className="mt-1 font-serif text-base font-bold leading-none">
                                                 {c.gan.ch}{c.ji.ch}
                                             </p>
-                                            <p className={`mt-0.5 text-[11px] ${isCurrent ? 'text-white/90' : 'text-[#7e6d5e]'}`}>
+                                            <p className={`mt-0.5 text-[11px] ${isHighlighted ? 'text-white/90' : 'text-[#7e6d5e]'}`}>
                                                 ({c.gan.kr}{c.ji.kr})
                                             </p>
                                         </div>
 
                                         <div className="mt-1.5 border-t border-black/5 pt-1 text-[11px]">
-                                            <p className={`font-semibold ${isCurrent ? 'text-white/90' : 'text-[#9c6a38]'}`}>
+                                            <p className={`font-semibold ${isHighlighted ? 'text-white/90' : 'text-[#9c6a38]'}`}>
                                                 {c.ji.ten_god || c.gan.ten_god || '-'}
                                             </p>
                                             {c.unseong && (
-                                                <p className={isCurrent ? 'text-white/75' : 'text-[#a29284]'}>{c.unseong}</p>
+                                                <p className={isHighlighted ? 'text-white/75' : 'text-[#a29284]'}>{c.unseong}</p>
                                             )}
                                         </div>
-                                    </div>
+                                    </button>
                                 );
                             })}
                         </div>
                     ) : (
-                        <p className="text-xs text-[#8c7d71]">세운 데이터를 불러오지 못했습니다.</p>
+                        <p className="text-xs text-[#8c7d71]">이 대운 구간에는 제공되는 세운 연도가 없습니다.</p>
                     )}
-                </div>
+                </div>}
+                {beforeFirstYears.length > 0 && <div className="mt-5">
+                    <p className="mb-2 text-xs font-bold text-[#8c6b4b]">첫 대운 이전 세운</p>
+                    <div className="flex flex-wrap gap-2">{beforeFirstYears.map(c => <button key={c.year} type="button"
+                        aria-pressed={selectedSewoonYear === c.year}
+                        onClick={() => { setSelectedSewoonYear(c.year); setSelectedDaewoonIndex(null); loadCycle({ sewoonYear: c.year }); }}
+                        className={`rounded border px-3 py-2 text-sm ${selectedSewoonYear === c.year ? 'border-[#a97945] bg-[#ae7a43] text-white' : 'border-[#eadfd4] bg-white'}`}>
+                        {c.year}년 {c.gan.ch}{c.ji.ch}</button>)}</div>
+                </div>}
+                <CycleRelations graph={cycleGraph} error={cycleError} loading={cycleLoading} />
             </div>
         </Card>
     );

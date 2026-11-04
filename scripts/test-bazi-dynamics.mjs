@@ -15,8 +15,15 @@ const sourcePath = path.join(__dirname, '../src/components/bazi/DynamicsDetails.
 const compiled = ts.transpileModule(fs.readFileSync(sourcePath, 'utf8'), {
     compilerOptions: { target: ts.ScriptTarget.ES2017, module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX },
 });
+const labelsPath = path.join(__dirname, '../src/components/bazi/relation-labels.ts');
+const labelsCompiled = ts.transpileModule(fs.readFileSync(labelsPath, 'utf8'), {
+    compilerOptions: { target: ts.ScriptTarget.ES2017, module: ts.ModuleKind.CommonJS },
+});
+const labels = { exports: {} };
+vm.runInNewContext(labelsCompiled.outputText, { module: labels, exports: labels.exports });
 const loaded = { exports: {} };
-vm.runInNewContext(compiled.outputText, { module: loaded, exports: loaded.exports, require: createRequire(sourcePath) });
+const nativeRequire = createRequire(sourcePath);
+vm.runInNewContext(compiled.outputText, { module: loaded, exports: loaded.exports, require: name => name === './relation-labels' ? labels.exports : nativeRequire(name) });
 const { XuShiContent, BinZhuContent, InteractionDetails, scoreText } = loaded.exports;
 const render = (component, props) => renderToStaticMarkup(React.createElement(component, props));
 const plain = html => html.replace(/<[^>]*>/g, '');
@@ -36,6 +43,7 @@ const v2Xu = {
     overall_status: '공통 뿌리를 제외한 후 잔존 기반을 비교합니다.',
     pillars: { hour: {
         char: '甲', ten_star: '비견', score: 0.8, effective_score: 0,
+        root_impact_status: 'legacy_evaluated', root_impact_score: 0.8,
         original_status: '실(實)', current_status: '변허(變虛)', transition_code: 'real_to_empty',
         root_structure: { primary_root_pillars: ['month'], remaining_root_pillars: [], excluded_root_pillars: ['month'], remaining_support: 'none' },
         root_evidence: [{ pillar: 'month', branch_char: '午', score: 0.8, effective_score: 0, is_affected: true, interactions: [relation] }],
@@ -49,11 +57,11 @@ const v2Xu = {
 test('새 허실 응답의 점수, 상태, 시주와 뿌리 근거를 표시한다', () => {
     const html = render(XuShiContent, { data: v2Xu });
     const text = plain(html);
-    for (const expected of ['실0개', '변허1개', '허투2개', '허1개', '시간 (甲)', '실(實) → 변허(變虛)', '잔여 0', '월지 (午)', '子午충', '기여도 0.8 → 잔여 0', '천간: 시간']) {
+    for (const expected of ['실0개', '변허1개', '허투2개', '허1개', '시간 (甲)', '실(實) → 변허(變虛)', '동주 통근 원점수: 0.8', '월지 (午)', '子午충', '동주 통근 기여도 0.8', '천간: 시간']) {
         assert.ok(text.includes(expected), expected);
     }
     assert.ok(html.includes('<details'));
-    assert.ok(text.includes('대운·세운에 따른 시기별 변화는 아닙니다'));
+    assert.ok(text.includes('대운·세운 변화는 포함하지 않습니다'));
 });
 
 test('과거 허실 응답의 신규 필드를 0이나 없음으로 추정하지 않는다', () => {
@@ -63,7 +71,8 @@ test('과거 허실 응답의 신규 필드를 0이나 없음으로 추정하지
     assert.ok(html.includes('과거 총평'));
     assert.ok(html.includes('과거 근거'));
     assert.ok(html.includes('허미제공'));
-    assert.ok(html.includes('잔여 미제공'));
+    assert.ok(html.includes('동주 통근 원점수: 미제공'));
+    assert.ok(html.includes('관계에 따른 통근 영향: 정보 미제공'));
     assert.ok(!html.includes('허0개'));
     assert.ok(!html.includes('통근 뿌리가 없습니다'));
     assert.ok(!html.includes('공유하는 뿌리가 없습니다'));
@@ -75,7 +84,7 @@ test('제공된 빈 목록과 상세 미제공을 구분한다', () => {
     } }));
     assert.ok(html.includes('계산에 사용된 통근 뿌리가 없습니다'));
     assert.ok(html.includes('공유하는 뿌리가 없습니다'));
-    assert.ok(html.includes('통근에 반영된 충·형·해 관계가 없습니다'));
+    assert.ok(html.includes('기록된 관계별 통근 영향 그룹이 없습니다'));
 });
 
 test('표시 반올림으로 상태를 재판정하지 않고 경계값을 구분한다', () => {
@@ -87,7 +96,7 @@ test('표시 반올림으로 상태를 재판정하지 않고 경계값을 구�
     const html = plain(render(XuShiContent, { data: { pillars: {
         day: { score: 0.3, effective_score: 0, original_status: '허(虛)', current_status: '허(虛)' },
     } } }));
-    assert.ok(html.includes('허(虛) → 허(虛)'));
+    assert.ok(html.includes('동주 판정: 허(虛)'));
     assert.ok(!html.includes('변허(變虛)'));
 });
 

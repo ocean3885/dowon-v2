@@ -82,6 +82,9 @@ export type XuShiRootEvidence = {
 };
 
 export type XuShiPillarInfo = {
+    root_impact_status?: string;
+    root_impact_score?: number | null;
+    related_interactions?: InteractionMatrixItem[];
     effective_score?: number;
     transition_code?: 'maintained' | 'real_to_empty';
     transition_reasons?: string[];
@@ -126,6 +129,9 @@ export type BaziResult = {
     four_pillars?: Partial<Record<PillarKey | 'hour', PillarStructure>>;
     ten_gods?: Record<string, string | undefined>;
     daewoon?: {
+        selection_year?: number;
+        selection_status?: 'selected' | 'before_first_period' | 'after_last_period' | 'unavailable';
+        period_basis?: string;
         direction?: string;
         start_age?: number;
         current?: DaewoonItem | null;
@@ -215,6 +221,8 @@ export type StemInfo = {
 
 export type DaewoonItem = {
     index?: number;
+    selection_start_year?: number;
+    selection_end_year_exclusive?: number;
     start_age?: number;
     end_age?: number;
     start_year?: number;
@@ -228,6 +236,60 @@ export type DaewoonItem = {
     gan_ten_god?: string;
     ji_ten_god?: string;
     unseong?: string;
+};
+
+export type BaziCharacter = {
+    context_id: string;
+    position: string;
+    kind: 'stem' | 'branch';
+    char: string;
+    attributes: GanJiDetail;
+    pillar_attributes: { unseong?: string; unseong_self?: string; jijanggan?: JijangganDetail[]; special_stars?: string[] };
+    analysis: Record<string, unknown>;
+    rooting: {
+        original_status: string;
+        current_status: string;
+        root_score: number;
+        remaining_score: number;
+        has_same_pillar_root: boolean;
+        root_branch_ids: string[];
+        external_support_score: number;
+        external_support_branch_ids: string[];
+        validation_status: string;
+        root_impact_status: string;
+        root_impact_score: number | null;
+    } | null;
+    relation_ids: string[];
+    transmission_relation_ids: string[];
+};
+
+export type BaziRelation = {
+    relation_id: string;
+    type: string;
+    participants: string[];
+    context_ids: string[];
+    activation_status: string;
+    status_reason: string | null;
+    direction?: { from_character?: string; to_character?: string; basis?: string } | null;
+    candidate_element?: string | null;
+    hidden_stem?: string | null;
+    formation_candidates?: string[][];
+};
+
+export type BaziCharacterGraph = {
+    schema_version: string;
+    contexts: Record<string, { scope: 'natal' | 'daewoon' | 'sewoon'; label: string; calculation_status: string; selection?: Record<string, unknown> }>;
+    characters: Record<string, BaziCharacter>;
+    relations: Record<string, BaziRelation>;
+    coverage: { not_evaluated_mechanisms?: string[]; power_effects_included?: boolean };
+    selection?: {
+        mode: 'daewoon' | 'sewoon';
+        daewoon_index: number | null;
+        sewoon_year: number | null;
+        daewoon_status: 'selected' | 'before_first_period';
+        sewoon_basis?: string;
+        cycle_relations_status?: string;
+    };
 };
 
 // New fields remain optional so saved responses from earlier API versions still render.

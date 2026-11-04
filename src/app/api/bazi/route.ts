@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
     for (const key of ['year', 'month', 'day', 'hour', 'min', 'sl', 'gen']) {
         const value = searchParams.get(key);
-        if (!value) continue;
+        if (value === null) continue;
 
         params.set(
             key,
@@ -28,10 +28,8 @@ export async function GET(request: NextRequest) {
         const body = await response.text();
 
         if (!response.ok) {
-            return NextResponse.json(
-                { message: '만세력 정보를 불러오지 못했습니다.' },
-                { status: response.status },
-            );
+            return new NextResponse(body, { status: response.status,
+                headers: { 'Content-Type': response.headers.get('content-type') || 'application/json; charset=utf-8' } });
         }
 
         // Parse result and asynchronously log inquiry data
@@ -43,11 +41,11 @@ export async function GET(request: NextRequest) {
             const day = searchParams.get('day') || '0';
             const hour = searchParams.get('hour') || '0';
             const min = searchParams.get('min') || '0';
-            const sl = searchParams.get('sl') || '1';
-            const gen = searchParams.get('gen') || '1';
+            const sl = searchParams.get('sl') || 'sol';
+            const gen = searchParams.get('gen') || '남';
 
-            const calendarLabel = sl === '0' ? '음력' : sl === '2' ? '윤달' : '양력';
-            const genderLabel = gen === '1' ? '남' : '여';
+            const calendarLabel = sl === 'lun' ? '음력' : sl === 'lun_y' ? '윤달' : '양력';
+            const genderLabel = gen;
 
             const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
             const userAgent = request.headers.get('user-agent') || null;
@@ -88,7 +86,7 @@ export async function GET(request: NextRequest) {
         });
     } catch {
         return NextResponse.json(
-            { message: '만세력 API 연결에 실패했습니다.' },
+            { status: 'error', code: 'upstream_unavailable', message: '만세력 API 연결에 실패했습니다.', errors: [] },
             { status: 502 },
         );
     }

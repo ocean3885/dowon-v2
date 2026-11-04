@@ -5,11 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
     Sparkles,
-    Shield,
     Star,
     Briefcase,
     Zap,
-    HelpCircle,
 } from 'lucide-react';
 import type {
     BaziAuthStatus,
@@ -42,14 +40,6 @@ const elementColorClassMap: Record<string, string> = {
     토: 'bg-[#c58e49] text-white',
     금: 'bg-[#707271] text-white',
     수: 'bg-[#437b99] text-white',
-};
-
-const elementBgClassMap: Record<string, string> = {
-    목: 'border-[#417e50]/30 bg-[#417e50]/10 text-[#2d5c38]',
-    화: 'border-[#db3c39]/30 bg-[#db3c39]/10 text-[#9c2422]',
-    토: 'border-[#c58e49]/30 bg-[#c58e49]/10 text-[#885a21]',
-    금: 'border-[#707271]/30 bg-[#707271]/10 text-[#4c4e4d]',
-    수: 'border-[#437b99]/30 bg-[#437b99]/10 text-[#2a5b75]',
 };
 
 export function Card({
@@ -154,9 +144,6 @@ export function SajuChart({ result }: { result: BaziResult }) {
                         const jijangganList: JijangganDetail[] = pillar?.jijanggan || (
                             detail?.branch?.jijanggan?.map((ch) => ({ ch })) || []
                         );
-
-                        const ganElemColor = gan?.element ? (elementBgClassMap[gan.element] || 'bg-[#efebe6] text-[#2c221a]') : 'bg-[#efebe6] text-[#2c221a]';
-                        const jiElemColor = ji?.element ? (elementBgClassMap[ji.element] || 'bg-[#efebe6] text-[#2c221a]') : 'bg-[#efebe6] text-[#2c221a]';
 
                         return (
                             <article key={key} className="flex min-w-0 flex-col border-r border-[#eadfd4] last:border-r-0">
@@ -326,7 +313,7 @@ export function XuShiDynamicsCard({ result }: { result: BaziResult }) {
     const data = result.advanced_analysis?.xu_shi_dynamics;
     if (!data) return null;
     return <Card>
-        <CardTitle title="허실(虛實)과 통근 구조" body="천간의 통근 기반과 관계 반영 전후의 상태, 판단 근거를 살펴봅니다." icon={Zap} />
+        <CardTitle title="허실(虛實)과 통근 구조" body="동주 통근의 잠정 판정과 별도로 기록된 지지 관계를 살펴봅니다. 관계의 통근 영향은 미평가입니다." icon={Zap} />
         <XuShiContent data={data} />
     </Card>;
 }
