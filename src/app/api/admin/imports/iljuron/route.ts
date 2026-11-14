@@ -113,17 +113,18 @@ export async function POST(request: NextRequest) {
                         try {
                             const tempLocalDir = path.join(process.cwd(), 'public/temp_thumbs');
                             await fs.mkdir(tempLocalDir, { recursive: true });
-                            const tempThumbPath = path.join(tempLocalDir, `thumb_${destFilename}`);
+                            const thumbFilename = `thumb_${destFilename.replace(/\.png$/, '.jpg')}`;
+                            const tempThumbPath = path.join(tempLocalDir, thumbFilename);
                             
                             await createThumbnailFromFile(imgPath, tempThumbPath);
                             const thumbBuffer = await fs.readFile(tempThumbPath);
-                            const thumbStoragePath = `iljuron/thumbs/thumb_${destFilename}`;
+                            const thumbStoragePath = `iljuron/thumbs/${thumbFilename}`;
 
                             const { error: thumbUploadError } = await supabase
                                 .storage
                                 .from('public-assets')
                                 .upload(thumbStoragePath, thumbBuffer, {
-                                    contentType: 'image/png',
+                                    contentType: 'image/jpeg',
                                     upsert: true
                                 });
 
