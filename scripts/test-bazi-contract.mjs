@@ -151,3 +151,60 @@ test('프록시는 원래 HTTP 오류 상태와 구조화된 본문을 보존한
     assert.ok(calledUrl.includes('sewoon_year=2001'));
     assert.ok(!calledUrl.includes('daewoon_index='));
 });
+
+test('글자별 display 요약(sections, relation_groups)과 관계 presentation을 표시한다', () => {
+    const richGraph = {
+        ...graph,
+        selection: { mode: 'sewoon', daewoon_index: 0, sewoon_year: 2001, daewoon_status: 'selected' },
+        characters: {
+            ...graph.characters,
+            'natal.chart.day.stem': {
+                ...graph.characters['natal.chart.day.stem'],
+                display: {
+                    version: '1.0.0',
+                    title: '원국 일간 甲',
+                    subtitle: '목 · 양 · 일간',
+                    sections: [
+                        { key: 'rooting', title: '통근', items: [{ text: '타주 지원 · 월지 巳', character_ids: ['natal.chart.year.stem'], relation_ids: [], detail_lines: [] }] },
+                    ],
+                    relation_groups: [
+                        { key: 'natal.chart', title: '원국', items: [{ text: '년간 甲 · 투간 ←', character_ids: ['natal.chart.year.stem'], relation_ids: ['r1'], detail_lines: ['원국 년간 甲 → 원국 일간 甲'] }] },
+                        { key: 'sewoon.year_2001', title: '세운 2001 辛巳', items: [{ text: '천간 甲 · 충', character_ids: ['sewoon.year_2001.cycle.stem'], relation_ids: [], detail_lines: [] }] },
+                    ],
+                },
+            },
+            'sewoon.year_2001.cycle.stem': {
+                ...graph.characters['sewoon.year_2001.cycle.stem'],
+                display: {
+                    version: '1.0.0',
+                    title: '세운 천간 甲',
+                    subtitle: '목 · 양 · 비견',
+                    sections: [{ key: 'pillar', title: '기둥 정보', items: [{ text: '운성 · 건록', character_ids: [], relation_ids: [], detail_lines: [] }] }],
+                    relation_groups: [{ key: 'natal.chart', title: '원국', items: [{ text: '일간 甲 · 충', character_ids: ['natal.chart.day.stem'], relation_ids: [], detail_lines: [] }] }],
+                },
+            },
+        },
+        relations: {
+            r1: {
+                ...graph.relations.r1,
+                presentation: {
+                    rule_version: '1.0.0',
+                    title: '원국 일간 甲 · 년간 甲의 관계',
+                    status_label: '탐지',
+                    description: '지장간 투간 설명 문장입니다.',
+                    reasons: [{ code: 'detected_fact', text: '등록 규칙으로 확인한 관계 사실입니다.' }],
+                },
+            },
+        },
+    };
+    const natalText = plain(renderToStaticMarkup(React.createElement(ui.NatalCharacterDetails, { graph: richGraph, error: '' })));
+    assert.ok(natalText.includes('원국 일간 甲'));
+    assert.ok(natalText.includes('타주 지원 · 월지 巳'));
+    assert.ok(natalText.includes('년간 甲 · 투간 ←'));
+    assert.ok(natalText.includes('지장간 투간 설명 문장입니다.'));
+
+    const cycleText = plain(renderToStaticMarkup(React.createElement(ui.CycleRelations, { graph: richGraph, error: '', loading: false })));
+    assert.ok(cycleText.includes('세운 천간 甲'));
+    assert.ok(cycleText.includes('운성 · 건록'));
+    assert.ok(cycleText.includes('세운 2001 辛巳'));
+});

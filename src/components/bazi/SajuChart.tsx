@@ -8,14 +8,20 @@ import {
     Star,
     Briefcase,
     Zap,
+    X,
 } from 'lucide-react';
 import type {
     BaziAuthStatus,
+    BaziCharacter,
+    BaziCharacterDisplayItem,
+    BaziCharacterGraph,
+    BaziRelation,
     BaziResult,
     PillarKey,
     JijangganDetail,
 } from './types';
 import { XuShiContent, BinZhuContent } from './DynamicsDetails';
+import { relationName } from './relation-labels';
 import { getStoredUserId } from '@/utils/supabase/client';
 
 const pillarMeta: Record<PillarKey, { title: string; ganTenGodKey?: string; jiTenGodKey: string }> = {
@@ -85,11 +91,48 @@ export function CardTitle({
     );
 }
 
-export function SajuChart({ result }: { result: BaziResult }) {
+const positionLabelByCode: Record<string, string> = {
+    year: '년',
+    month: '월',
+    day: '일',
+    hour: '시',
+    cycle: '운',
+};
+
+function formatCharNodeLabel(graph: BaziCharacterGraph, id: string) {
+    const character = graph.characters[id];
+    if (!character) return id;
+    if (character.display?.title) return character.display.title;
+    const context = graph.contexts[character.context_id];
+    const scope = context?.scope === 'natal' ? '원국' : context?.label || character.context_id;
+    return `${scope} ${positionLabelByCode[character.position] || character.position}${character.kind === 'stem' ? '천간' : '지지'} ${character.char}`;
+}
+
+export function SajuChart({
+    result,
+    characterGraph = null,
+    characterGraphError = '',
+}: {
+    result: BaziResult;
+    characterGraph?: BaziCharacterGraph | null;
+    characterGraphError?: string;
+}) {
+    const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
     const pillars = result.four_pillars;
     const tenGods = result.ten_gods || {};
     const specialStarsByPillar = result.advanced_analysis?.special_stars_by_pillar || {};
     const details = result.analysis?.details || {};
+
+    useEffect(() => {
+        setSelectedCharId(null);
+    }, [result]);
+
+    const toggleCharacter = (id: string) => {
+        setSelectedCharId((prev) => (prev === id ? null : id));
+    };
+
+    const selectedCharacter: BaziCharacter | undefined =
+        selectedCharId && characterGraph ? characterGraph.characters[selectedCharId] : undefined;
 
     return (
         <Card className="xl:col-span-2">
@@ -103,8 +146,9 @@ export function SajuChart({ result }: { result: BaziResult }) {
                 {/* Header Row: Pillar Names & Top Stars */}
                 <div className="grid grid-cols-4 border-b border-[#eadfd4] text-center bg-[#faf4ec]">
                     {pillarOrder.map((key) => {
-                        const stars = specialStarsByPillar[key] || (key === 'time' ? specialStarsByPillar.hour : []) || [];
-                        const ganTenGod = pillarMeta[key].ganTenGodKey ? tenGods[pillarMeta[key].ganTenGodKey] : '일간(본인)';
+                        const pillar = pillars?.[key] || (key === 'time' ? pillars?.hour : undefined);
+                        const stars = specialStarsByPillar[key] || (key === 'time' ? specialStarsByPillar.hour : undefined) || pillar?.special_stars || [];
+                        const ganTenGod = pillarMeta[key].ganTenGodKey ? (tenGods[pillarMeta[key].ganTenGodKey] || pillar?.gan?.ten_god) : '일간(본인)';
 
                         return (
                             <div key={key} className="flex flex-col justify-between border-r border-[#eadfd4] p-3 last:border-r-0 lg:p-4">
@@ -134,11 +178,18 @@ export function SajuChart({ result }: { result: BaziResult }) {
                 {/* Main 4-Pillars Grid */}
                 <div className="grid grid-cols-4 text-center">
                     {pillarOrder.map((key) => {
+                        const posKey = detailKeyByPillar[key];
+                        const stemId = `natal.chart.${posKey}.stem`;
+                        const branchId = `natal.chart.${posKey}.branch`;
+                        const isStemSelected = selectedCharId === stemId;
+                        const isBranchSelected = selectedCharId === branchId;
+
                         const pillar = pillars?.[key] || (key === 'time' ? pillars?.hour : undefined);
-                        const detail = details[detailKeyByPillar[key]];
+                        const detail = details[posKey];
                         const gan = pillar?.gan;
                         const ji = pillar?.ji;
                         const unseong = pillar?.unseong || detail?.stem?.unseong;
+                        const unseongSelf = pillar?.unseong_self;
 
                         // Jijanggan list: prefer rich objects from pillar, fall back to string list from details
                         const jijangganList: JijangganDetail[] = pillar?.jijanggan || (
@@ -148,7 +199,17 @@ export function SajuChart({ result }: { result: BaziResult }) {
                         return (
                             <article key={key} className="flex min-w-0 flex-col border-r border-[#eadfd4] last:border-r-0">
                                 {/* Heavenly Stem (천간) */}
-                                <div className="border-b border-[#eadfd4] bg-white/70 p-3 lg:p-5">
+                                <button
+                                    type="button"
+                                    onClick={() => toggleCharacter(stemId)}
+                                    aria-pressed={isStemSelected}
+                                    aria-label={`${pillarMeta[key].title} 천간 ${gan?.ch || ''} 상세 보기`}
+                                    className={`group relative w-full border-b border-[#eadfd4] p-3 text-center transition lg:p-5 ${
+                                        isStemSelected
+                                            ? 'bg-[#fbf0e1] ring-2 ring-inset ring-[#b57d43]'
+                                            : 'bg-white/70 hover:bg-[#fdf5ea]'
+                                    }`}
+                                >
                                     <div className="mx-auto flex w-fit items-center gap-1.5">
                                         {gan?.element && (
                                             <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${elementColorClassMap[gan.element] || 'bg-neutral-600 text-white'}`}>
@@ -160,17 +221,27 @@ export function SajuChart({ result }: { result: BaziResult }) {
                                         )}
                                     </div>
                                     <div className="mt-2">
-                                        <p className="font-serif text-3xl font-bold leading-none text-[#15110d] lg:text-[3.25rem]">
+                                        <p className="font-serif text-3xl font-bold leading-none text-[#15110d] transition group-hover:text-[#7c4f20] lg:text-[3.25rem]">
                                             {gan?.ch || '-'}
                                         </p>
                                         {gan?.kr && (
                                             <p className="mt-1 text-xs font-semibold text-[#837264] lg:text-sm">({gan.kr})</p>
                                         )}
                                     </div>
-                                </div>
+                                </button>
 
                                 {/* Earthly Branch (지지) */}
-                                <div className="border-b border-[#eadfd4] bg-white/70 p-3 lg:p-5">
+                                <button
+                                    type="button"
+                                    onClick={() => toggleCharacter(branchId)}
+                                    aria-pressed={isBranchSelected}
+                                    aria-label={`${pillarMeta[key].title} 지지 ${ji?.ch || ''} 상세 보기`}
+                                    className={`group relative w-full border-b border-[#eadfd4] p-3 text-center transition lg:p-5 ${
+                                        isBranchSelected
+                                            ? 'bg-[#fbf0e1] ring-2 ring-inset ring-[#b57d43]'
+                                            : 'bg-white/70 hover:bg-[#fdf5ea]'
+                                    }`}
+                                >
                                     <div className="mx-auto flex w-fit items-center gap-1.5">
                                         {ji?.element && (
                                             <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold ${elementColorClassMap[ji.element] || 'bg-neutral-600 text-white'}`}>
@@ -182,24 +253,33 @@ export function SajuChart({ result }: { result: BaziResult }) {
                                         )}
                                     </div>
                                     <div className="mt-2">
-                                        <p className="font-serif text-3xl font-bold leading-none text-[#15110d] lg:text-[3.25rem]">
+                                        <p className="font-serif text-3xl font-bold leading-none text-[#15110d] transition group-hover:text-[#7c4f20] lg:text-[3.25rem]">
                                             {ji?.ch || '-'}
                                         </p>
                                         {ji?.kr && (
                                             <p className="mt-1 text-xs font-semibold text-[#837264] lg:text-sm">({ji.kr})</p>
                                         )}
                                     </div>
-                                </div>
+                                </button>
 
                                 {/* Ten God (지지 십성) & 12 Unseong */}
                                 <div className="border-b border-[#eadfd4] bg-[#fbf7f1] px-2 py-2.5">
                                     <p className="text-xs font-bold text-[#8a6245] lg:text-sm">
-                                        {tenGods[pillarMeta[key].jiTenGodKey] || '-'}
+                                        {tenGods[pillarMeta[key].jiTenGodKey] || ji?.ten_god || '-'}
                                     </p>
-                                    {unseong && (
-                                        <span className="mt-1.5 inline-block rounded border border-[#d6beaa] bg-[#fffcf8] px-2 py-0.5 text-xs font-semibold text-[#735339]">
-                                            {unseong}
-                                        </span>
+                                    {(unseong || unseongSelf) && (
+                                        <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1">
+                                            {unseong && (
+                                                <span className="inline-block rounded border border-[#d6beaa] bg-[#fffcf8] px-2 py-0.5 text-xs font-semibold text-[#735339]">
+                                                    {unseong}
+                                                </span>
+                                            )}
+                                            {unseongSelf && (
+                                                <span className="inline-block rounded border border-[#e5d6c5] bg-[#f8f1e7] px-1.5 py-0.5 text-[11px] font-medium text-[#876b52]" title="자좌 12운성">
+                                                    자좌 {unseongSelf}
+                                                </span>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
 
@@ -244,67 +324,297 @@ export function SajuChart({ result }: { result: BaziResult }) {
                     })}
                 </div>
             </div>
+
+            {/* Subtle Click Hint Bar when collapsed */}
+            {!selectedCharId && (
+                <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-[#eadccd] bg-[#fbf6ef] px-3.5 py-2 text-xs text-[#6f5f50] sm:text-sm">
+                    <span>
+                        💡 사주 정국 표의 <strong className="font-semibold text-[#4c3928]">천간·지지 한자</strong>를 클릭하면 해당 글자의 통근·투간·원국 합충 요약을 바로 확인할 수 있습니다.
+                    </span>
+                </div>
+            )}
+
+            {/* Collapsible Character Summary Drawer when a character cell is clicked */}
+            {selectedCharId && (
+                <div className="mt-3.5 rounded-xl border border-[#dec7ae] bg-[#fbf6ef] p-4 shadow-sm">
+                    {characterGraphError ? (
+                        <div className="flex items-center justify-between gap-3 text-sm text-[#9a462d]">
+                            <p>{characterGraphError}</p>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedCharId(null)}
+                                className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[#d9c3ac] bg-white px-2.5 py-1 text-xs font-semibold text-[#5c4938] hover:bg-[#f5ebe0]"
+                            >
+                                닫기 <X className="h-3.5 w-3.5" />
+                            </button>
+                        </div>
+                    ) : !characterGraph || !selectedCharacter ? (
+                        <div className="flex items-center justify-between gap-3 text-sm text-[#78695c]">
+                            <p>선택한 글자의 상세 요약 정보를 불러오는 중입니다...</p>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedCharId(null)}
+                                className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[#d9c3ac] bg-white px-2.5 py-1 text-xs font-semibold text-[#5c4938] hover:bg-[#f5ebe0]"
+                            >
+                                닫기 <X className="h-3.5 w-3.5" />
+                            </button>
+                        </div>
+                    ) : (
+                        <SelectedCharacterDrawer
+                            graph={characterGraph}
+                            characterId={selectedCharId}
+                            character={selectedCharacter}
+                            onSelectCharacter={setSelectedCharId}
+                            onClose={() => setSelectedCharId(null)}
+                        />
+                    )}
+                </div>
+            )}
         </Card>
+    );
+}
+
+function SelectedCharacterDrawer({
+    graph,
+    characterId,
+    character,
+    onSelectCharacter,
+    onClose,
+}: {
+    graph: BaziCharacterGraph;
+    characterId: string;
+    character: BaziCharacter;
+    onSelectCharacter: (id: string) => void;
+    onClose: () => void;
+}) {
+    const display = character.display;
+    const element = character.attributes?.element;
+    const sections = display?.sections || [];
+    const relationGroups = display?.relation_groups || [];
+
+    const renderSummaryItem = (item: BaziCharacterDisplayItem, idx: number) => {
+        const linkedRelations = (item.relation_ids || [])
+            .map((id) => graph.relations[id])
+            .filter((rel): rel is BaziRelation => Boolean(rel));
+        const jumpTargets = (item.character_ids || []).filter(
+            (targetId) => targetId !== characterId && Boolean(graph.characters[targetId]),
+        );
+
+        return (
+            <div key={`${item.text}-${idx}`} className="rounded-lg border border-[#eadccf] bg-white/95 px-3 py-2 text-xs leading-5 sm:text-[13px]">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="font-semibold text-[#35281e]">{item.text}</span>
+                    {jumpTargets.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-1">
+                            {jumpTargets.map((targetId) => {
+                                const target = graph.characters[targetId];
+                                if (!target || target.context_id !== 'natal.chart') return null;
+                                return (
+                                    <button
+                                        key={targetId}
+                                        type="button"
+                                        onClick={() => onSelectCharacter(targetId)}
+                                        className="rounded border border-[#d9c3ac] bg-[#faf3eb] px-2 py-0.5 text-[11px] font-semibold text-[#7b522a] transition hover:bg-[#efe1d1]"
+                                    >
+                                        {positionLabelByCode[target.position] || target.position}{target.kind === 'stem' ? '간' : '지'} {target.char} 보기
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+                {!!item.detail_lines?.length && (
+                    <div className="mt-1 space-y-0.5 text-xs text-[#756557]">
+                        {item.detail_lines.map((line, lineIdx) => (
+                            <p key={lineIdx}>{line}</p>
+                        ))}
+                    </div>
+                )}
+                {linkedRelations.some((rel) => rel.presentation?.description) && (
+                    <div className="mt-1 space-y-0.5 border-t border-[#f2e8de] pt-1 text-xs text-[#665648]">
+                        {linkedRelations.map((rel) =>
+                            rel.presentation?.description ? (
+                                <p key={rel.relation_id}>{rel.presentation.description}</p>
+                            ) : null,
+                        )}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    return (
+        <div className="space-y-3">
+            {/* Header */}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e6d6c5] pb-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                    {element && (
+                        <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${elementColorClassMap[element] || 'bg-neutral-600 text-white'}`}>
+                            {element}
+                        </span>
+                    )}
+                    <h4 className="font-serif text-lg font-bold text-[#2a2018] sm:text-xl">
+                        {display?.title || formatCharNodeLabel(graph, characterId)}
+                    </h4>
+                    <span className="rounded-md bg-[#ede0d1] px-2.5 py-0.5 text-xs font-semibold text-[#69492a] sm:text-sm">
+                        {display?.subtitle || [character.attributes?.element, character.attributes?.yin_yang, character.attributes?.ten_god].filter(Boolean).join(' · ')}
+                    </span>
+                    {character.pillar_attributes?.unseong && (
+                        <span className="rounded border border-[#d6beaa] bg-white px-2 py-0.5 text-xs font-semibold text-[#735339]">
+                            12운성: {character.pillar_attributes.unseong}
+                            {character.pillar_attributes.unseong_self ? ` · 자좌 ${character.pillar_attributes.unseong_self}` : ''}
+                        </span>
+                    )}
+                    {character.rooting && (
+                        <span className="rounded border border-[#d6beaa] bg-white px-2 py-0.5 text-xs font-semibold text-[#685748]">
+                            동주 통근: {character.rooting.current_status}
+                        </span>
+                    )}
+                </div>
+
+                <button
+                    type="button"
+                    onClick={onClose}
+                    className="inline-flex items-center gap-1 rounded-md border border-[#d8c3ad] bg-white px-2.5 py-1 text-xs font-semibold text-[#5c4938] transition hover:bg-[#f3e8dc]"
+                >
+                    닫기 <X className="h-3.5 w-3.5" />
+                </button>
+            </div>
+
+            {/* Sections (통근 / 묘고 / 지장간 투간 / 기둥 정보) */}
+            {sections.length > 0 && (
+                <div className={`grid gap-2.5 ${sections.length > 1 ? 'md:grid-cols-2' : ''}`}>
+                    {sections.map((section) => (
+                        <div key={section.key} className="rounded-lg border border-[#e6d6c6] bg-[#fffcf8] p-3">
+                            <div className="mb-2 flex items-center justify-between">
+                                <span className="inline-flex items-center rounded bg-[#ede0d1] px-2 py-0.5 text-xs font-bold text-[#69492a]">
+                                    {section.title}
+                                </span>
+                                {section.key === 'storehouse' && (
+                                    <span className="text-xs font-semibold text-[#9a6738]">묘고(墓庫)</span>
+                                )}
+                            </div>
+                            <div className="space-y-1.5">
+                                {section.items.map((item, idx) => renderSummaryItem(item, idx))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Relation Groups (원국 합·충·형·파·해·투간 요약) */}
+            {relationGroups.length > 0 ? (
+                <div className="space-y-2.5">
+                    {relationGroups.map((group) => (
+                        <div key={group.key} className="rounded-lg border border-[#e6d6c6] bg-[#fffcf8] p-3">
+                            <div className="mb-2 flex items-center justify-between">
+                                <span className="text-xs font-bold text-[#69492a] sm:text-sm">
+                                    {group.title} 관계 요약 ({group.items.length}건)
+                                </span>
+                            </div>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                                {group.items.map((item, idx) => renderSummaryItem(item, idx))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <p className="rounded-lg border border-[#e6d6c6] bg-[#fffcf8] px-3 py-2 text-xs text-[#78695c] sm:text-sm">
+                    이 글자에 직접 연결된 원국 관계 요약 항목이 없습니다.
+                </p>
+            )}
+
+            {/* Optional Fallback / Raw Relation List if display is absent */}
+            {!display && character.relation_ids.length > 0 && (
+                <div className="rounded-lg border border-[#e6d6c6] bg-[#fffcf8] p-3 text-xs sm:text-sm">
+                    <p className="mb-2 font-bold text-[#69492a]">연결된 관계 ({character.relation_ids.length}건)</p>
+                    <ul className="divide-y divide-[#eadfd4]">
+                        {character.relation_ids.map((relId) => {
+                            const rel = graph.relations[relId];
+                            if (!rel) return null;
+                            return (
+                                <li key={relId} className="py-1.5 text-[#514030]">
+                                    <strong>{relationName(rel.type)}</strong> ·{' '}
+                                    {rel.participants.map((p) => formatCharNodeLabel(graph, p)).join(' · ')}
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </div>
+            )}
+        </div>
     );
 }
 
 export function SpecialStarsCard({ result }: { result: BaziResult }) {
     const specialStars = result.advanced_analysis?.special_stars || [];
 
-    if (specialStars.length === 0) return null;
-
     return (
-        <Card className="xl:col-span-2">
+        <Card>
             <CardTitle
                 title="타고난 신살 및 길신 (神殺 · 吉神)"
-                body="사주 원국에 깃든 고유한 재능, 잠재력 및 보호 작용을 해석합니다."
+                body="사주 원국에 깃든 고유한 재능, 잠재력 및 보호 작용의 전통적 상징입니다."
                 icon={Star}
                 badge={`총 ${specialStars.length}개 발견`}
             />
 
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {specialStars.map((star, index) => {
-                    const isLucky = star.type?.includes('길신') || star.name.includes('귀인');
-                    const isSpecial = star.type?.includes('특수');
+            {specialStars.length === 0 ? (
+                <div className="mt-5 rounded-lg border border-[#eee2d6] bg-[#fcf8f3] p-4 text-sm text-[#6f6257]">
+                    원국에서 등록 기준에 해당하는 주요 신살·길신이 탐지되지 않았습니다.
+                </div>
+            ) : (
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {specialStars.map((star, index) => {
+                        const isLucky = star.type?.includes('길신') || star.name.includes('귀인');
+                        const isSpecial = star.type?.includes('특수');
+                        const basisText = star.basis?.map(b => b.display_name || `${b.pillar || ''} ${b.char || ''}`.trim()).filter(Boolean).join(' · ');
 
-                    return (
-                        <div
-                            key={`${star.name}-${index}`}
-                            className="flex flex-col justify-between rounded-lg border border-[#eee2d6] bg-[#fcf8f3] p-4 transition hover:border-[#d9be9e] hover:shadow-sm"
-                        >
-                            <div>
-                                <div className="flex items-start justify-between gap-2">
-                                    <div className="flex items-center gap-2">
-                                        <span className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-                                            isLucky
-                                                ? 'bg-[#417e50]/20 text-[#2d5c38]'
-                                                : isSpecial
-                                                ? 'bg-[#c58e49]/20 text-[#885a21]'
-                                                : 'bg-[#9a4b34]/20 text-[#9a4b34]'
-                                        }`}>
-                                            {isLucky ? '吉' : isSpecial ? '特' : '殺'}
-                                        </span>
-                                        <h4 className="font-serif text-lg font-bold text-[#2a2018]">{star.name}</h4>
+                        return (
+                            <div
+                                key={`${star.name}-${index}`}
+                                className="flex flex-col justify-between rounded-lg border border-[#eee2d6] bg-[#fcf8f3] p-4 transition hover:border-[#d9be9e] hover:shadow-sm"
+                            >
+                                <div>
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                                                isLucky
+                                                    ? 'bg-[#417e50]/20 text-[#2d5c38]'
+                                                    : isSpecial
+                                                    ? 'bg-[#c58e49]/20 text-[#885a21]'
+                                                    : 'bg-[#9a4b34]/20 text-[#9a4b34]'
+                                            }`}>
+                                                {isLucky ? '吉' : isSpecial ? '特' : '殺'}
+                                            </span>
+                                            <h4 className="font-serif text-lg font-bold text-[#2a2018]">{star.name}</h4>
+                                        </div>
+                                        {star.position && (
+                                            <span className="rounded bg-[#eee3d6] px-2 py-0.5 text-xs font-semibold text-[#665445]">
+                                                {star.position} ({star.char})
+                                            </span>
+                                        )}
                                     </div>
-                                    {star.position && (
-                                        <span className="rounded bg-[#eee3d6] px-2 py-0.5 text-xs font-semibold text-[#665445]">
-                                            {star.position} ({star.char})
-                                        </span>
-                                    )}
+
+                                    <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+                                        {star.type && (
+                                            <span className="font-semibold text-[#a26e3c]">{star.type}</span>
+                                        )}
+                                        {basisText && (
+                                            <span className="rounded border border-[#e5d6c5] bg-white/80 px-1.5 py-0.5 text-[11px] font-medium text-[#756557]">
+                                                산출 기준: {basisText}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    <p className="mt-2 break-keep text-sm leading-6 text-[#5e5043]">
+                                        {star.description || '고유한 기운과 특징을 나타냅니다.'}
+                                    </p>
                                 </div>
-
-                                {star.type && (
-                                    <p className="mt-2 text-xs font-semibold text-[#a26e3c]">{star.type}</p>
-                                )}
-
-                                <p className="mt-2 break-keep text-sm leading-6 text-[#5e5043]">
-                                    {star.description || '고유한 기운과 특징을 나타냅니다.'}
-                                </p>
                             </div>
-                        </div>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
+            )}
         </Card>
     );
 }

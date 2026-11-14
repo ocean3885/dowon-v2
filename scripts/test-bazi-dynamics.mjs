@@ -143,6 +143,20 @@ test('참여 정보 없는 all을 임의의 네 기둥으로 바꾸지 않는다
 });
 
 const responsePath = process.argv[2];
+test('v4 빈주 응답의 영역별 간지 구성과 교차 관계 요약을 표시한다', () => {
+    const html = plain(render(BinZhuContent, { data: {
+        rule_version: '4.0.0',
+        guest_structure: { scope: '년주·월주', elements: { year: { stem: '년간 庚(비견)', branch: '년지 午(정관)' } } },
+        host_structure: { scope: '일주·시주', elements: { day: { stem: '일간 庚(일간)', branch: '일지 辰(편인)' } } },
+        guest_host_links: [{ relation_id: 'r1', detail: '빈 년지 午(정관) ↔ 주 시지 未(정인): 육합(六合) 관계가 있습니다.', is_adjacent: false, activation_status: 'detected' }],
+        group_connections: [],
+    } }));
+    assert.ok(html.includes('년간 庚(비견)'));
+    assert.ok(html.includes('일지 辰(편인)'));
+    assert.ok(html.includes('빈–주 교차 관계 요약'));
+    assert.ok(html.includes('육합(六合) 관계가 있습니다'));
+});
+
 test('실제 API 응답의 분석 영역을 오류 없이 렌더링한다', { skip: !responsePath }, () => {
     const result = JSON.parse(fs.readFileSync(responsePath, 'utf8'));
     const advanced = result.advanced_analysis;
@@ -150,6 +164,10 @@ test('실제 API 응답의 분석 영역을 오류 없이 렌더링한다', { sk
     const bin = plain(render(BinZhuContent, { data: advanced.bin_zhu_dynamics }));
     const interactions = plain(render(InteractionDetails, { matrix: advanced.interactions.matrix }));
     assert.ok(xu.includes(advanced.xu_shi_dynamics.overall_status));
-    assert.ok(bin.includes(advanced.bin_zhu_dynamics.control_flow.direction));
+    if (advanced.bin_zhu_dynamics.control_flow?.direction) {
+        assert.ok(bin.includes(advanced.bin_zhu_dynamics.control_flow.direction));
+    } else if (advanced.bin_zhu_dynamics.guest_structure?.scope) {
+        assert.ok(bin.includes(advanced.bin_zhu_dynamics.guest_structure.scope));
+    }
     for (const item of advanced.interactions.matrix) assert.ok(interactions.includes(item.name));
 });

@@ -377,8 +377,10 @@ export function buildBaziPromptContext(result: BaziResult): Record<string, strin
     const fiveElementsCounts = fe?.counts
         ? Object.entries(fe.counts).map(([k, v]) => `${k}: ${v}개`).join(', ')
         : '-';
-    const dominantElement = fe?.dominant?.length ? fe.dominant.join(', ') : '없음';
-    const deficientElement = fe?.deficient?.length ? fe.deficient.join(', ') : '없음';
+    const dominantList = fe?.frequent_elements || fe?.dominant || [];
+    const deficientList = fe?.absent_elements || fe?.deficient || [];
+    const dominantElement = dominantList.length ? dominantList.join(', ') : '없음';
+    const deficientElement = deficientList.length ? deficientList.join(', ') : '없음';
 
     // Advanced analysis: Special stars
     const stars = result.advanced_analysis?.special_stars || [];
@@ -390,18 +392,26 @@ export function buildBaziPromptContext(result: BaziResult): Record<string, strin
 
     // Advanced analysis: Interactions & Climate
     const inter = result.advanced_analysis?.interactions;
+    const fallbackInteractionLines = [
+        ...(result.analysis?.summary?.branch_interactions || []),
+        ...(result.analysis?.summary?.stem_interactions || []),
+    ];
     const interactionsSummary = inter?.summary_list?.length
         ? inter.summary_list.map((item) => `• ${item}`).join('\n')
-        : '-';
+        : fallbackInteractionLines.length
+            ? fallbackInteractionLines.map((item) => `• ${item}`).join('\n')
+            : '-';
     const climate = inter?.climate
         ? `${inter.climate} (긴장도: ${inter.tension_score ?? '-'}, 조화도: ${inter.harmony_score ?? '-'})`
-        : '-';
+        : result.analysis?.summary?.rooting_summary || '-';
 
     // Advanced analysis: Bin-Zhu & Xu-Shi dynamics
-    const bz = result.advanced_analysis?.bin_zhu_dynamics?.control_flow;
+    const binZhu = result.advanced_analysis?.bin_zhu_dynamics;
+    const bz = binZhu?.control_flow;
     const careerAdvice = bz?.career_advice || '-';
-    const binZhuMeaning = bz?.summary_meaning || '-';
-    const binZhuDirection = bz?.direction || '-';
+    const binZhuLinksSummary = binZhu?.guest_host_links?.map((l) => l.detail || l.type).filter(Boolean).join(' / ');
+    const binZhuMeaning = bz?.summary_meaning || binZhuLinksSummary || '-';
+    const binZhuDirection = bz?.direction || (binZhu?.guest_host_links?.length ? `빈–주 연결 통로 ${binZhu.guest_host_links.length}건` : '-');
     const xuShiDynamics = result.advanced_analysis?.xu_shi_dynamics?.overall_status || '-';
 
     // Advanced analysis: AI prompts

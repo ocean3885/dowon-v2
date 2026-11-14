@@ -34,18 +34,33 @@ export type PillarStructure = {
     unseong?: string;
     unseong_self?: string;
     jijanggan?: JijangganDetail[];
+    special_stars?: string[];
 };
 
 export type FiveElementsAnalysis = {
+    distribution_basis?: string;
+    score_meaning?: string;
     counts?: Record<string, number>;
     percentages?: Record<string, number>;
     scores?: Record<string, number>;
+    frequent_elements?: string[];
+    absent_elements?: string[];
     dominant?: string[];
     deficient?: string[];
     summary?: string;
 };
 
+export type SpecialStarBasisItem = {
+    pillar?: string;
+    kind?: string;
+    char?: string;
+    display_name?: string;
+};
+
 export type SpecialStar = {
+    rule_id?: string;
+    basis?: SpecialStarBasisItem[];
+    interpretation_scope?: string;
     name: string;
     pillar?: string;
     position?: string;
@@ -164,6 +179,7 @@ export type BaziResult = {
             branch_interactions?: string[];
             stem_interactions?: string[];
             total_energy_balance?: string;
+            rooting_summary?: string;
         };
         details?: Partial<Record<PillarDetailKey, PillarDetail>>;
     };
@@ -179,22 +195,57 @@ export type BaziResult = {
             harmony_score?: number;
             climate?: string;
         };
+        branch_dynamics?: BranchDynamics;
         xu_shi_dynamics?: XuShiDynamics;
         bin_zhu_dynamics?: BinZhuDynamics;
         ai_consultation_prompts?: string[];
     };
 };
 
+export type BranchStrengthItem = {
+    branch?: string;
+    element?: string;
+    base_power?: number;
+    after_stem_power?: number;
+    effective_power?: number;
+    stem_branch_relation?: {
+        stem?: string;
+        stem_element?: string;
+        relation?: string;
+        branch_effect?: string;
+        adjustment?: number;
+    };
+    components?: {
+        position_weight?: number;
+        seasonal_factor?: number;
+        stem_adjustment_ratio?: number;
+    };
+};
+
+export type BranchDynamics = {
+    rule_profile?: string;
+    rule_version?: string;
+    scope?: string;
+    score_meaning?: string;
+    branch_strengths?: Partial<Record<PillarDetailKey, BranchStrengthItem>>;
+};
+
 export type PillarDetail = {
     stem?: {
         char?: string;
+        position?: string;
         score?: number;
         status?: string;
         unseong?: string;
         root_info?: RootInfo[];
+        root_scope?: string;
+        same_pillar_root_exists?: boolean;
+        external_support_score?: number;
+        external_support_info?: RootInfo[];
     };
     branch?: {
         char?: string;
+        storehouse?: { type?: string; stored_element?: string } | null;
         jijanggan?: string[];
         transmitted?: StemInfo[];
         hidden?: StemInfo[];
@@ -238,6 +289,33 @@ export type DaewoonItem = {
     unseong?: string;
 };
 
+export type BaziCharacterDisplayItem = {
+    text: string;
+    character_ids?: string[];
+    relation_ids?: string[];
+    detail_lines?: string[];
+};
+
+export type BaziCharacterDisplayGroup = {
+    key: string;
+    title: string;
+    items: BaziCharacterDisplayItem[];
+};
+
+export type BaziCharacterDisplaySection = {
+    key: string;
+    title: string;
+    items: BaziCharacterDisplayItem[];
+};
+
+export type BaziCharacterDisplay = {
+    version?: string;
+    title?: string;
+    subtitle?: string;
+    relation_groups?: BaziCharacterDisplayGroup[];
+    sections?: BaziCharacterDisplaySection[];
+};
+
 export type BaziCharacter = {
     context_id: string;
     position: string;
@@ -258,9 +336,40 @@ export type BaziCharacter = {
         validation_status: string;
         root_impact_status: string;
         root_impact_score: number | null;
+        reason?: string;
+        transition_reasons?: string[];
     } | null;
     relation_ids: string[];
     transmission_relation_ids: string[];
+    display?: BaziCharacterDisplay;
+};
+
+export type BaziRelationReason = {
+    code?: string;
+    category?: string;
+    text?: string;
+    character_ids?: string[];
+    relation_ids?: string[];
+};
+
+export type BaziRelationPresentation = {
+    rule_version?: string;
+    title?: string;
+    status_label?: string;
+    description?: string;
+    reasons?: BaziRelationReason[];
+    explanation_status?: string;
+};
+
+export type BaziRelationParticipantDetail = {
+    character_id?: string;
+    context_id?: string;
+    scope?: string;
+    position?: string;
+    kind?: 'stem' | 'branch';
+    char?: string;
+    ten_god?: string;
+    display_name?: string;
 };
 
 export type BaziRelation = {
@@ -274,6 +383,8 @@ export type BaziRelation = {
     candidate_element?: string | null;
     hidden_stem?: string | null;
     formation_candidates?: string[][];
+    participant_details?: BaziRelationParticipantDetail[];
+    presentation?: BaziRelationPresentation;
 };
 
 export type BaziCharacterGraph = {
@@ -296,6 +407,7 @@ export type BaziCharacterGraph = {
 export type XuShiDynamics = {
     analysis_scope?: string;
     rule_version?: string;
+    root_scope?: string;
     pillars?: Record<string, XuShiPillarInfo>;
     real_count?: number;
     transformed_empty_count?: number;
@@ -321,6 +433,13 @@ export type XuShiDynamics = {
     }>;
 };
 
+export type BinZhuEndpoint = {
+    pillar?: string;
+    char?: string;
+    ten_god?: string;
+    display_name?: string;
+};
+
 export type BinZhuDynamics = {
     rule_version?: string;
     interaction_scope?: string;
@@ -330,18 +449,27 @@ export type BinZhuDynamics = {
     pairwise_scores?: { combination?: number; conflict?: number };
     guest_host_links?: Array<{
         relation_id?: string | null;
+        category?: string;
         type?: string;
+        participants?: string[];
         detail?: string;
         target_guest?: string;
         source_host?: string;
+        guest?: BinZhuEndpoint;
+        host?: BinZhuEndpoint;
+        activation_status?: string;
+        distance?: number;
+        is_adjacent?: boolean;
     }>;
     group_connections?: Array<{
         relation_id?: string | null;
         type?: string;
         participants?: string[];
+        formations?: string[][];
         guest_participants?: string[];
         host_participants?: string[];
         included_in_score?: boolean;
+        activation_status?: string;
         description?: string;
     }>;
     excluded_interactions?: Array<InteractionMatrixItem & { reason_code?: string }>;
