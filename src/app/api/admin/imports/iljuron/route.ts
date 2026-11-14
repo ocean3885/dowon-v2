@@ -11,11 +11,12 @@ export async function POST(request: NextRequest) {
         const supabase = await createAdminClient();
 
         // 1. Ensure Category "일주론" exists
-        let { data: category, error: catError } = await supabase
+        const { data: categoryData, error: catError } = await supabase
             .from('categories')
             .select('*')
             .eq('name', '일주론')
             .single();
+        let category = categoryData;
 
         if (catError && catError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
             console.error('Error fetching category:', catError);

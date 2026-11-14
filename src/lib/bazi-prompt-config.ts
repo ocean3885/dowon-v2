@@ -179,10 +179,11 @@ export async function getBaziPromptSavedVersions(adminSupabase: SupabaseClient):
         return [];
     }
 
-    return (data.value as any[])
-        .filter((item) => item && typeof item === 'object')
+    const savedVersions: unknown[] = data.value;
+    return savedVersions
+        .filter(isObject)
         .map((item) => ({
-            id: getString(item.id, item.version || 'v1'),
+            id: getString(item.id, getString(item.version, 'v1')),
             version: getString(item.version, 'v1'),
             name: getString(item.name, '버전'),
             description: getString(item.description, ''),

@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { Jimp, JimpMime } from 'jimp';
+import sharp from 'sharp';
 
 const DEFAULT_THUMBNAIL_WIDTH = 320;
 const DEFAULT_THUMBNAIL_HEIGHT = 320;
@@ -26,38 +26,28 @@ export function getPublicFilePath(assetPath: string) {
     return path.join(process.cwd(), 'public', normalizeAssetPath(assetPath));
 }
 
-type JimpImage = Awaited<ReturnType<typeof Jimp.read>>;
-
-async function writeThumbnail(image: JimpImage, thumbnailPath: string, options: ThumbnailOptions = {}) {
+async function renderThumbnail(source: Buffer | string, options: ThumbnailOptions = {}): Promise<Buffer> {
     const width = options.width ?? DEFAULT_THUMBNAIL_WIDTH;
     const height = options.height ?? DEFAULT_THUMBNAIL_HEIGHT;
     const quality = options.quality ?? DEFAULT_THUMBNAIL_QUALITY;
 
-    image.cover({ w: width, h: height });
+    return sharp(source).resize(width, height, { fit: 'cover' }).jpeg({ quality }).toBuffer();
+}
 
-    const outputBuffer = await image.getBuffer(JimpMime.jpeg, { quality });
-
+async function writeThumbnail(source: Buffer | string, thumbnailPath: string, options?: ThumbnailOptions) {
+    const outputBuffer = await renderThumbnail(source, options);
     await fs.mkdir(path.dirname(thumbnailPath), { recursive: true });
     await fs.writeFile(thumbnailPath, outputBuffer);
 }
 
 export async function createThumbnailFromBuffer(sourceBuffer: Buffer, thumbnailPath: string, options?: ThumbnailOptions) {
-    const image = await Jimp.read(sourceBuffer);
-    await writeThumbnail(image, thumbnailPath, options);
+    await writeThumbnail(sourceBuffer, thumbnailPath, options);
 }
 
 export async function createThumbnailFromFile(sourcePath: string, thumbnailPath: string, options?: ThumbnailOptions) {
-    const image = await Jimp.read(sourcePath);
-    await writeThumbnail(image, thumbnailPath, options);
+    await writeThumbnail(sourcePath, thumbnailPath, options);
 }
 
 export async function createThumbnailBuffer(sourceBuffer: Buffer, options: ThumbnailOptions = {}): Promise<Buffer> {
-    const width = options.width ?? DEFAULT_THUMBNAIL_WIDTH;
-    const height = options.height ?? DEFAULT_THUMBNAIL_HEIGHT;
-    const quality = options.quality ?? DEFAULT_THUMBNAIL_QUALITY;
-
-    const image = await Jimp.read(sourceBuffer);
-    image.cover({ w: width, h: height });
-    const buffer = await image.getBuffer(JimpMime.jpeg, { quality });
-    return Buffer.from(buffer);
+    return renderThumbnail(sourceBuffer, options);
 }

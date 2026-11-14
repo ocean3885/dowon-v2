@@ -17,12 +17,12 @@ class AsyncDb {
     this.db.exec(sql);
   }
 
-  async get<T = any>(sql: string, ...params: unknown[]): Promise<T | undefined> {
+  async get<T = unknown>(sql: string, ...params: unknown[]): Promise<T | undefined> {
     const stmt = this.db.prepare(sql);
     return stmt.get(...normalizeParams(params)) as T | undefined;
   }
 
-  async all<T = any>(sql: string, ...params: unknown[]): Promise<T[]> {
+  async all<T = unknown>(sql: string, ...params: unknown[]): Promise<T[]> {
     const stmt = this.db.prepare(sql);
     return stmt.all(...normalizeParams(params)) as T[];
   }

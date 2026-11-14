@@ -10,6 +10,9 @@
     "backfill:thumbnails": "node scripts/backfill-thumbnails.cjs"
   },
   "overrides": {
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "^11.0.1"
+    },
     "postcss": "^8.5.10",
     "postcss-selector-parser": "^7.1.6"
   },
@@ -21,12 +24,12 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.25",
-    "jimp": "^1.6.0",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.556.0",
     "next": "^16.2.6",
     "react": "19.2.0",
     "react-dom": "19.2.0",
+    "sharp": "^0.35.5",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7"
   },
@@ -43,7 +46,7 @@
   },
   "allowScripts": {
     "better-sqlite3@12.8.0": true,
-    "sharp@0.34.5": true,
+    "sharp@0.35.5": true,
     "unrs-resolver@1.11.1": true
   }
 }

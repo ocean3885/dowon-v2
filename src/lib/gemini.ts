@@ -71,8 +71,8 @@ export async function requestGeminiCompletion({
 
     const candidate = data?.candidates?.[0];
     const textPart = candidate?.content?.parts
-        ?.filter((p: any) => !p.thought && typeof p.text === 'string')
-        ?.map((p: any) => p.text)
+        ?.filter((p: { thought?: boolean; text?: string }) => !p.thought && typeof p.text === 'string')
+        ?.map((p: { text?: string }) => p.text)
         ?.join('\n')
         || candidate?.content?.parts?.[0]?.text;
 
