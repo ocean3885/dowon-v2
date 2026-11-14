@@ -117,18 +117,19 @@ export function SajuChart({
     characterGraph?: BaziCharacterGraph | null;
     characterGraphError?: string;
 }) {
-    const [selectedCharId, setSelectedCharId] = useState<string | null>(null);
+    const [selection, setSelection] = useState<{ result: BaziResult; id: string } | null>(null);
+    const selectedCharId = selection?.result === result ? selection.id : null;
     const pillars = result.four_pillars;
     const tenGods = result.ten_gods || {};
     const specialStarsByPillar = result.advanced_analysis?.special_stars_by_pillar || {};
     const details = result.analysis?.details || {};
 
-    useEffect(() => {
-        setSelectedCharId(null);
-    }, [result]);
-
     const toggleCharacter = (id: string) => {
-        setSelectedCharId((prev) => (prev === id ? null : id));
+        setSelection((prev) => (prev?.result === result && prev.id === id ? null : { result, id }));
+    };
+
+    const selectCharacter = (id: string | null) => {
+        setSelection(id ? { result, id } : null);
     };
 
     const selectedCharacter: BaziCharacter | undefined =
@@ -342,7 +343,7 @@ export function SajuChart({
                             <p>{characterGraphError}</p>
                             <button
                                 type="button"
-                                onClick={() => setSelectedCharId(null)}
+                                onClick={() => selectCharacter(null)}
                                 className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[#d9c3ac] bg-white px-2.5 py-1 text-xs font-semibold text-[#5c4938] hover:bg-[#f5ebe0]"
                             >
                                 닫기 <X className="h-3.5 w-3.5" />
@@ -353,7 +354,7 @@ export function SajuChart({
                             <p>선택한 글자의 상세 요약 정보를 불러오는 중입니다...</p>
                             <button
                                 type="button"
-                                onClick={() => setSelectedCharId(null)}
+                                onClick={() => selectCharacter(null)}
                                 className="inline-flex shrink-0 items-center gap-1 rounded-md border border-[#d9c3ac] bg-white px-2.5 py-1 text-xs font-semibold text-[#5c4938] hover:bg-[#f5ebe0]"
                             >
                                 닫기 <X className="h-3.5 w-3.5" />
@@ -364,8 +365,8 @@ export function SajuChart({
                             graph={characterGraph}
                             characterId={selectedCharId}
                             character={selectedCharacter}
-                            onSelectCharacter={setSelectedCharId}
-                            onClose={() => setSelectedCharId(null)}
+                            onSelectCharacter={selectCharacter}
+                            onClose={() => selectCharacter(null)}
                         />
                     )}
                 </div>
