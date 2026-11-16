@@ -9,6 +9,7 @@ import {
     Briefcase,
     Zap,
     X,
+    BookOpen,
 } from 'lucide-react';
 import type {
     BaziAuthStatus,
@@ -544,6 +545,79 @@ function SelectedCharacterDrawer({
                 </div>
             )}
         </div>
+    );
+}
+
+const hanjaToKrMap: Record<string, string> = {
+    甲: '갑', 乙: '을', 丙: '병', 丁: '정', 戊: '무',
+    己: '기', 庚: '경', 辛: '신', 壬: '임', 癸: '계',
+    子: '자', 丑: '축', 寅: '인', 卯: '묘', 辰: '진', 巳: '사',
+    午: '오', 未: '미', 申: '신', 酉: '유', 戌: '술', 亥: '해',
+};
+
+function toKoreanGanJi(text?: string) {
+    if (!text) return '';
+    return Array.from(text).map((ch) => hanjaToKrMap[ch] || ch).join('');
+}
+
+export function DayMonthInterpretationCard({ result }: { result: BaziResult }) {
+    const interpretation = result.day_month_interpretation ?? result.advanced_analysis?.day_month_interpretation;
+    if (!interpretation || !interpretation.explanation?.trim()) {
+        return null;
+    }
+
+    const { day_pillar, month_branch, explanation } = interpretation;
+    const dayGanKr = result.four_pillars?.day?.gan?.kr || '';
+    const dayJiKr = result.four_pillars?.day?.ji?.kr || '';
+    const dayKr = toKoreanGanJi(day_pillar) || (dayGanKr && dayJiKr ? `${dayGanKr}${dayJiKr}` : day_pillar);
+    const monthKr = toKoreanGanJi(month_branch) || result.four_pillars?.month?.ji?.kr || month_branch;
+
+    return (
+        <Card className="xl:col-span-2 relative overflow-hidden border-[#e6d5c1] bg-[linear-gradient(180deg,rgba(255,252,247,0.95),rgba(250,242,232,0.9))]">
+            <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-[radial-gradient(circle,rgba(205,154,91,0.14),transparent_70%)]" />
+            <div className="pointer-events-none absolute -bottom-16 -left-12 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(181,131,78,0.1),transparent_70%)]" />
+
+            <div className="relative">
+                <div className="flex flex-col items-center text-center sm:px-4">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#dfc8ae] bg-[#fffaf3] px-3.5 py-1 text-xs font-medium tracking-wide text-[#8c5d30]">
+                        <BookOpen className="h-3.5 w-3.5 text-[#b07b46]" />
+                        계절과 마음이 만나는 풍경
+                    </span>
+
+                    <h3 className="mt-4 break-keep font-serif text-xl font-normal leading-relaxed text-[#2c2016] sm:text-2xl">
+                        당신은{' '}
+                        <span className="font-bold text-[#9c632b]">
+                            &ldquo;{monthKr}&rdquo;
+                        </span>
+                        월에 태어난{' '}
+                        <span className="font-bold text-[#7d4918]">
+                            &ldquo;{dayKr}&rdquo;
+                        </span>
+                        일주 입니다.
+                    </h3>
+
+                    {(day_pillar || month_branch) && (
+                        <p className="mt-1.5 font-serif text-xs tracking-widest text-[#94806e] sm:text-sm">
+                            {month_branch ? `${month_branch}월(月)` : ''}
+                            {month_branch && day_pillar ? ' · ' : ''}
+                            {day_pillar ? `${day_pillar}일주(日柱)` : ''}
+                        </p>
+                    )}
+
+                    <div className="mt-4 flex items-center gap-2 text-[#d4b899]" aria-hidden="true">
+                        <span className="h-px w-10 bg-[#dfd0c0]" />
+                        <span className="text-xs">✦</span>
+                        <span className="h-px w-10 bg-[#dfd0c0]" />
+                    </div>
+                </div>
+
+                <div className="mt-5 rounded-xl border border-[#ead9c7] bg-[#fffdf9]/90 px-5 py-6 shadow-[inset_0_1px_12px_rgba(122,88,52,0.05)] sm:px-8 sm:py-7">
+                    <p className="whitespace-pre-line break-keep font-serif text-[15px] leading-8 tracking-[0.01em] text-[#3d3025] sm:text-base sm:leading-9">
+                        {explanation}
+                    </p>
+                </div>
+            </div>
+        </Card>
     );
 }
 

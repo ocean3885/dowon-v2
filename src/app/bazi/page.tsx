@@ -24,6 +24,7 @@ import {
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import {
     BaziInterpretationCard,
+    DayMonthInterpretationCard,
     SajuChart,
     SpecialStarsCard,
     Card,
@@ -341,6 +342,7 @@ export default function BaziPage() {
 
                             <div className="grid min-w-0 gap-5 xl:grid-cols-2">
                                 <SajuChart result={result} characterGraph={characterGraph} characterGraphError={characterGraphError} />
+                                <DayMonthInterpretationCard result={result} />
                                 <DecadeFlow key={`cycle-${JSON.stringify(birthParams)}`} result={result} birthParams={birthParams} />
                                 <ElementBalance result={result} />
                                 <SpecialStarsCard result={result} />

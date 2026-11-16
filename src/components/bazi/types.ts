@@ -134,7 +134,14 @@ export type CycleYearItem = {
     unseong?: string;
 };
 
+export type DayMonthInterpretation = {
+    day_pillar: string;
+    month_branch: string;
+    explanation: string;
+};
+
 export type BaziResult = {
+    day_month_interpretation?: DayMonthInterpretation | null;
     calendar?: {
         solar?: { year?: number; month?: string | number; day?: string | number };
         lunar?: { year?: number; month?: string | number; day?: string | number };
@@ -199,6 +206,7 @@ export type BaziResult = {
         xu_shi_dynamics?: XuShiDynamics;
         bin_zhu_dynamics?: BinZhuDynamics;
         ai_consultation_prompts?: string[];
+        day_month_interpretation?: DayMonthInterpretation | null;
     };
 };
 
